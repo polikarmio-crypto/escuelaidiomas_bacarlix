@@ -1,0 +1,137 @@
+# ===============================================================================
+# Docker Compose - Sistema de Gestión Académica
+# Escuela de Idiomas del Ejército (EIE)
+# ===============================================================================
+# Servicios: PostgreSQL, Laravel API, Next.js Frontend, Quarkus Microservice
+# ===============================================================================
+
+services:
+
+  # ─────────────────────────────────────────────────────────────
+  # BASE DE DATOS: PostgreSQL 16 con extensiones
+  # ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: eie_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: escuela_idiomas
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-escuela_idiomas_2026}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=es_BO.UTF-8 --lc-ctype=es_BO.UTF-8"
+      TZ: America/La_Paz
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d escuela_idiomas"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eie_network
+
+  # ─────────────────────────────────────────────────────────────
+  # BACKEND: Laravel 12 API REST (PHP 8.2 + FPM)
+  # ─────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: eie_backend
+    restart: unless-stopped
+    environment:
+      APP_NAME: "Escuela de Idiomas del Ejército - API"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_TIMEZONE: America/La_Paz
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: escuela_idiomas
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-escuela_idiomas_2026}
+      QUEUE_CONNECTION: database
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+      - backend_vendor:/var/www/html/vendor
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - eie_network
+
+  # ─────────────────────────────────────────────────────────────
+  # FRONTEND: Next.js 14 + React 18 + TypeScript
+  # ─────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: eie_frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: /api/v1
+      BACKEND_INTERNAL_URL: http://backend:8000
+      QUARKUS_INTERNAL_URL: http://quarkus:8080
+      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-super_secret_key_eie_2026}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/next.config.mjs:/app/next.config.mjs
+      - frontend_node_modules:/app/node_modules
+      - frontend_next:/app/.next
+    depends_on:
+      - backend
+    networks:
+      - eie_network
+
+  # ─────────────────────────────────────────────────────────────
+  # MICROSERVICIO: Quarkus (Analítica IO / Teoría de Colas)
+  # ─────────────────────────────────────────────────────────────
+  quarkus:
+    build:
+      context: ./quarkus
+      dockerfile: Dockerfile
+    container_name: eie_quarkus
+    restart: unless-stopped
+    environment:
+      QUARKUS_DATASOURCE_JDBC_URL: jdbc:postgresql://postgres:5432/escuela_idiomas
+      QUARKUS_DATASOURCE_USERNAME: ${DB_USERNAME:-postgres}
+      QUARKUS_DATASOURCE_PASSWORD: ${DB_PASSWORD:-escuela_idiomas_2026}
+      QUARKUS_HTTP_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - eie_network
+
+# ─────────────────────────────────────────────────────────────
+# VOLUMES PERSISTENTES
+# ─────────────────────────────────────────────────────────────
+volumes:
+  pgdata:
+    driver: local
+  backend_vendor:
+    driver: local
+  frontend_node_modules:
+    driver: local
+  frontend_next:
+    driver: local
+
+# ─────────────────────────────────────────────────────────────
+# RED INTERNA
+# ─────────────────────────────────────────────────────────────
+networks:
+  eie_network:
+    driver: bridge
