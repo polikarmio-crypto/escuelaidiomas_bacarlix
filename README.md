@@ -2,6 +2,21 @@
 
 Sistema de la Escuela de Idiomas del Ejército (EIE). El proyecto se ejecuta mediante Docker Compose e incluye PostgreSQL, Laravel, Next.js y Quarkus.
 
+---
+
+## 👥 Equipo de Desarrollo y Asignación de Roles
+
+A continuación se detalla el equipo de desarrollo, sus cuentas de GitHub, roles y responsabilidades en el proyecto:
+
+| Integrante | Usuario de GitHub | Rol en el Proyecto | Rama Asignada | Responsabilidades y Módulos Principales |
+| :--- | :--- | :--- | :---: | :--- |
+| **Pablo Medina** | [@polikarmio-crypto](https://github.com/polikarmio-crypto) | **Project Lead & Frontend Architect** | [Pablo](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Pablo) | Arquitectura frontend Next.js 14, UI/UX institucional con radar y escudo EIE, AppShell, diseño responsive y vistas core. |
+| **Arturo Wilder Figueredo Sanjinés** | [@figueredosanjinesarturowilder-0708](https://github.com/figueredosanjinesarturowilder-0708) | **Backend Lead & Database Architect** | [Arturo](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Arturo) | Backend API RESTful en Laravel 11, modelos Eloquent, migraciones y seeders relacionales PostgreSQL, controladores de catálogos y estructura académica. |
+| **Ricardo** | [@RicardoS2225](https://github.com/RicardoS2225) | **Coordinador Financiero y Matrículas** | [Ricardo](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Ricardo) | Módulos de inscripciones, control de aranceles, gestión de cobros/pagos, reportes administrativos y conciliación contable. |
+| **André Candia** | [@AndreCandia0712](https://github.com/AndreCandia0712) | **Microservicios, Analítica & DevOps** | [Candia](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Candia) | Microservicio Quarkus (Java / RESTEasy), orquestación y networking Docker Compose, telemetría y métricas de rendimiento. |
+
+---
+
 ## Requisitos
 
 - Docker Desktop (Windows) o Docker Engine con Docker Compose (Linux).
