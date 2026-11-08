@@ -44,7 +44,7 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     pinSeguridad: '9999',
     descripcion: 'Administra los catálogos base del sistema: gestiones, idiomas, aulas y aforos, horarios, modalidades, tipos de programa y tipos de pago.',
     color: '#eab308',
-    rutasPermitidas: ['/', '/dashboard', '/catalogos', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/cajas', '/almacen', '/metodos-numericos'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/catalogos', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/asistencia', '/cajas', '/almacen', '/metodos-numericos'],
   },
   JEFE_ACADEMICO: {
     id: 'JEFE_ACADEMICO',
@@ -56,7 +56,7 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     pinSeguridad: '5050',
     descripcion: 'Planifica programas, niveles y libros; registra docentes e idiomas; inscribe alumnos validando cupos; apertura paralelos y supervisa actas y exámenes de nivel.',
     color: '#3b82f6',
-    rutasPermitidas: ['/', '/dashboard', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/metodos-numericos'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/asistencia', '/metodos-numericos'],
   },
   DOCENTE: {
     id: 'DOCENTE',
@@ -66,9 +66,9 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     emailPorDefecto: 'doc.rios@ejercito.mil.bo',
     ciPorDefecto: '4820194 CB',
     pinSeguridad: '1010',
-    descripcion: 'Consulta sus paralelos y su cronograma de rotación de 15 días; registra calificaciones por libro con la fórmula oficial (Examen 80%, Oral 10%, Participación 10%).',
+    descripcion: 'Consulta sus paralelos y su cronograma de rotación; registra partes de asistencia y calificaciones bajo normativa institucional.',
     color: '#10b981',
-    rutasPermitidas: ['/', '/dashboard', '/paralelos', '/calificaciones'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/paralelos', '/calificaciones', '/asistencia'],
   },
   CAJERO: {
     id: 'CAJERO',
@@ -78,9 +78,9 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     emailPorDefecto: 'cajero@ejercito.mil.bo',
     ciPorDefecto: '5920148 LP',
     pinSeguridad: '3030',
-    descripcion: 'Controla la cola de atención FIFO, atiende turnos en ventanilla, cobra conceptos (matrícula, mensualidad, compra de libro) y emite comprobantes oficiales.',
+    descripcion: 'Controla el flujo de atención en ventanilla, atiende turnos convocados, procesa cobros y emite comprobantes oficiales.',
     color: '#f59e0b',
-    rutasPermitidas: ['/', '/dashboard', '/cajas'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/cajas'],
   },
   ALMACENERO: {
     id: 'ALMACENERO',
@@ -90,9 +90,9 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     emailPorDefecto: 'almacen@ejercito.mil.bo',
     ciPorDefecto: '6019284 SC',
     pinSeguridad: '4040',
-    descripcion: 'Supervisa el stock físico de libros, registra salidas/entradas de kardex, gestiona el punto de reorden (ROP) y pedidos de reposición a proveedores.',
+    descripcion: 'Supervisa las existencias físicas de textos, registra movimientos de entrada y salida de depósito y gestiona órdenes de reposición.',
     color: '#ec4899',
-    rutasPermitidas: ['/', '/dashboard', '/almacen'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/almacen'],
   },
   ESTUDIANTE: {
     id: 'ESTUDIANTE',
@@ -102,9 +102,9 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     emailPorDefecto: 'est.mamani@ejercito.mil.bo',
     ciPorDefecto: '6849201 LP',
     pinSeguridad: '',
-    descripcion: 'Consulta su historial de avance libro a libro y calificaciones, sus cursos inscritos, y solicita fichas de turno digital para trámites en caja.',
+    descripcion: 'Consulta su historial de avance curricular y calificaciones, sus cursos inscritos, y solicita turnos digitales para trámites en ventanilla.',
     color: '#06b6d4',
-    rutasPermitidas: ['/', '/dashboard', '/calificaciones', '/cajas', '/inscripciones'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/calificaciones', '/cajas', '/inscripciones'],
   },
 };
 
@@ -148,6 +148,13 @@ export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
   };
 
   const cerrarSesion = () => {
+    try {
+      localStorage.removeItem('eie_auth');
+      localStorage.removeItem('eie_role');
+      localStorage.removeItem('eie_email');
+      localStorage.removeItem('eie_rol_activo');
+      sessionStorage.clear();
+    } catch (e) {}
     cambiarRol('ESTUDIANTE');
   };
 
@@ -164,7 +171,7 @@ export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
   };
 
   const canAccessRoute = (pathname: string): boolean => {
-    if (pathname === '/') return true;
+    if (pathname === '/' || pathname === '/login') return true;
     return rolConfig.rutasPermitidas.some(
       (r) => r === pathname || (r !== '/' && pathname.startsWith(r))
     );

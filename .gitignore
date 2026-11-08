@@ -1,6 +1,3 @@
-# ==============================
-# Node.js / Next.js
-# ==============================
 **/node_modules/
 **/.next/
 **/out/
@@ -10,10 +7,21 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# ==============================
-# Laravel / PHP
-# ==============================
 **/vendor/
+backend/.env
+backend/storage/*.key
+backend/storage/logs/*
+backend/storage/framework/cache/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/bootstrap/cache/*
+!backend/storage/logs/**/.gitkeep
+!backend/storage/logs/.gitkeep
+!backend/storage/framework/cache/.gitkeep
+!backend/storage/framework/sessions/.gitkeep
+!backend/storage/framework/views/.gitkeep
+!backend/bootstrap/cache/.gitkeep
+
 backend-laravel/.env
 backend-laravel/storage/*.key
 backend-laravel/storage/logs/*
@@ -27,28 +35,17 @@ backend-laravel/bootstrap/cache/*
 !backend-laravel/storage/framework/views/.gitkeep
 !backend-laravel/bootstrap/cache/.gitkeep
 
-# ==============================
-# Java / Quarkus / Maven
-# ==============================
 **/target/
 **/.quarkus/
 **/*.class
 
-# ==============================
-# Ambientes / Secretos
-# ==============================
 .env
 .env.local
 .env.*.local
 *.env
-
-# Conservar ejemplos
 !.env.example
 !**/.env.example
 
-# ==============================
-# IDEs & Sistema Operativo
-# ==============================
 .idea/
 .vscode/
 *.iml
@@ -56,3 +53,6 @@ backend-laravel/bootstrap/cache/*
 *.swo
 .DS_Store
 Thumbs.db
+*.jpg
+*.png
+*.jpeg
