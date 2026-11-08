@@ -362,13 +362,13 @@ export default function EstudiantesPage() {
         <div className="flex items-center gap-3">
           <form onSubmit={handleBuscar} className="flex items-center gap-2 w-full sm:w-72">
             <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-2" />
+              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Buscar por CI, nombre..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-neutral-500"
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white placeholder-neutral-500"
               />
             </div>
             <button

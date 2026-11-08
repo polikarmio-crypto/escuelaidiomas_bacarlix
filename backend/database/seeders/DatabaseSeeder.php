@@ -30,13 +30,13 @@ class DatabaseSeeder extends Seeder
         ], 'id_gestion');
 
         $idiomasData = [
-            ['nombre_idioma' => 'Inglés Militar'],
-            ['nombre_idioma' => 'Francés Diplomático'],
-            ['nombre_idioma' => 'Ruso Técnico'],
-            ['nombre_idioma' => 'Mandarín Táctico'],
-            ['nombre_idioma' => 'Quechua Institucional'],
-            ['nombre_idioma' => 'Alemán Académico'],
-            ['nombre_idioma' => 'Portugués Estratégico'],
+            ['nombre_idioma' => 'Inglés'],
+            ['nombre_idioma' => 'Francés'],
+            ['nombre_idioma' => 'Ruso'],
+            ['nombre_idioma' => 'Mandarín'],
+            ['nombre_idioma' => 'Quechua'],
+            ['nombre_idioma' => 'Alemán'],
+            ['nombre_idioma' => 'Portugués'],
         ];
 
         $idiomaIds = [];
@@ -122,8 +122,8 @@ class DatabaseSeeder extends Seeder
 
         $programasConfig = [
             [
-                'nombre' => 'Programa de Inglés Militar para Misiones de Paz',
-                'idioma' => 'Inglés Militar',
+                'nombre' => 'Plan de Idioma Inglés',
+                'idioma' => 'Inglés',
                 'tipo'   => $idProgMilitar,
                 'duracion' => 2,
                 'niveles' => [
@@ -133,8 +133,8 @@ class DatabaseSeeder extends Seeder
                 ]
             ],
             [
-                'nombre' => 'Programa de Francés Diplomático y Operacional',
-                'idioma' => 'Francés Diplomático',
+                'nombre' => 'Plan de Idioma Francés',
+                'idioma' => 'Francés',
                 'tipo'   => $idProgDiplom,
                 'duracion' => 2,
                 'niveles' => [
@@ -143,8 +143,8 @@ class DatabaseSeeder extends Seeder
                 ]
             ],
             [
-                'nombre' => 'Programa de Ruso Técnico y Táctico',
-                'idioma' => 'Ruso Técnico',
+                'nombre' => 'Plan de Idioma Ruso',
+                'idioma' => 'Ruso',
                 'tipo'   => $idProgMilitar,
                 'duracion' => 2,
                 'niveles' => [
@@ -153,8 +153,8 @@ class DatabaseSeeder extends Seeder
                 ]
             ],
             [
-                'nombre' => 'Programa de Mandarín Táctico y Negocios',
-                'idioma' => 'Mandarín Táctico',
+                'nombre' => 'Plan de Idioma Mandarín',
+                'idioma' => 'Mandarín',
                 'tipo'   => $idProgCivil,
                 'duracion' => 3,
                 'niveles' => [
@@ -163,8 +163,8 @@ class DatabaseSeeder extends Seeder
                 ]
             ],
             [
-                'nombre' => 'Programa de Quechua Originario Institucional',
-                'idioma' => 'Quechua Institucional',
+                'nombre' => 'Plan de Idioma Quechua',
+                'idioma' => 'Quechua',
                 'tipo'   => $idProgMilitar,
                 'duracion' => 1,
                 'niveles' => [
@@ -172,8 +172,8 @@ class DatabaseSeeder extends Seeder
                 ]
             ],
             [
-                'nombre' => 'Programa de Alemán Académico y Estratégico',
-                'idioma' => 'Alemán Académico',
+                'nombre' => 'Plan de Idioma Alemán',
+                'idioma' => 'Alemán',
                 'tipo'   => $idProgCivil,
                 'duracion' => 2,
                 'niveles' => [
@@ -182,8 +182,8 @@ class DatabaseSeeder extends Seeder
                 ]
             ],
             [
-                'nombre' => 'Programa de Portugués Militar y Mercosur',
-                'idioma' => 'Portugués Estratégico',
+                'nombre' => 'Plan de Idioma Portugués',
+                'idioma' => 'Portugués',
                 'tipo'   => $idProgMilitar,
                 'duracion' => 1,
                 'niveles' => [
@@ -270,28 +270,28 @@ class DatabaseSeeder extends Seeder
         }
 
         $docentesData = [
-            ['5849201 LP', 'Fernando', 'Ríos Torrico', '+591 76543210', 'f.rios@ejercito.mil.bo', 'Inglés Militar'],
-            ['7120485 LP', 'Carlos', 'Ramos Siles', '+591 71234567', 'c.ramos@ejercito.mil.bo', 'Inglés Militar'],
-            ['6920184 CB', 'María', 'Condori Quispe', '+591 78901234', 'm.condori@ejercito.mil.bo', 'Francés Diplomático'],
-            ['8392019 LP', 'Ana', 'Blanco Gutiérrez', '+591 74445566', 'ana.blanco@idiomas.edu.bo', 'Mandarín Táctico'],
-            ['4920194 SC', 'Roberto', 'Daza Peñaranda', '+591 73102938', 'r.daza@ejercito.mil.bo', 'Ruso Técnico'],
-            ['6194028 CB', 'Jeanette', 'Mendoza Alarcón', '+591 72019485', 'j.mendoza@ejercito.mil.bo', 'Francés Diplomático'],
-            ['5302918 OR', 'Hugo', 'Mamani Choque', '+591 79182304', 'h.mamani@ejercito.mil.bo', 'Quechua Institucional'],
-            ['7849201 PT', 'Beatriz', 'Flores Colque', '+591 76591283', 'b.flores@ejercito.mil.bo', 'Quechua Institucional'],
-            ['4810293 TJ', 'Rodrigo', 'Guzmán Torrico', '+591 71492018', 'r.guzman@ejercito.mil.bo', 'Alemán Académico'],
-            ['9201847 SC', 'Marcelo', 'Justiniano Roca', '+591 77201948', 'm.justiniano@ejercito.mil.bo', 'Portugués Estratégico'],
-            ['6849102 LP', 'David', 'Morales Silva', '+591 73849102', 'd.morales@ejercito.mil.bo', 'Inglés Militar'],
-            ['7392014 CB', 'Claudia', 'Pinto Montaño', '+591 75920184', 'c.pinto@idiomas.edu.bo', 'Inglés Militar'],
-            ['8402918 LP', 'Jorge', 'Escalera Vargas', '+591 76019283', 'j.escalera@ejercito.mil.bo', 'Ruso Técnico'],
-            ['5819203 CH', 'Valeria', 'Rojas Banzer', '+591 74920183', 'v.rojas@ejercito.mil.bo', 'Francés Diplomático'],
-            ['6948201 BE', 'Gonzalo', 'Villarroel Suárez', '+591 78192039', 'g.villarroel@ejercito.mil.bo', 'Portugués Estratégico'],
-            ['7301928 LP', 'Patricia', 'Alvis Murillo', '+591 72948102', 'p.alvis@ejercito.mil.bo', 'Inglés Militar'],
-            ['8192049 CB', 'Sergio', 'Zambrana Quiroga', '+591 71839201', 's.zambrana@ejercito.mil.bo', 'Inglés Militar'],
-            ['4928104 SC', 'Gabriela', 'Aguilera Méndez', '+591 76294018', 'g.aguilera@ejercito.mil.bo', 'Alemán Académico'],
-            ['6719402 LP', 'Eduardo', 'Callisaya Quisbert', '+591 79283019', 'e.callisaya@ejercito.mil.bo', 'Mandarín Táctico'],
-            ['7492018 OR', 'Néstor', 'Aruquipa Limachi', '+591 74819203', 'n.aruquipa@ejercito.mil.bo', 'Quechua Institucional'],
-            ['8920147 TJ', 'Mariana', 'López Paz', '+591 77391029', 'm.lopez@ejercito.mil.bo', 'Inglés Militar'],
-            ['6029481 PA', 'Oscar', 'Vaca Díez', '+591 78402918', 'o.vaca@ejercito.mil.bo', 'Portugués Estratégico'],
+            ['5849201 LP', 'Fernando', 'Ríos Torrico', '+591 76543210', 'f.rios@ejercito.mil.bo', 'Inglés'],
+            ['7120485 LP', 'Carlos', 'Ramos Siles', '+591 71234567', 'c.ramos@ejercito.mil.bo', 'Inglés'],
+            ['6920184 CB', 'María', 'Condori Quispe', '+591 78901234', 'm.condori@ejercito.mil.bo', 'Francés'],
+            ['8392019 LP', 'Ana', 'Blanco Gutiérrez', '+591 74445566', 'ana.blanco@idiomas.edu.bo', 'Mandarín'],
+            ['4920194 SC', 'Roberto', 'Daza Peñaranda', '+591 73102938', 'r.daza@ejercito.mil.bo', 'Ruso'],
+            ['6194028 CB', 'Jeanette', 'Mendoza Alarcón', '+591 72019485', 'j.mendoza@ejercito.mil.bo', 'Francés'],
+            ['5302918 OR', 'Hugo', 'Mamani Choque', '+591 79182304', 'h.mamani@ejercito.mil.bo', 'Quechua'],
+            ['7849201 PT', 'Beatriz', 'Flores Colque', '+591 76591283', 'b.flores@ejercito.mil.bo', 'Quechua'],
+            ['4810293 TJ', 'Rodrigo', 'Guzmán Torrico', '+591 71492018', 'r.guzman@ejercito.mil.bo', 'Alemán'],
+            ['9201847 SC', 'Marcelo', 'Justiniano Roca', '+591 77201948', 'm.justiniano@ejercito.mil.bo', 'Portugués'],
+            ['6849102 LP', 'David', 'Morales Silva', '+591 73849102', 'd.morales@ejercito.mil.bo', 'Inglés'],
+            ['7392014 CB', 'Claudia', 'Pinto Montaño', '+591 75920184', 'c.pinto@idiomas.edu.bo', 'Inglés'],
+            ['8402918 LP', 'Jorge', 'Escalera Vargas', '+591 76019283', 'j.escalera@ejercito.mil.bo', 'Ruso'],
+            ['5819203 CH', 'Valeria', 'Rojas Banzer', '+591 74920183', 'v.rojas@ejercito.mil.bo', 'Francés'],
+            ['6948201 BE', 'Gonzalo', 'Villarroel Suárez', '+591 78192039', 'g.villarroel@ejercito.mil.bo', 'Portugués'],
+            ['7301928 LP', 'Patricia', 'Alvis Murillo', '+591 72948102', 'p.alvis@ejercito.mil.bo', 'Inglés'],
+            ['8192049 CB', 'Sergio', 'Zambrana Quiroga', '+591 71839201', 's.zambrana@ejercito.mil.bo', 'Inglés'],
+            ['4928104 SC', 'Gabriela', 'Aguilera Méndez', '+591 76294018', 'g.aguilera@ejercito.mil.bo', 'Alemán'],
+            ['6719402 LP', 'Eduardo', 'Callisaya Quisbert', '+591 79283019', 'e.callisaya@ejercito.mil.bo', 'Mandarín'],
+            ['7492018 OR', 'Néstor', 'Aruquipa Limachi', '+591 74819203', 'n.aruquipa@ejercito.mil.bo', 'Quechua'],
+            ['8920147 TJ', 'Mariana', 'López Paz', '+591 77391029', 'm.lopez@ejercito.mil.bo', 'Inglés'],
+            ['6029481 PA', 'Oscar', 'Vaca Díez', '+591 78402918', 'o.vaca@ejercito.mil.bo', 'Portugués'],
         ];
 
         $docenteIds = [];
@@ -309,7 +309,7 @@ class DatabaseSeeder extends Seeder
 
             $docenteIds[] = $idDoc;
 
-            $nomIdm = isset($idiomaIds[$doc[5]]) ? $doc[5] : 'Inglés Militar';
+            $nomIdm = isset($idiomaIds[$doc[5]]) ? $doc[5] : 'Inglés';
             DB::table('docente_idioma')->insert([
                 'id_docente' => $idDoc,
                 'id_idioma'  => $idiomaIds[$nomIdm]
@@ -518,7 +518,7 @@ class DatabaseSeeder extends Seeder
                 'id_estudiante'      => $idEst,
                 'id_paralelo'        => $paraleloElegido['id_paralelo'],
                 'fecha_inscripcion'  => Carbon::now()->subDays(rand(15, 45))->toDateString(),
-                'estado_inscripcion' => ($i % 25 === 0) ? 'Concluida' : 'Activa',
+                'estado_inscripcion' => 'Activa',
                 'created_at'         => now(),
                 'updated_at'         => now(),
             ], 'id_inscripcion');
