@@ -7,14 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\Paralelo;
 use App\Models\AsignacionDocenteParalelo;
 use App\Models\Gestion;
+use App\Services\AuditLogger;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class ParaleloController extends Controller
 {
-    /**
-     * Lista los paralelos con su aforo, docente asignado e información de aula
-     */
     public function index(Request $request)
     {
         $gestionActiva = Gestion::where('estado_gestion', 'Activa')->first();
@@ -37,26 +35,30 @@ class ParaleloController extends Controller
             return [
                 'id_paralelo' => $p->id_paralelo,
                 'codigo_paralelo' => $p->codigo_paralelo,
-                'idioma' => $p->nivel->programa->idioma->nombre_idioma,
-                'nivel' => $p->nivel->nombre_nivel,
-                'aula' => $p->aula->nombre_aula,
-                'horario' => "{$p->horario->hora_inicio_horario} - {$p->horario->hora_fin_horario}",
-                'modalidad' => $p->modalidad->nombre_modalidad,
-                'docente_actual' => $docenteAsignado ? "{$docenteAsignado->docente->nombre_docente} {$docenteAsignado->docente->apellido_docente}" : 'Sin docente asignado',
+                'idioma' => $p->nivel && $p->nivel->programa && $p->nivel->programa->idioma ? $p->nivel->programa->idioma->nombre_idioma : 'Inglés',
+                'id_idioma' => $p->nivel && $p->nivel->programa ? $p->nivel->programa->id_idioma : 1,
+                'programa' => $p->nivel && $p->nivel->programa ? $p->nivel->programa->nombre_programa : 'Plan de Idioma Inglés',
+                'nivel' => $p->nivel ? $p->nivel->nombre_nivel : 'Básico',
+                'aula' => $p->aula ? $p->aula->nombre_aula : 'Aula General',
+                'horario' => $p->horario ? "{$p->horario->hora_inicio_horario} - {$p->horario->hora_fin_horario}" : 'Horario Regular',
+                'modalidad' => $p->modalidad ? $p->modalidad->nombre_modalidad : 'Presencial',
+                'docente_actual' => $docenteAsignado && $docenteAsignado->docente ? "{$docenteAsignado->docente->nombre_docente} {$docenteAsignado->docente->apellido_docente}" : 'Sin docente asignado',
+                'id_docente_actual' => $docenteAsignado ? $docenteAsignado->docente->id_docente : null,
                 'dias_en_aula' => $docenteAsignado ? $docenteAsignado->dias_en_aula : 0,
                 'inscritos' => $p->inscritos_count,
+                'inscripciones_count' => $p->inscritos_count,
                 'capacidad_maxima' => $p->capacidad_maxima_paralelo,
+                'capacidad_maxima_paralelo' => $p->capacidad_maxima_paralelo,
+                'capacidad_minima_apertura' => $p->capacidad_minima_apertura,
                 'cupo_disponible' => $p->tiene_cupo_disponible,
                 'estado' => $p->estado_paralelo,
+                'estado_paralelo' => $p->estado_paralelo,
             ];
         });
 
         return response()->json($paralelos);
     }
 
-    /**
-     * Apertura de nuevo paralelo con validación estricta de no-solapamiento de aula y horario
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -70,7 +72,6 @@ class ParaleloController extends Controller
             'id_docente_inicial' => 'nullable|exists:docente,id_docente',
         ]);
 
-        // Validación de solapamiento de aula y horario en la misma gestión académica
         $solapamiento = Paralelo::where('id_gestion', $validated['id_gestion'])
             ->where('id_aula', $validated['id_aula'])
             ->where('id_horario', $validated['id_horario'])
@@ -78,6 +79,11 @@ class ParaleloController extends Controller
             ->exists();
 
         if ($solapamiento) {
+            AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'SOLAPAMIENTO_AULA_HORARIO', [
+                'id_aula' => $validated['id_aula'],
+                'id_horario' => $validated['id_horario'],
+            ]);
+
             return response()->json([
                 'error' => 'Conflicto de infraestructura: El aula seleccionada ya se encuentra ocupada en ese horario y gestión.'
             ], 422);
@@ -104,6 +110,11 @@ class ParaleloController extends Controller
                     'fecha_fin_asignacion' => null,
                 ]);
             }
+
+            AuditLogger::academico(AuditLogger::LEVEL_INFO, 'PARALELO_APERTURADO', [
+                'id_paralelo' => $p->id_paralelo,
+                'codigo' => $p->codigo_paralelo,
+            ], null, 'paralelo', $p->id_paralelo);
 
             return $p;
         });

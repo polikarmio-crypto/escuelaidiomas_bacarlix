@@ -48,7 +48,7 @@ export default function CatalogosPage() {
   const cargarCatalogos = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8000/api/v1/catalogos');
+      const res = await fetch('/api/v1/catalogos');
       if (res.ok) {
         const data = await res.json();
         setGestiones(data.gestiones || []);
@@ -78,7 +78,7 @@ export default function CatalogosPage() {
   const handleCrearGestion = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/v1/catalogos/gestiones', {
+      const res = await fetch('/api/v1/catalogos/gestiones', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ anio_gestion: formGestion.anio, estado_gestion: formGestion.estado }),
@@ -96,7 +96,7 @@ export default function CatalogosPage() {
     e.preventDefault();
     if (!formIdioma.nombre.trim()) return;
     try {
-      const res = await fetch('http://localhost:8000/api/v1/catalogos/idiomas', {
+      const res = await fetch('/api/v1/catalogos/idiomas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre_idioma: formIdioma.nombre }),
@@ -115,7 +115,7 @@ export default function CatalogosPage() {
     e.preventDefault();
     if (!formAula.nombre.trim()) return;
     try {
-      const res = await fetch('http://localhost:8000/api/v1/catalogos/aulas', {
+      const res = await fetch('/api/v1/catalogos/aulas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre_aula: formAula.nombre, capacidad_aula: formAula.capacidad }),
@@ -133,7 +133,7 @@ export default function CatalogosPage() {
   const handleCrearHorario = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/v1/catalogos/horarios', {
+      const res = await fetch('/api/v1/catalogos/horarios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hora_inicio_horario: formHorario.inicio, hora_fin_horario: formHorario.fin }),
@@ -151,7 +151,7 @@ export default function CatalogosPage() {
     e.preventDefault();
     if (!formTipoProg.nombre.trim()) return;
     try {
-      const res = await fetch('http://localhost:8000/api/v1/catalogos/tipos-programa', {
+      const res = await fetch('/api/v1/catalogos/tipos-programa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre_tipo_programa: formTipoProg.nombre }),
@@ -170,7 +170,7 @@ export default function CatalogosPage() {
     e.preventDefault();
     if (!formTipoPago.nombre.trim()) return;
     try {
-      const res = await fetch('http://localhost:8000/api/v1/catalogos/tipos-pago', {
+      const res = await fetch('/api/v1/catalogos/tipos-pago', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre_tipo_pago: formTipoPago.nombre }),
@@ -188,7 +188,7 @@ export default function CatalogosPage() {
   const eliminarElemento = async (ruta: string, id: number) => {
     if (!confirm('¿Confirma eliminar este elemento del catálogo base?')) return;
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/catalogos/${ruta}/${id}`, {
+      const res = await fetch(`/api/v1/catalogos/${ruta}/${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
@@ -242,10 +242,10 @@ export default function CatalogosPage() {
         <button
           onClick={cargarCatalogos}
           disabled={loading}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
+          className="flex items-center gap-2.5 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-100 dark:border-neutral-700 text-xs font-semibold transition shadow-sm"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Sincronizar Catálogos
+          <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
+          <span>Sincronizar Catálogos</span>
         </button>
       </div>
 

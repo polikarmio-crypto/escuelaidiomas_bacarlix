@@ -51,8 +51,8 @@ export default function EstructuraAcademicaPage() {
     setLoading(true);
     try {
       const [resProg, resCat] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/estructura/programas'),
-        fetch('http://localhost:8000/api/v1/catalogos'),
+        fetch('/api/v1/estructura/programas'),
+        fetch('/api/v1/catalogos'),
       ]);
       if (resProg.ok) {
         const dataProg = await resProg.json();
@@ -90,7 +90,7 @@ export default function EstructuraAcademicaPage() {
   const handleCrearPrograma = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/v1/estructura/programas', {
+      const res = await fetch('/api/v1/estructura/programas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,7 +114,7 @@ export default function EstructuraAcademicaPage() {
     e.preventDefault();
     if (!programaSeleccionado) return;
     try {
-      const res = await fetch('http://localhost:8000/api/v1/estructura/niveles', {
+      const res = await fetch('/api/v1/estructura/niveles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -138,7 +138,7 @@ export default function EstructuraAcademicaPage() {
     e.preventDefault();
     if (!nivelSeleccionado) return;
     try {
-      const res = await fetch('http://localhost:8000/api/v1/estructura/libros', {
+      const res = await fetch('/api/v1/estructura/libros', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -194,10 +194,10 @@ export default function EstructuraAcademicaPage() {
         <button
           onClick={cargarDatos}
           disabled={loading}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Sincronizar Malla
+          <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
+          <span>Sincronizar Malla</span>
         </button>
       </div>
 

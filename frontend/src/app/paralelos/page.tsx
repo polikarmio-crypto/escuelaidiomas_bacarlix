@@ -63,10 +63,10 @@ export default function ParalelosPage() {
     setLoading(true);
     try {
       const [resPar, resDoc, resCat, resProg] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/paralelos'),
-        fetch('http://localhost:8000/api/v1/docentes'),
-        fetch('http://localhost:8000/api/v1/catalogos'),
-        fetch('http://localhost:8000/api/v1/estructura/programas'),
+        fetch('/api/v1/paralelos'),
+        fetch('/api/v1/docentes'),
+        fetch('/api/v1/catalogos'),
+        fetch('/api/v1/estructura/programas'),
       ]);
 
       if (resPar.ok) setParalelos(await resPar.json() || []);
@@ -109,7 +109,7 @@ export default function ParalelosPage() {
   const handleAperturarParalelo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/v1/paralelos', {
+      const res = await fetch('/api/v1/paralelos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -143,16 +143,26 @@ export default function ParalelosPage() {
 
   const paralelosVisibles = useMemo(() => {
     return paralelos.filter((p) => {
+      const docenteStr = typeof p.docente_actual === 'string'
+        ? p.docente_actual
+        : (p.docente_actual?.nombre_docente ? `${p.docente_actual.nombre_docente} ${p.docente_actual.apellido_docente}` : '');
+      const aulaStr = typeof p.aula === 'string' ? p.aula : (p.aula?.nombre_aula || '');
+      const idiomaStr = typeof p.idioma === 'string' ? p.idioma : (p.nivel?.programa?.idioma?.nombre_idioma || '');
+      const programaStr = typeof p.programa === 'string' ? p.programa : (p.nivel?.programa?.nombre_programa || '');
+      const nivelStr = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.nombre_nivel || '');
+
       if (esDocente) {
-        const nombreDocente = p.docente_actual?.nombre_docente || '';
-        return nombreDocente.toLowerCase().includes(usuario.nombre.toLowerCase().split(' ')[1] || '');
+        return docenteStr.toLowerCase().includes(usuario.nombre.toLowerCase().split(' ')[1] || '');
       }
       if (!busqueda.trim()) return true;
       const q = busqueda.toLowerCase().trim();
       return (
         p.codigo_paralelo?.toLowerCase().includes(q) ||
-        p.nivel?.programa?.idioma?.nombre_idioma?.toLowerCase().includes(q) ||
-        p.aula?.nombre_aula?.toLowerCase().includes(q)
+        idiomaStr.toLowerCase().includes(q) ||
+        programaStr.toLowerCase().includes(q) ||
+        nivelStr.toLowerCase().includes(q) ||
+        aulaStr.toLowerCase().includes(q) ||
+        docenteStr.toLowerCase().includes(q)
       );
     });
   }, [paralelos, esDocente, usuario.nombre, busqueda]);
@@ -200,10 +210,10 @@ export default function ParalelosPage() {
           <button
             onClick={cargarDatos}
             disabled={loading}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
+            className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Sincronizar
+            <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
+            <span>Sincronizar</span>
           </button>
           {puedeCrear && (
             <button
@@ -219,11 +229,10 @@ export default function ParalelosPage() {
 
       {alerta && (
         <div
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
-            alerta.tipo === 'ok'
+          className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${alerta.tipo === 'ok'
               ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200'
               : 'bg-red-950/50 border-red-500/50 text-red-200'
-          }`}
+            }`}
         >
           {alerta.tipo === 'ok' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
           <span>{alerta.mensaje}</span>
@@ -232,13 +241,13 @@ export default function ParalelosPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
         <div className="relative w-full sm:w-80">
-          <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Buscar por código de paralelo, idioma o aula..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white"
+            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white"
           />
         </div>
         <span className="text-xs text-neutral-500">
@@ -253,10 +262,20 @@ export default function ParalelosPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {paralelosPaginados.map((p) => {
-            const inscritos = p.inscripciones_count || 0;
-            const capMax = p.capacidad_maxima_paralelo || 30;
+            const inscritos = p.inscritos ?? p.inscripciones_count ?? 0;
+            const capMax = p.capacidad_maxima ?? p.capacidad_maxima_paralelo ?? 30;
             const cuposDisp = p.cupos_disponibles ?? Math.max(0, capMax - inscritos);
             const porcentaje = Math.min(100, Math.round((inscritos / capMax) * 100));
+            const estadoTexto = p.estado || p.estado_paralelo || 'Abierto';
+
+            const nombreIdioma = typeof p.idioma === 'string' ? p.idioma : (p.nivel?.programa?.idioma?.nombre_idioma || 'Idioma General');
+            const nombrePrograma = p.programa || p.nivel?.programa?.nombre_programa || 'Plan de Idioma';
+            const nombreNivel = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.nombre_nivel || 'Nivel');
+            const nombreAula = typeof p.aula === 'string' ? p.aula : (p.aula?.nombre_aula || 'Aula Principal');
+            const horarioTexto = typeof p.horario === 'string' ? p.horario : (p.horario ? `${p.horario.hora_inicio_horario} - ${p.horario.hora_fin_horario}` : 'Turno Regular');
+            const nombreDocente = typeof p.docente_actual === 'string'
+              ? p.docente_actual
+              : (p.docente_actual?.nombre_docente ? `${p.docente_actual.nombre_docente} ${p.docente_actual.apellido_docente}` : 'Sin asignar');
 
             return (
               <div
@@ -268,33 +287,32 @@ export default function ParalelosPage() {
                     <span className="text-base font-extrabold font-mono text-sky-400">
                       {p.codigo_paralelo}
                     </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      p.estado_paralelo === 'Abierto' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-800 text-neutral-400'
-                    }`}>
-                      {p.estado_paralelo}
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${estadoTexto === 'Abierto' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-800 text-neutral-400'
+                      }`}>
+                      {estadoTexto}
                     </span>
                   </div>
 
                   <div className="space-y-1.5 text-xs">
                     <p className="font-bold text-white text-sm">
-                      {p.nivel?.programa?.idioma?.nombre_idioma}
+                      {nombreIdioma}
                     </p>
                     <p className="text-neutral-400">
-                      {p.nivel?.programa?.nombre_programa} &bull; <span className="text-sky-300 font-semibold">{p.nivel?.nombre_nivel}</span>
+                      {nombrePrograma} &bull; <span className="text-sky-300 font-semibold">{nombreNivel}</span>
                     </p>
                     <div className="pt-2 border-t border-neutral-800/60 space-y-1 text-neutral-300">
                       <p className="flex items-center gap-2">
                         <DoorOpen className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                        Aula: <strong className="text-white">{p.aula?.nombre_aula}</strong>
+                        Aula: <strong className="text-white">{nombreAula}</strong>
                       </p>
                       <p className="flex items-center gap-2">
                         <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                        Horario: <span className="font-mono text-neutral-200">{p.horario?.hora_inicio_horario} - {p.horario?.hora_fin_horario}</span>
+                        Horario: <span className="font-mono text-neutral-200">{horarioTexto}</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <GraduationCap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                         Docente: <strong className="text-emerald-300 truncate">
-                          {p.docente_actual ? `${p.docente_actual.nombre_docente} ${p.docente_actual.apellido_docente}` : 'Sin asignar'}
+                          {nombreDocente}
                         </strong>
                       </p>
                     </div>
@@ -308,14 +326,13 @@ export default function ParalelosPage() {
                   </div>
                   <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-300 ${
-                        porcentaje >= 90 ? 'bg-red-500' : porcentaje >= 70 ? 'bg-amber-400' : 'bg-emerald-500'
-                      }`}
+                      className={`h-full rounded-full transition-all duration-300 ${porcentaje >= 90 ? 'bg-red-500' : porcentaje >= 70 ? 'bg-amber-400' : 'bg-emerald-500'
+                        }`}
                       style={{ width: `${porcentaje}%` }}
                     />
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-neutral-500">
-                    <span>Mín. apertura: {p.capacidad_minima_apertura} alumnos</span>
+                    <span>Mín. apertura: {p.capacidad_minima_apertura || 10} alumnos</span>
                     <span>{porcentaje}% cubierto</span>
                   </div>
                 </div>

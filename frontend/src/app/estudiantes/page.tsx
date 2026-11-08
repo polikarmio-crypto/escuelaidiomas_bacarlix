@@ -20,7 +20,10 @@ import {
   ShieldAlert,
   ChevronLeft,
   ChevronRight,
-  BookOpen
+  BookOpen,
+  KeyRound,
+  Copy,
+  Printer
 } from 'lucide-react';
 import { useAuthRole } from '@/context/AuthRoleContext';
 
@@ -66,6 +69,9 @@ export default function EstudiantesPage() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [idSeleccionado, setIdSeleccionado] = useState<number | null>(null);
+  const [modalCredenciales, setModalCredenciales] = useState(false);
+  const [credencialesCreadas, setCredencialesCreadas] = useState<any | null>(null);
+  const [copiado, setCopiado] = useState(false);
 
   const [formData, setFormData] = useState({
     ci_estudiante: '',
@@ -97,7 +103,7 @@ export default function EstudiantesPage() {
       if (filtroParalelo) params.append('paralelo', filtroParalelo);
       if (busqueda.trim()) params.append('q', busqueda.trim());
 
-      const res = await fetch(`http://localhost:8000/api/v1/estudiantes?${params.toString()}`);
+      const res = await fetch(`/api/v1/estudiantes?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setEstudiantes(data.data || []);
@@ -172,8 +178,8 @@ export default function EstudiantesPage() {
     e.preventDefault();
     try {
       const url = modoEdicion
-        ? `http://localhost:8000/api/v1/estudiantes/${idSeleccionado}`
-        : 'http://localhost:8000/api/v1/estudiantes';
+        ? `/api/v1/estudiantes/${idSeleccionado}`
+        : '/api/v1/estudiantes';
       const method = modoEdicion ? 'PUT' : 'POST';
 
       const payload: any = {
@@ -205,6 +211,16 @@ export default function EstudiantesPage() {
       mostrarMensaje('ok', data.message || 'Operación completada exitosamente.');
       setModalAbierto(false);
       cargarEstudiantes();
+
+      if (!modoEdicion && data.credenciales_iniciales) {
+        setCredencialesCreadas({
+          ...data.credenciales_iniciales,
+          nombre_completo: `${formData.nombre_estudiante} ${formData.apellido_estudiante}`,
+          ci: formData.ci_estudiante,
+          tipo: formData.tipo_estudiante,
+        });
+        setModalCredenciales(true);
+      }
     } catch (err: any) {
       mostrarMensaje('error', err.message);
     }
@@ -213,7 +229,7 @@ export default function EstudiantesPage() {
   const handleBajaLogica = async (id: number) => {
     if (!confirm('¿Confirma dar de baja lógica al estudiante? Sus registros académicos se preservarán.')) return;
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/estudiantes/${id}/baja-logica`, {
+      const res = await fetch(`/api/v1/estudiantes/${id}/baja-logica`, {
         method: 'PATCH',
       });
       const data = await res.json();
@@ -346,13 +362,13 @@ export default function EstudiantesPage() {
         <div className="flex items-center gap-3">
           <form onSubmit={handleBuscar} className="flex items-center gap-2 w-full sm:w-72">
             <div className="relative flex-1">
-              <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-2.5 top-2" />
+              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Buscar por CI, nombre..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-neutral-500"
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white placeholder-neutral-500"
               />
             </div>
             <button
@@ -668,6 +684,76 @@ export default function EstudiantesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {modalCredenciales && credencialesCreadas && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-amber-500/40 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 text-white animate-solemn-fade">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2 text-amber-400">
+                <KeyRound className="w-5 h-5" />
+                <h3 className="font-bold text-base">Credenciales de Acceso Institucional</h3>
+              </div>
+              <button
+                onClick={() => setModalCredenciales(false)}
+                className="text-neutral-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-300">
+              Se ha dado de alta exitosamente la cuenta del estudiante en el sistema SACA.
+              Entregue esta ficha de acceso de manera reservada:
+            </p>
+
+            <div className="bg-neutral-950 p-4 rounded-lg border border-neutral-800 space-y-2.5 font-mono text-xs">
+              <div>
+                <span className="text-neutral-500 block">Estudiante:</span>
+                <span className="text-white font-bold">{credencialesCreadas.nombre_completo}</span>
+              </div>
+              <div>
+                <span className="text-neutral-500 block">C.I. / Identificación:</span>
+                <span className="text-white">{credencialesCreadas.ci} ({credencialesCreadas.tipo})</span>
+              </div>
+              <div>
+                <span className="text-neutral-500 block">Correo Institucional (Usuario):</span>
+                <span className="text-emerald-400 font-bold select-all">{credencialesCreadas.email_institucional}</span>
+              </div>
+              <div>
+                <span className="text-neutral-500 block">Contraseña Temporal:</span>
+                <span className="text-amber-400 font-bold text-sm tracking-wider select-all">{credencialesCreadas.password_temporal}</span>
+              </div>
+              <div>
+                <span className="text-neutral-500 block">Rol Asignado:</span>
+                <span className="text-sky-400">{credencialesCreadas.rol}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const texto = `EIE - CEDMIL | CREDENCIALES DE ACCESO SACA\nEstudiante: ${credencialesCreadas.nombre_completo}\nUsuario: ${credencialesCreadas.email_institucional}\nContraseña Temporal: ${credencialesCreadas.password_temporal}`;
+                  navigator.clipboard.writeText(texto);
+                  setCopiado(true);
+                  setTimeout(() => setCopiado(false), 3000);
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 bg-neutral-800 hover:bg-neutral-700 text-xs font-bold text-amber-300 rounded-lg border border-neutral-700 transition"
+              >
+                <Copy className="w-4 h-4" />
+                <span>{copiado ? '¡Copiado!' : 'Copiar Credenciales'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setModalCredenciales(false)}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition"
+              >
+                Aceptar y Finalizar
+              </button>
+            </div>
           </div>
         </div>
       )}

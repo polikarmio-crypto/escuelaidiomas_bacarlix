@@ -12,38 +12,28 @@ use App\Http\Controllers\Api\CalificacionController;
 use App\Http\Controllers\Api\CajaPagoController;
 use App\Http\Controllers\Api\AlmacenController;
 use App\Http\Controllers\Api\AuthController;
-
-/*
-|--------------------------------------------------------------------------
-| API Routes - Escuela de Idiomas del Ejército (EIE)
-|--------------------------------------------------------------------------
-|
-| Backend REST API v1 - Todos los módulos del sistema académico militar
-|
-*/
+use App\Http\Controllers\Api\AsistenciaController;
+use App\Http\Controllers\Api\MetodosNumericosController;
 
 Route::prefix('v1')->group(function () {
 
-    // HEALTHCHECK
     Route::get('/health', function () {
         return response()->json([
             'status'   => 'online',
-            'servicio' => 'Escuela de Idiomas del Ejército - Core API (Laravel 12)',
-            'version'  => '1.0.0',
+            'servicio' => 'Escuela de Idiomas del Ejército - Core API',
+            'version'  => '2.0.0',
             'hora_servidor' => now()->toDateTimeString(),
         ]);
     });
 
-    // AUTENTICACIÓN Y ROLES INSTITUCIONALES (6 roles)
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
+        Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/usuarios', [AuthController::class, 'usuarios']);
     });
 
-    // DASHBOARD: Panel ejecutivo con KPIs consolidados
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
-    // MÓDULO 1: CATÁLOGOS BASE (Administrador del Sistema)
     Route::prefix('catalogos')->group(function () {
         Route::get('/', [CatalogoController::class, 'index']);
         
@@ -80,7 +70,6 @@ Route::prefix('v1')->group(function () {
         Route::post('/cajas', [CatalogoController::class, 'storeCaja']);
     });
 
-    // MÓDULO 2: ESTRUCTURA ACADÉMICA (Jefe Académico)
     Route::prefix('estructura')->group(function () {
         Route::get('/programas', [EstructuraAcademicaController::class, 'index']);
         Route::get('/programas/{id}', [EstructuraAcademicaController::class, 'showPrograma']);
@@ -97,15 +86,12 @@ Route::prefix('v1')->group(function () {
         Route::delete('/libros/{id}', [EstructuraAcademicaController::class, 'destroyLibro']);
     });
 
-    // MÓDULO: ESTUDIANTES (Civiles y Militares - CRUD Completo)
     Route::get('/estudiantes', [EstudianteController::class, 'index']);
     Route::post('/estudiantes', [EstudianteController::class, 'store']);
     Route::get('/estudiantes/{id}', [EstudianteController::class, 'show']);
     Route::put('/estudiantes/{id}', [EstudianteController::class, 'update']);
-    Route::patch('/estudiantes/{id}/baja-logica', [EstudianteController::class, 'bajaLogica']);
     Route::delete('/estudiantes/{id}', [EstudianteController::class, 'destroy']);
 
-    // MÓDULO: DOCENTES Y ROTACIÓN 15 DÍAS (CRUD Completo)
     Route::get('/docentes', [DocenteController::class, 'index']);
     Route::post('/docentes', [DocenteController::class, 'store']);
     Route::get('/docentes/{id}', [DocenteController::class, 'show']);
@@ -114,35 +100,39 @@ Route::prefix('v1')->group(function () {
     Route::delete('/docentes/{id}', [DocenteController::class, 'destroy']);
     Route::get('/docentes/alertas/rotacion', [DocenteController::class, 'alertarRotaciones']);
     Route::post('/docentes/rotar', [DocenteController::class, 'rotarDocente']);
+    Route::post('/docentes/asignacion-automatica', [DocenteController::class, 'asignacionAutomatica']);
 
-    // MÓDULO: PARALELOS
     Route::get('/paralelos', [ParaleloController::class, 'index']);
     Route::post('/paralelos', [ParaleloController::class, 'store']);
     Route::get('/paralelos/{id}', [ParaleloController::class, 'show']);
 
-    // MÓDULO: INSCRIPCIONES
     Route::get('/inscripciones', [InscripcionController::class, 'index']);
     Route::post('/inscripciones', [InscripcionController::class, 'inscribir']);
     Route::get('/inscripciones/{id}', [InscripcionController::class, 'show']);
 
-    // MÓDULO: CALIFICACIONES (Ponderación Militar 80/10/10)
     Route::get('/calificaciones/paralelo/{id}', [CalificacionController::class, 'notasParalelo']);
     Route::post('/calificaciones/libro', [CalificacionController::class, 'registrarNotaLibro']);
     Route::post('/calificaciones/examen-nivel', [CalificacionController::class, 'registrarExamenNivel']);
 
-    // MÓDULO: CAJAS, COLA FIFO Y PAGOS
+    Route::prefix('asistencia')->group(function () {
+        Route::get('/', [AsistenciaController::class, 'index']);
+        Route::post('/', [AsistenciaController::class, 'registrar']);
+        Route::get('/reporte/{idParalelo}', [AsistenciaController::class, 'reporte']);
+    });
+
     Route::prefix('cajas')->group(function () {
         Route::get('/', [CajaPagoController::class, 'listarCajas']);
-        Route::get('/cola-fifo', [CajaPagoController::class, 'colaFifo']);
+        Route::get('/cola-espera', [CajaPagoController::class, 'colaEspera']);
+        Route::get('/cola-espera', [CajaPagoController::class, 'colaEspera']);
         Route::get('/metricas', [CajaPagoController::class, 'metricasCola']);
         Route::post('/ficha', [CajaPagoController::class, 'emitirFicha']);
-        Route::post('/ficha/llamar', [CajaPagoController::class, 'llamarSiguienteFifo']);
+        Route::post('/ficha/llamar', [CajaPagoController::class, 'llamarSiguiente']);
+        Route::post('/ficha/llamar-siguiente', [CajaPagoController::class, 'llamarSiguiente']);
         Route::post('/ficha/finalizar', [CajaPagoController::class, 'finalizarAtencion']);
         Route::post('/pago', [CajaPagoController::class, 'registrarPago']);
         Route::get('/pagos', [CajaPagoController::class, 'historialPagos']);
     });
 
-    // MÓDULO: ALMACÉN E INVENTARIO (ROP / Kardex)
     Route::prefix('almacen')->group(function () {
         Route::get('/stock', [AlmacenController::class, 'stock']);
         Route::get('/alertas-rop', [AlmacenController::class, 'alertasRop']);
@@ -153,15 +143,12 @@ Route::prefix('v1')->group(function () {
         Route::put('/pedidos/{id}/recibir', [AlmacenController::class, 'recibirPedido']);
     });
 
-    // MÓDULO: MÉTODOS NUMÉRICOS E INVESTIGACIÓN OPERATIVA
     Route::prefix('metodos-numericos')->group(function () {
-        Route::post('/minimos-cuadrados', [\App\Http\Controllers\Api\MetodosNumericosController::class, 'minimosCuadrados']);
-        Route::post('/interpolacion-newton', [\App\Http\Controllers\Api\MetodosNumericosController::class, 'interpolacionNewton']);
-        Route::post('/simplex', [\App\Http\Controllers\Api\MetodosNumericosController::class, 'simplex']);
-        // H3: Servicio Predictivo de Rendimiento Académico y Riesgo de Deserción
-        Route::post('/prediccion-rendimiento', [\App\Http\Controllers\Api\MetodosNumericosController::class, 'prediccionRendimiento']);
-        Route::get('/prediccion-rendimiento/validacion-h3', [\App\Http\Controllers\Api\MetodosNumericosController::class, 'validacionH3']);
-        Route::post('/prediccion-rendimiento/lote', [\App\Http\Controllers\Api\MetodosNumericosController::class, 'recalcularLote']);
+        Route::post('/minimos-cuadrados', [MetodosNumericosController::class, 'minimosCuadrados']);
+        Route::post('/interpolacion-newton', [MetodosNumericosController::class, 'interpolacionNewton']);
+        Route::post('/simplex', [MetodosNumericosController::class, 'optimizacionLineal']);
+        Route::post('/prediccion-rendimiento', [MetodosNumericosController::class, 'prediccionRendimiento']);
+        Route::get('/prediccion-rendimiento/validacion-h3', [MetodosNumericosController::class, 'validacionH3']);
+        Route::post('/prediccion-rendimiento/lote', [MetodosNumericosController::class, 'recalcularLote']);
     });
 });
-

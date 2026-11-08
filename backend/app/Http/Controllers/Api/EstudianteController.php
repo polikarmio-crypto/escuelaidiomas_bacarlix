@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Estudiante;
 use App\Models\EstudianteMilitar;
+use App\Models\Usuario;
+use App\Services\AuditLogger;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class EstudianteController extends Controller
 {
-    /**
-     * Lista estudiantes con filtro opcional por categoría (Civil / Militar) y búsqueda
-     */
     public function index(Request $request)
     {
         $query = Estudiante::with([
@@ -98,7 +99,7 @@ class EstudianteController extends Controller
                 'correo'          => $est->email_estudiante ?? 'alumno@ejercito.mil.bo',
                 'estado'          => ($actIns && $actIns->estado_inscripcion === 'Concluida') ? 'INACTIVO' : 'ACTIVO',
                 'asistencia'      => $actIns ? 95 : null,
-                'promedio'        => $nota, // Solo notas reales; null para estudiantes nuevos sin calificar
+                'promedio'        => $nota,
                 'fecha_nacimiento_estudiante' => $est->fecha_nacimiento_estudiante ? $est->fecha_nacimiento_estudiante->format('Y-m-d') : null,
                 'direccion_estudiante'        => $est->direccion_estudiante,
                 'militar'                     => $est->militar,
@@ -108,9 +109,6 @@ class EstudianteController extends Controller
         return response()->json($paginator);
     }
 
-    /**
-     * Registro de nuevo estudiante (Normalizado 5NF: Estudiante + EstudianteMilitar)
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -122,13 +120,12 @@ class EstudianteController extends Controller
             'email_estudiante' => 'nullable|email|max:100',
             'direccion_estudiante' => 'nullable|string|max:150',
             'tipo_estudiante' => 'required|in:Civil,Militar',
-            // Campos condicionales para militares
             'grado_militar' => 'required_if:tipo_estudiante,Militar|nullable|string|max:40',
             'unidad_militar' => 'required_if:tipo_estudiante,Militar|nullable|string|max:80',
             'id_militar_estudiante' => 'required_if:tipo_estudiante,Militar|nullable|string|max:20|unique:estudiante_militar,id_militar_estudiante',
         ]);
 
-        $estudiante = DB::transaction(function () use ($validated) {
+        $resultado = DB::transaction(function () use ($validated) {
             $est = Estudiante::create([
                 'ci_estudiante' => $validated['ci_estudiante'],
                 'nombre_estudiante' => $validated['nombre_estudiante'],
@@ -149,18 +146,53 @@ class EstudianteController extends Controller
                 ]);
             }
 
-            return $est;
+            $ciDigits = preg_replace('/\D/', '', $validated['ci_estudiante']);
+            $emailUsuario = !empty($validated['email_estudiante'])
+                ? strtolower(trim($validated['email_estudiante']))
+                : 'est.' . strtolower(Str::slug($validated['apellido_estudiante'])) . $est->id_estudiante . '@idiomas.ejercito.mil.bo';
+
+            $passwordTemporal = 'EIE-' . random_int(1000, 9999) . '-' . substr($ciDigits, -3);
+
+            $cuentaUsuario = Usuario::create([
+                'nombre_usuario' => "{$validated['nombre_estudiante']} {$validated['apellido_estudiante']}",
+                'email_usuario' => $emailUsuario,
+                'password_usuario' => Hash::make($passwordTemporal),
+                'rol_usuario' => 'ESTUDIANTE',
+                'id_estudiante' => $est->id_estudiante,
+                'estado_usuario' => 'Activo',
+            ]);
+
+            AuditLogger::academico(AuditLogger::LEVEL_INFO, 'ESTUDIANTE_REGISTRADO', [
+                'id_estudiante' => $est->id_estudiante,
+                'ci' => $validated['ci_estudiante'],
+                'tipo' => $validated['tipo_estudiante'],
+            ], null, 'estudiante', $est->id_estudiante);
+
+            AuditLogger::auth(AuditLogger::LEVEL_INFO, 'CUENTA_ESTUDIANTE_CREADA', [
+                'id_usuario' => $cuentaUsuario->id_usuario,
+                'email' => $emailUsuario,
+                'id_estudiante' => $est->id_estudiante,
+            ], $cuentaUsuario->id_usuario);
+
+            return [
+                'estudiante' => $est->load('militar'),
+                'credenciales' => [
+                    'id_usuario' => $cuentaUsuario->id_usuario,
+                    'email_institucional' => $emailUsuario,
+                    'password_temporal' => $passwordTemporal,
+                    'rol' => 'ESTUDIANTE',
+                    'instruccion' => 'Entregar de forma reservada al alumno para su primer acceso a la plataforma SACA.',
+                ],
+            ];
         });
 
         return response()->json([
-            'message' => 'Estudiante matriculado exitosamente en el sistema SACA',
-            'data' => $estudiante->load('militar'),
+            'message' => 'Estudiante matriculado y cuenta institucional creada con éxito.',
+            'data' => $resultado['estudiante'],
+            'credenciales_iniciales' => $resultado['credenciales'],
         ], 201);
     }
 
-    /**
-     * Expediente académico completo del estudiante
-     */
     public function show($id)
     {
         $estudiante = Estudiante::with([
@@ -174,9 +206,6 @@ class EstudianteController extends Controller
         return response()->json($estudiante);
     }
 
-    /**
-     * Actualización completa de estudiante (CRUD - Update)
-     */
     public function update(Request $request, $id)
     {
         $estudiante = Estudiante::findOrFail($id);
@@ -200,49 +229,43 @@ class EstudianteController extends Controller
                     EstudianteMilitar::updateOrCreate(
                         ['id_estudiante' => $estudiante->id_estudiante],
                         [
-                            'grado_militar' => $validated['grado_militar'] ?? 'Oficial',
-                            'unidad_militar'=> $validated['unidad_militar'] ?? 'Comando General',
-                            'id_militar_estudiante' => sprintf('EIE-MIL-2026-%04d', $estudiante->id_estudiante),
+                            'grado_militar'         => $validated['grado_militar'] ?? 'Oficial',
+                            'unidad_militar'        => $validated['unidad_militar'] ?? 'Sin unidad',
+                            'id_militar_estudiante' => 'MIL-' . $estudiante->id_estudiante,
                         ]
                     );
                 }
             }
+
+            AuditLogger::academico(AuditLogger::LEVEL_INFO, 'ESTUDIANTE_ACTUALIZADO', [
+                'id_estudiante' => $estudiante->id_estudiante,
+            ], null, 'estudiante', $estudiante->id_estudiante);
         });
 
         return response()->json([
-            'message' => "Expediente del estudiante {$estudiante->nombre_estudiante} actualizado con éxito.",
+            'message' => "Expediente del estudiante {$estudiante->nombre_estudiante} {$estudiante->apellido_estudiante} actualizado.",
             'data'    => $estudiante->load('militar'),
         ]);
     }
 
-    /**
-     * Baja Lógica (Desactivación del estudiante sin pérdida de historial)
-     */
-    public function bajaLogica($id)
-    {
-        $estudiante = Estudiante::findOrFail($id);
-        $estudiante->delete(); // Soft delete
-
-        return response()->json([
-            'message' => "Baja lógica procesada: {$estudiante->nombre_estudiante} {$estudiante->apellido_estudiante} ha pasado al estado Inactivo."
-        ]);
-    }
-
-    /**
-     * Baja Física (Eliminación permanente tras confirmación expresa)
-     */
     public function destroy($id)
     {
-        $estudiante = Estudiante::withTrashed()->findOrFail($id);
+        $estudiante = Estudiante::findOrFail($id);
         $nombre = "{$estudiante->nombre_estudiante} {$estudiante->apellido_estudiante}";
 
         DB::transaction(function () use ($estudiante) {
+            Usuario::where('id_estudiante', $estudiante->id_estudiante)->delete();
             EstudianteMilitar::where('id_estudiante', $estudiante->id_estudiante)->delete();
-            $estudiante->forceDelete();
+            $estudiante->delete();
         });
 
+        AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'ESTUDIANTE_ELIMINADO', [
+            'nombre' => $nombre,
+            'id_estudiante' => $id,
+        ], null, 'estudiante');
+
         return response()->json([
-            'message' => "Baja física definitiva ejecutada correctamente para {$nombre}."
+            'message' => "Estudiante {$nombre} y su cuenta asociada han sido dados de baja."
         ]);
     }
 }
