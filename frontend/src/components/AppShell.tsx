@@ -298,6 +298,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     const rolDetectado = detectarRolPorEmail(emailTrim);
     const config = ROLES_CONFIG[rolDetectado];
+    if (typeof window !== 'undefined' && window.navigator && 'credentials' in window.navigator) {
+      try {
+        (window.navigator as any).credentials?.preventSilentAccess?.();
+      } catch (e) {}
+    }
+    setLoginPassword('');
     triggerCurtain(`Acceso Concedido: ${config.titulo}`, Shield, () => {
       cambiarRol(rolDetectado);
       setDemoAuth(true);
@@ -397,12 +403,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     triggerCurtain('Cierre de Sesión Operativa', LogOut, () => {
       setDemoAuth(false);
       setLoginEmail('');
+      setLoginPassword('');
       setLoginEmailError(null);
       try {
-        localStorage.removeItem('eie_auth');
-        localStorage.removeItem('eie_role');
-        localStorage.removeItem('eie_email');
-        localStorage.removeItem('eie_rol_activo');
+        localStorage.clear();
         sessionStorage.clear();
       } catch (e) {}
       signOut({ redirect: false });
@@ -548,19 +552,31 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             ) : authTab === 'login' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} className="animate-solemn-fade">
-                <form onSubmit={handleDemoLogin} autoComplete="off" style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <form onSubmit={handleDemoLogin} autoComplete="off" data-form-type="other" noValidate style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }} aria-hidden="true">
+                    <input type="text" name="fake_username_remember" tabIndex={-1} autoComplete="off" />
+                    <input type="password" name="fake_password_remember" tabIndex={-1} autoComplete="new-password" />
+                  </div>
+
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.3rem' }}>
                       Correo Institucional o Registrado *
                     </label>
                     <input
                       type="email"
+                      name="modal_access_identity"
+                      id="modal_access_identity"
                       value={loginEmail}
                       onChange={(e) => { setLoginEmail(e.target.value); setLoginEmailError(null); }}
                       placeholder="usuario@idiomas.ejercito.mil.bo o su correo registrado"
                       className="input"
                       required
                       autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
+                      data-lpignore="true"
+                      data-form-type="other"
                       autoFocus
                       style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
                     />
@@ -572,12 +588,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     </label>
                     <input
                       type="password"
+                      name="military_session_auth_modal"
+                      id="military_session_auth_modal"
                       value={loginPassword}
                       onChange={(e) => { setLoginPassword(e.target.value); setLoginEmailError(null); }}
                       placeholder="Contraseña de acceso"
                       className="input"
                       required
-                      autoComplete="off"
+                      autoComplete="new-password"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true"
+                      data-form-type="other"
                       style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
                     />
                   </div>

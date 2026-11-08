@@ -66,6 +66,18 @@ return new class extends Migration
                 $table->index(['modulo_log', 'nivel_log']);
                 $table->index(['created_at']);
             });
+        } else {
+            Schema::table('log_auditoria', function (Blueprint $table) {
+                if (!Schema::hasColumn('log_auditoria', 'modulo_log')) {
+                    $table->string('modulo_log', 50)->nullable();
+                }
+                if (!Schema::hasColumn('log_auditoria', 'nivel_log')) {
+                    $table->string('nivel_log', 20)->default('INFO');
+                }
+                if (!Schema::hasColumn('log_auditoria', 'detalles_log')) {
+                    $table->json('detalles_log')->nullable();
+                }
+            });
         }
     }
 

@@ -246,12 +246,6 @@ html[data-theme="light"] .text-purple-400 {
   color: #7e22ce !important;
 }
 
-
-/* ========================================================
-   MODO OSCURO: REGLAS EXPLÍCITAS PARA RECUADROS, CAJITAS,
-   INPUTS, TABLAS Y TEXTOS SEGÚN PALETA MILITAR INSTITUCIONAL
-   ======================================================== */
-
 html[data-theme="dark"],
 html.dark,
 :root:not([data-theme="light"]):not([data-theme="high-contrast"]) {
@@ -279,7 +273,6 @@ html.dark h6 {
   color: #ffffff !important;
 }
 
-/* Inversión automática de clases oscuras a claras en modo oscuro */
 html[data-theme="dark"] .text-slate-900,
 html[data-theme="dark"] .text-slate-800,
 html[data-theme="dark"] .text-neutral-900,
@@ -315,7 +308,6 @@ html.dark .text-gray-600 {
   color: #cbd5e1 !important;
 }
 
-/* Textos secundarios y muted en recuadros: blanco ahumado / slate claro legible */
 html[data-theme="dark"] .text-neutral-500,
 html[data-theme="dark"] .text-slate-500,
 html[data-theme="dark"] .text-gray-500,
@@ -348,7 +340,6 @@ html.dark .text-slate-200 {
   color: #f8fafc !important;
 }
 
-/* Recuadros, tarjetas y cajas de información */
 html[data-theme="dark"] .card,
 html[data-theme="dark"] .login-card,
 html[data-theme="dark"] .modal-content,
@@ -393,7 +384,6 @@ html.dark b {
   color: #ffffff;
 }
 
-/* Tablas dentro de los recuadros en modo oscuro */
 html[data-theme="dark"] table,
 html.dark table {
   background-color: transparent !important;
@@ -431,7 +421,6 @@ html.dark table tbody td {
   color: #f1f5f9 !important;
 }
 
-/* Cajitas de formularios: inputs, selects, textareas */
 html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
 html[data-theme="dark"] select,
 html[data-theme="dark"] textarea,
@@ -466,20 +455,17 @@ html.dark textarea::placeholder {
   color: #64748b !important;
 }
 
-/* Menús desplegables (<select> y sus <option>) */
 html[data-theme="dark"] select option,
 html.dark select option {
   background-color: #121d2b !important;
   color: #ffffff !important;
 }
 
-/* Etiquetas (labels) */
 html[data-theme="dark"] label,
 html.dark label {
   color: #cbd5e1 !important;
 }
 
-/* Colores de acento / estado en modo oscuro */
 html[data-theme="dark"] .text-emerald-400,
 html.dark .text-emerald-400 {
   color: #4ade80 !important;

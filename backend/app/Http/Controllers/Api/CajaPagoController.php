@@ -109,11 +109,12 @@ class CajaPagoController extends Controller
                 ], 200);
             }
 
-            $ultimoNumero = FichaAtencion::whereDate('hora_llegada_ficha', Carbon::today())
+            $ultimaFicha = FichaAtencion::whereDate('hora_llegada_ficha', Carbon::today())
+                ->orderByDesc('numero_ficha')
                 ->lockForUpdate()
-                ->max('numero_ficha');
+                ->first();
 
-            $nuevoNumero = ($ultimoNumero ?? 100) + 1;
+            $nuevoNumero = $ultimaFicha ? ($ultimaFicha->numero_ficha + 1) : 101;
 
             $ficha = FichaAtencion::create([
                 'id_caja'                    => null,

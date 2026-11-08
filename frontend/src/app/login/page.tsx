@@ -82,9 +82,15 @@ export default function LoginPage() {
     const rol = detectarRol(emailTrim);
 
     try {
+      if (typeof window !== 'undefined' && window.navigator && 'credentials' in window.navigator) {
+        try {
+          (window.navigator as any).credentials?.preventSilentAccess?.();
+        } catch (e) {}
+      }
       localStorage.setItem('eie_auth', 'true');
       localStorage.setItem('eie_role', rol);
       localStorage.setItem('eie_email', emailTrim);
+      setPassword('');
       cambiarRol(rol);
       router.push('/dashboard');
     } catch (err) {
@@ -133,7 +139,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} autoComplete="off" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <form onSubmit={handleSubmit} autoComplete="off" data-form-type="other" noValidate style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }} aria-hidden="true">
+            <input type="text" name="fake_username_remember" tabIndex={-1} autoComplete="off" />
+            <input type="password" name="fake_password_remember" tabIndex={-1} autoComplete="new-password" />
+          </div>
+
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#e5e7eb', display: 'block', marginBottom: '0.35rem' }}>
               Correo Electrónico Institucional o Registrado *
@@ -142,11 +153,18 @@ export default function LoginPage() {
               <Mail size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
               <input
                 type="email"
+                name="institutional_access_identity"
+                id="institutional_access_identity"
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(null); }}
                 placeholder="usuario@idiomas.ejercito.mil.bo"
                 required
                 autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                data-lpignore="true"
+                data-form-type="other"
                 autoFocus
                 style={{ width: '100%', padding: '0.65rem 0.75rem 0.65rem 2.4rem', fontSize: '0.85rem', background: '#0a0f0c', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#ffffff', outline: 'none' }}
               />
@@ -161,11 +179,20 @@ export default function LoginPage() {
               <Lock size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
               <input
                 type="password"
+                name="military_session_auth_field"
+                id="military_session_auth_field"
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(null); }}
                 placeholder="Ingrese su contraseña institucional"
                 required
-                autoComplete="off"
+                autoComplete="new-password"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-bwignore="true"
+                data-form-type="other"
                 style={{ width: '100%', padding: '0.65rem 0.75rem 0.65rem 2.4rem', fontSize: '0.85rem', background: '#0a0f0c', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#ffffff', outline: 'none' }}
               />
             </div>

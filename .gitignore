@@ -15,6 +15,7 @@ backend/storage/framework/cache/*
 backend/storage/framework/sessions/*
 backend/storage/framework/views/*
 backend/bootstrap/cache/*
+!backend/storage/logs/**/.gitkeep
 !backend/storage/logs/.gitkeep
 !backend/storage/framework/cache/.gitkeep
 !backend/storage/framework/sessions/.gitkeep
