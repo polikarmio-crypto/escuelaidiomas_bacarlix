@@ -242,10 +242,10 @@ export default function CatalogosPage() {
         <button
           onClick={cargarCatalogos}
           disabled={loading}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-neutral-800/80 dark:hover:bg-neutral-700 dark:text-neutral-200 dark:border-neutral-700 text-xs font-semibold transition shadow-xs"
+          className="flex items-center gap-2.5 px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-100 dark:border-neutral-700 text-xs font-semibold transition shadow-sm"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Sincronizar Catálogos
+          <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
+          <span>Sincronizar Catálogos</span>
         </button>
       </div>
 

@@ -53,3 +53,6 @@ backend-laravel/bootstrap/cache/*
 *.swo
 .DS_Store
 Thumbs.db
+*.jpg
+*.png
+*.jpeg

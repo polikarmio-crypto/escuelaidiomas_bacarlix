@@ -190,13 +190,21 @@ html[data-theme="light"] input::placeholder {
   color: #94a3b8 !important;
 }
 
-html[data-theme="light"] [class*="bg-neutral-800"]:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]) {
+html[data-theme="light"] [class*="bg-neutral-700"]:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]),
+html[data-theme="light"] [class*="bg-neutral-800"]:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]),
+html[data-theme="light"] [class*="bg-neutral-900"]:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]),
+html[data-theme="light"] [class*="bg-neutral-950"]:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]),
+html[data-theme="light"] [class*="bg-slate-700"]:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]),
+html[data-theme="light"] [class*="bg-slate-800"]:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]) {
   background-color: #f1f5f9 !important;
   border-color: #cbd5e1 !important;
   color: #1e293b !important;
 }
 
-html[data-theme="light"] [class*="bg-neutral-800"]:hover:not(.btn-bolivia-green):not([class*="btn-bolivia"]) {
+html[data-theme="light"] [class*="bg-neutral-700"]:hover:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]),
+html[data-theme="light"] [class*="bg-neutral-800"]:hover:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]),
+html[data-theme="light"] [class*="bg-slate-700"]:hover:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]),
+html[data-theme="light"] [class*="bg-slate-800"]:hover:not(.btn-bolivia-green):not([class*="btn-bolivia"]):not([class*="bg-emerald-"]):not([class*="bg-amber-"]):not([class*="bg-red-"]):not([class*="bg-purple-"]) {
   background-color: #e2e8f0 !important;
   color: #0f172a !important;
 }
@@ -988,6 +996,30 @@ textarea {
   outline: none;
   transition: border-color .15s ease, box-shadow .15s ease;
   box-sizing: border-box;
+}
+
+input[type="text"].pl-10,
+input[type="search"].pl-10,
+input[class*="pl-10"],
+.pl-10 {
+  padding-left: 2.6rem !important;
+}
+
+input[type="text"].pl-11,
+input[class*="pl-11"],
+.pl-11 {
+  padding-left: 2.85rem !important;
+}
+
+input[type="text"].pl-12,
+input[class*="pl-12"],
+.pl-12 {
+  padding-left: 3.1rem !important;
+}
+
+button svg,
+.btn svg {
+  flex-shrink: 0;
 }
 .input:focus,
 input[type="text"]:focus,

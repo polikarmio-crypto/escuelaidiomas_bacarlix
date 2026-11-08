@@ -194,10 +194,10 @@ export default function EstructuraAcademicaPage() {
         <button
           onClick={cargarDatos}
           disabled={loading}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Sincronizar Malla
+          <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
+          <span>Sincronizar Malla</span>
         </button>
       </div>
 

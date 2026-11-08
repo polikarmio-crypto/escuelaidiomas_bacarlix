@@ -253,11 +253,15 @@ export default function AsistenciaPage() {
               onChange={(e) => setIdParaleloSeleccionado(e.target.value)}
               className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
             >
-              {paralelos.map((p) => (
-                <option key={p.id_paralelo} value={p.id_paralelo}>
-                  {p.codigo_paralelo} - {p.idioma || p.nivel?.programa?.idioma?.nombre_idioma || 'Idioma'} ({p.nivel?.nombre_nivel || 'Nivel'})
-                </option>
-              ))}
+              {paralelos.map((p) => {
+                const nombreIdioma = typeof p.idioma === 'string' ? p.idioma : (p.nivel?.programa?.idioma?.nombre_idioma || 'Idioma');
+                const nombreNivel = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.nombre_nivel || 'Nivel');
+                return (
+                  <option key={p.id_paralelo} value={p.id_paralelo}>
+                    {p.codigo_paralelo} - {nombreIdioma} ({nombreNivel})
+                  </option>
+                );
+              })}
             </select>
           </div>
 

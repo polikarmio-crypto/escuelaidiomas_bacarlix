@@ -59,6 +59,13 @@ class Paralelo extends Model
             ->latestOfMany('fecha_inicio_asignacion');
     }
 
+    public function asignacionActiva()
+    {
+        return $this->hasOne(AsignacionDocenteParalelo::class, 'id_paralelo', 'id_paralelo')
+            ->whereNull('fecha_fin_asignacion')
+            ->latestOfMany('fecha_inicio_asignacion');
+    }
+
     public function inscripciones()
     {
         return $this->hasMany(Inscripcion::class, 'id_paralelo', 'id_paralelo');

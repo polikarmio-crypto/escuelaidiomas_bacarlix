@@ -74,7 +74,7 @@ class AsistenciaController extends Controller
                     : 'Sin Docente Titular',
                 'id_docente' => $paralelo->asignacionActiva ? $paralelo->asignacionActiva->id_docente : null,
                 'aula' => $paralelo->aula ? $paralelo->aula->nombre_aula : 'Aula General',
-                'horario' => $paralelo->horario ? "{$paralelo->horario->hora_inicio} - {$paralelo->horario->hora_fin}" : 'Turno Regular',
+                'horario' => $paralelo->horario ? "{$paralelo->horario->hora_inicio_horario} - {$paralelo->horario->hora_fin_horario}" : 'Turno Regular',
             ],
             'fecha' => $fecha,
             'resumen' => $resumen,
@@ -197,7 +197,7 @@ class AsistenciaController extends Controller
                 'idioma' => $paralelo->nivel->programa->idioma->nombre_idioma,
                 'nivel' => $paralelo->nivel->nombre_nivel,
                 'aula' => $paralelo->aula ? $paralelo->aula->nombre_aula : 'Aula Principal',
-                'horario' => $paralelo->horario ? "{$paralelo->horario->hora_inicio} a {$paralelo->horario->hora_fin}" : 'Turno Regular',
+                'horario' => $paralelo->horario ? "{$paralelo->horario->hora_inicio_horario} a {$paralelo->horario->hora_fin_horario}" : 'Turno Regular',
                 'docente' => $paralelo->asignacionActiva && $paralelo->asignacionActiva->docente
                     ? "{$paralelo->asignacionActiva->docente->nombre_docente} {$paralelo->asignacionActiva->docente->apellido_docente}"
                     : 'Docente Titular Asignado',
