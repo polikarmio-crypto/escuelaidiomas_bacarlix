@@ -453,19 +453,6 @@ export default function IndexPage() {
 
               <Link
                 href="/dashboard"
-                className={`hidden sm:inline-flex whitespace-nowrap items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition shrink-0 ${
-                  theme === 'light'
-                    ? 'bg-white border-amber-500/40 text-slate-800 hover:bg-slate-100 shadow-sm'
-                    : 'bg-[#0f1d33] border-amber-500/40 text-amber-300 hover:bg-[#162a4a]'
-                }`}
-                title="Iniciar Sesión o Registro"
-              >
-                <LogIn className="w-3.5 h-3.5 text-amber-500" />
-                <span>Ingresar</span>
-              </Link>
-
-              <Link
-                href="/dashboard"
                 className="whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white btn-bolivia-green shadow-sm hover:shadow transition shrink-0"
                 title="Acceder a la plataforma SACA"
               >
