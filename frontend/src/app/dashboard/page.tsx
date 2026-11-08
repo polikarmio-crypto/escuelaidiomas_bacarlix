@@ -5,32 +5,26 @@ import Link from 'next/link';
 import {
   Users,
   GraduationCap,
-  Clock,
-  Package,
   Layers,
-  Award,
+  ClipboardEdit,
   Landmark,
-  ArrowRight,
-  CheckCircle2,
-  BookOpen,
-  RefreshCw,
+  Package,
+  LineChart,
   Database,
   FolderTree,
-  ClipboardEdit,
-  LineChart,
-  Home,
+  Award,
   ChevronLeft,
   ChevronRight,
-  Calendar,
-  FileText,
-  TrendingUp,
-  BarChart3,
-  Wallet,
+  ArrowRight,
+  RefreshCw,
+  CheckCircle2,
   AlertTriangle,
-  ClipboardList,
-  BookMarked,
   Timer,
+  Wallet,
+  BookOpen,
   Star,
+  BookMarked,
+  UserCheck
 } from 'lucide-react';
 import { useAuthRole, RolUsuario } from '@/context/AuthRoleContext';
 
@@ -38,7 +32,7 @@ interface KpiCard {
   label: string;
   value: string | number;
   sub?: string;
-  icon: React.ElementType;
+  icon: any;
   color: string;
 }
 
@@ -46,35 +40,34 @@ interface ModuloCard {
   href: string;
   titulo: string;
   desc: string;
-  icon: React.ElementType;
+  icon: any;
 }
 
-function getDashboardConfig(rol: RolUsuario, data: any) {
-  const kpis = data?.kpis;
-
+function getDashboardConfig(rol: RolUsuario, kpis: any) {
   switch (rol) {
     case 'ADMIN':
       return {
-        subtitulo: 'Panel general de control y gestión académica institucional.',
+        subtitulo: 'Visión integral del sistema: gestión institucional, financiera, logística y académica.',
         kpiCards: [
           { label: 'Estudiantes', value: kpis?.estudiantes?.total || 0, sub: `${kpis?.estudiantes?.militares || 0} mil. • ${kpis?.estudiantes?.civiles || 0} civ.`, icon: Users, color: '#10b981' },
           { label: 'Docentes', value: kpis?.docentes?.activos || 0, sub: 'Cuerpo activo', icon: GraduationCap, color: '#3b82f6' },
           { label: 'Paralelos', value: kpis?.paralelos?.activos || 0, sub: 'Aperturados', icon: Layers, color: '#f59e0b' },
           { label: 'Inscripciones', value: kpis?.inscripciones?.activas || 0, sub: 'Matriculados', icon: ClipboardEdit, color: '#8b5cf6' },
-          { label: 'Cola Cajas', value: kpis?.cajas_fifo?.en_espera || 0, sub: 'En espera', icon: Landmark, color: '#ef4444' },
-          { label: 'Stock Textos', value: kpis?.almacen?.total_unidades || 0, sub: `${kpis?.almacen?.alertas_rop || 0} bajo ROP`, icon: Package, color: '#64748b' },
+          { label: 'En Espera Cajas', value: kpis?.cajas?.en_espera || 0, sub: 'En sala de espera', icon: Landmark, color: '#ef4444' },
+          { label: 'Stock Textos', value: kpis?.almacen?.total_unidades || 0, sub: `${kpis?.almacen?.alertas_rop || 0} por reponer`, icon: Package, color: '#64748b' },
         ] as KpiCard[],
         modulos: [
           { href: '/catalogos', titulo: 'Catálogos Base', desc: 'Gestiones, idiomas, horarios, aulas y tipos de pago.', icon: Database },
           { href: '/estructura', titulo: 'Estructura Académica', desc: 'Programas, niveles y libros de texto asignados.', icon: FolderTree },
           { href: '/docentes', titulo: 'Gestión de Docentes', desc: 'Datos, competencias y rotación pedagógica.', icon: GraduationCap },
-          { href: '/estudiantes', titulo: 'Gestión de Estudiantes', desc: 'Expedientes civiles y militares.', icon: Users },
+          { href: '/estudiantes', titulo: 'Gestión de Estudiantes', desc: 'Expedientes civiles y militares y altas de usuario.', icon: Users },
           { href: '/paralelos', titulo: 'Paralelos', desc: 'Apertura sin cruces y asignación docente.', icon: Layers },
-          { href: '/inscripciones', titulo: 'Inscripciones', desc: 'Matriculación y avance libro a libro.', icon: ClipboardEdit },
-          { href: '/calificaciones', titulo: 'Calificaciones', desc: 'Fórmula 80/10/10 y promedio directo.', icon: Award },
-          { href: '/cajas', titulo: 'Cajas y Recaudaciones', desc: 'Cola FIFO, cobros y comprobantes.', icon: Landmark },
-          { href: '/almacen', titulo: 'Almacén de Libros', desc: 'Kardex, ROP y reposición.', icon: Package },
-          { href: '/metodos-numericos', titulo: 'Analítica y Métodos', desc: 'EOQ, M/M/1, regresión lineal.', icon: LineChart },
+          { href: '/inscripciones', titulo: 'Inscripciones', desc: 'Matriculación y avance curricular.', icon: ClipboardEdit },
+          { href: '/calificaciones', titulo: 'Calificaciones', desc: 'Evaluaciones y promedio institucional.', icon: Award },
+          { href: '/asistencia', titulo: 'Control de Asistencia', desc: 'Partes de asistencia por paralelo y reportes oficiales.', icon: UserCheck },
+          { href: '/cajas', titulo: 'Cajas y Recaudaciones', desc: 'Atención en ventanilla, cobros y comprobantes.', icon: Landmark },
+          { href: '/almacen', titulo: 'Almacén de Libros', desc: 'Inventario, existencias y órdenes de reposición.', icon: Package },
+          { href: '/metodos-numericos', titulo: 'Modelos y Proyecciones', desc: 'Estimación de demanda, capacidad y flujo operativo.', icon: LineChart },
         ] as ModuloCard[],
       };
 
@@ -94,13 +87,14 @@ function getDashboardConfig(rol: RolUsuario, data: any) {
           { href: '/paralelos', titulo: 'Paralelos', desc: 'Apertura y asignación docente.', icon: Layers },
           { href: '/inscripciones', titulo: 'Inscripciones', desc: 'Matriculación formal y avance.', icon: ClipboardEdit },
           { href: '/calificaciones', titulo: 'Calificaciones', desc: 'Actas y supervisión de notas.', icon: Award },
-          { href: '/metodos-numericos', titulo: 'Analítica', desc: 'Modelos de investigación operativa.', icon: LineChart },
+          { href: '/asistencia', titulo: 'Control de Asistencia', desc: 'Partes de asistencia por paralelo y reportes oficiales.', icon: UserCheck },
+          { href: '/metodos-numericos', titulo: 'Modelos y Proyecciones', desc: 'Monitoreo preventivo y rendimiento académico.', icon: LineChart },
         ] as ModuloCard[],
       };
 
     case 'DOCENTE':
       return {
-        subtitulo: 'Mis paralelos, cronograma de rotación y registro de calificaciones.',
+        subtitulo: 'Mis paralelos asignados, control de asistencia y calificaciones.',
         kpiCards: [
           { label: 'Mis Paralelos', value: kpis?.paralelos?.activos || 2, sub: 'Asignados esta gestión', icon: Layers, color: '#10b981' },
           { label: 'Estudiantes', value: kpis?.estudiantes?.total || 45, sub: 'En mis cursos', icon: Users, color: '#3b82f6' },
@@ -108,56 +102,57 @@ function getDashboardConfig(rol: RolUsuario, data: any) {
         ] as KpiCard[],
         modulos: [
           { href: '/paralelos', titulo: 'Mis Paralelos', desc: 'Consulta tus cursos y horarios asignados.', icon: Layers },
-          { href: '/calificaciones', titulo: 'Calificaciones', desc: 'Registra notas: Examen 80%, Oral 10%, Participación 10%.', icon: Award },
+          { href: '/calificaciones', titulo: 'Calificaciones', desc: 'Registra calificaciones bajo normativa institucional.', icon: Award },
+          { href: '/asistencia', titulo: 'Control de Asistencia', desc: 'Registra el parte diario de asistencia de tu aula.', icon: UserCheck },
         ] as ModuloCard[],
       };
 
     case 'CAJERO':
       return {
-        subtitulo: 'Cola de atención, cobros de matrículas y libros, emisión de comprobantes.',
+        subtitulo: 'Atención en ventanilla, cobros de aranceles y comprobantes oficiales.',
         kpiCards: [
-          { label: 'En Cola', value: kpis?.cajas_fifo?.en_espera || 0, sub: 'Esperando atención', icon: Timer, color: '#ef4444' },
-          { label: 'Atendidos Hoy', value: kpis?.cajas_fifo?.atendidos_hoy || 0, sub: 'Turnos completados', icon: CheckCircle2, color: '#10b981' },
-          { label: 'Recaudación', value: `Bs ${kpis?.cajas_fifo?.recaudacion_hoy || 0}`, sub: 'Cobrado hoy', icon: Wallet, color: '#f59e0b' },
+          { label: 'En Sala de Espera', value: kpis?.cajas?.en_espera || 0, sub: 'Esperando atención', icon: Timer, color: '#ef4444' },
+          { label: 'Atendidos Hoy', value: kpis?.cajas?.atendidas_hoy || 0, sub: 'Turnos completados', icon: CheckCircle2, color: '#10b981' },
+          { label: 'Recaudación', value: `Bs ${kpis?.financiero?.ingresos_mes_bs || 0}`, sub: 'Registrado en el periodo', icon: Wallet, color: '#f59e0b' },
         ] as KpiCard[],
         modulos: [
-          { href: '/cajas', titulo: 'Cajas y Recaudaciones', desc: 'Cola FIFO, llamada a ventanilla, cobros y comprobantes.', icon: Landmark },
+          { href: '/cajas', titulo: 'Cajas y Recaudaciones', desc: 'Llamada a ventanilla, cobros y comprobantes.', icon: Landmark },
         ] as ModuloCard[],
       };
 
     case 'ALMACENERO':
       return {
-        subtitulo: 'Stock de libros, kardex de entradas/salidas y alertas de reorden (ROP).',
+        subtitulo: 'Existencias de textos, control de movimientos y órdenes de reposición.',
         kpiCards: [
-          { label: 'Stock Total', value: kpis?.almacen?.total_unidades || 0, sub: 'Unidades en almacén', icon: Package, color: '#3b82f6' },
-          { label: 'Alertas ROP', value: kpis?.almacen?.alertas_rop || 0, sub: 'Textos bajo mínimo', icon: AlertTriangle, color: '#ef4444' },
+          { label: 'Stock Total', value: kpis?.almacen?.total_unidades || 0, sub: 'Unidades en depósito', icon: Package, color: '#3b82f6' },
+          { label: 'Por Reponer', value: kpis?.almacen?.alertas_rop || 0, sub: 'Títulos bajo umbral', icon: AlertTriangle, color: '#ef4444' },
           { label: 'Salidas Mes', value: kpis?.almacen?.salidas_mes || 0, sub: 'Entregas por paralelo', icon: BookMarked, color: '#10b981' },
         ] as KpiCard[],
         modulos: [
-          { href: '/almacen', titulo: 'Almacén de Libros', desc: 'Kardex, salidas por paralelo, punto de reorden y reposición.', icon: Package },
+          { href: '/almacen', titulo: 'Almacén de Libros', desc: 'Inventario, movimientos de depósito y reposición.', icon: Package },
         ] as ModuloCard[],
       };
 
     case 'ESTUDIANTE':
     default:
       return {
-        subtitulo: 'Tu avance académico, cursos inscritos y turnos en caja.',
+        subtitulo: 'Tu avance académico, asignaturas cursadas y turnos en caja.',
         kpiCards: [
           { label: 'Mis Cursos', value: kpis?.inscripciones?.activas || 1, sub: 'Inscritos actualmente', icon: BookOpen, color: '#3b82f6' },
           { label: 'Promedio', value: kpis?.promedio_general || '—', sub: 'General acumulado', icon: Star, color: '#f59e0b' },
-          { label: 'Mi Turno', value: kpis?.cajas_fifo?.mi_turno || '—', sub: 'Estado de cola', icon: Timer, color: '#10b981' },
+          { label: 'Mi Turno', value: kpis?.cajas?.mi_turno || '—', sub: 'Estado de atención', icon: Timer, color: '#10b981' },
         ] as KpiCard[],
         modulos: [
-          { href: '/inscripciones', titulo: 'Mis Inscripciones', desc: 'Consulta cursos inscritos y avance libro a libro.', icon: ClipboardEdit },
-          { href: '/calificaciones', titulo: 'Mis Calificaciones', desc: 'Revisa tus notas y promedio acumulado.', icon: Award },
-          { href: '/cajas', titulo: 'Turnos en Caja', desc: 'Solicita fichas de turno para trámites de pago.', icon: Landmark },
+          { href: '/inscripciones', titulo: 'Mis Inscripciones', desc: 'Consulta cursos inscritos y avance curricular.', icon: ClipboardEdit },
+          { href: '/calificaciones', titulo: 'Mis Calificaciones', desc: 'Revisa tus calificaciones y desempeño.', icon: Award },
+          { href: '/cajas', titulo: 'Turnos en Caja', desc: 'Solicita tu ficha de atención para trámites en ventanilla.', icon: Landmark },
         ] as ModuloCard[],
       };
   }
 }
 
 export default function DashboardSacaPage() {
-  const { rolActivo, rolConfig, usuario } = useAuthRole();
+  const { rolActivo, usuario } = useAuthRole();
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [paginaModulos, setPaginaModulos] = useState(1);

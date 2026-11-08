@@ -50,9 +50,9 @@ export default function InscripcionesPage() {
     setLoading(true);
     try {
       const [resIns, resEst, resPar] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/inscripciones'),
-        fetch('http://localhost:8000/api/v1/estudiantes?per_page=100'),
-        fetch('http://localhost:8000/api/v1/paralelos'),
+        fetch('/api/v1/inscripciones'),
+        fetch('/api/v1/estudiantes?per_page=100'),
+        fetch('/api/v1/paralelos'),
       ]);
 
       if (resIns.ok) {
@@ -87,7 +87,7 @@ export default function InscripcionesPage() {
   const handleFormalizarInscripcion = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/v1/inscripciones', {
+      const res = await fetch('/api/v1/inscripciones', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -88,7 +88,7 @@ export default function CalificacionesPage() {
 
   const cargarParalelos = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/v1/paralelos');
+      const res = await fetch('/api/v1/paralelos');
       if (res.ok) {
         const data = await res.json();
         setParalelos(data || []);
@@ -105,7 +105,7 @@ export default function CalificacionesPage() {
     if (!id) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/calificaciones/paralelo/${id}`);
+      const res = await fetch(`/api/v1/calificaciones/paralelo/${id}`);
       if (res.ok) {
         const data = await res.json();
         setAlumnos(data.alumnos || []);
@@ -209,7 +209,7 @@ export default function CalificacionesPage() {
         payload.nota_participacion_libro = formNotas.participacion;
       }
 
-      const res = await fetch('http://localhost:8000/api/v1/calificaciones/libro', {
+      const res = await fetch('/api/v1/calificaciones/libro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

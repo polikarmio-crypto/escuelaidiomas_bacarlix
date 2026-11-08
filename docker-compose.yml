@@ -1,15 +1,4 @@
-# ===============================================================================
-# Docker Compose - Sistema de Gestión Académica
-# Escuela de Idiomas del Ejército (EIE)
-# ===============================================================================
-# Servicios: PostgreSQL, Laravel API, Next.js Frontend, Quarkus Microservice
-# ===============================================================================
-
 services:
-
-  # ─────────────────────────────────────────────────────────────
-  # BASE DE DATOS: PostgreSQL 16 con extensiones
-  # ─────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: eie_postgres
@@ -33,9 +22,6 @@ services:
     networks:
       - eie_network
 
-  # ─────────────────────────────────────────────────────────────
-  # BACKEND: Laravel 12 API REST (PHP 8.2 + FPM)
-  # ─────────────────────────────────────────────────────────────
   backend:
     build:
       context: ./backend
@@ -67,9 +53,6 @@ services:
     networks:
       - eie_network
 
-  # ─────────────────────────────────────────────────────────────
-  # FRONTEND: Next.js 14 + React 18 + TypeScript
-  # ─────────────────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -94,9 +77,6 @@ services:
     networks:
       - eie_network
 
-  # ─────────────────────────────────────────────────────────────
-  # MICROSERVICIO: Quarkus (Analítica IO / Teoría de Colas)
-  # ─────────────────────────────────────────────────────────────
   quarkus:
     build:
       context: ./quarkus
@@ -116,9 +96,6 @@ services:
     networks:
       - eie_network
 
-# ─────────────────────────────────────────────────────────────
-# VOLUMES PERSISTENTES
-# ─────────────────────────────────────────────────────────────
 volumes:
   pgdata:
     driver: local
@@ -129,9 +106,6 @@ volumes:
   frontend_next:
     driver: local
 
-# ─────────────────────────────────────────────────────────────
-# RED INTERNA
-# ─────────────────────────────────────────────────────────────
 networks:
   eie_network:
     driver: bridge

@@ -6,13 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Módulo 2: Creación de la Estructura Académica (5NF Normalization)
-     * Jefe Académico: programa, nivel, libro
-     */
+
     public function up(): void
     {
-        // 1.8 PROGRAMA
+
         Schema::create('programa', function (Blueprint $table) {
             $table->id('id_programa');
             $table->foreignId('id_idioma')->constrained('idioma', 'id_idioma')->onDelete('restrict')->onUpdate('cascade');
@@ -25,7 +22,6 @@ return new class extends Migration
             $table->unique(['id_idioma', 'id_tipo_programa', 'nombre_programa'], 'uq_programa_idioma_tipo_nombre');
         });
 
-        // 1.9 NIVEL
         Schema::create('nivel', function (Blueprint $table) {
             $table->id('id_nivel');
             $table->foreignId('id_programa')->constrained('programa', 'id_programa')->onDelete('cascade')->onUpdate('cascade');
@@ -38,7 +34,6 @@ return new class extends Migration
             $table->index('id_programa', 'idx_nivel_programa');
         });
 
-        // 1.10 LIBRO
         Schema::create('libro', function (Blueprint $table) {
             $table->id('id_libro');
             $table->foreignId('id_nivel')->constrained('nivel', 'id_nivel')->onDelete('cascade')->onUpdate('cascade');

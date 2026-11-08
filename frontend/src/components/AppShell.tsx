@@ -108,10 +108,11 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/estudiantes', label: 'Estudiantes', icon: Users },
   { href: '/paralelos', label: 'Paralelos', icon: Layers },
   { href: '/inscripciones', label: 'Inscripciones', icon: ClipboardEdit },
+  { href: '/asistencia', label: 'Control de Asistencia', icon: UserCheck },
   { href: '/calificaciones', label: 'Calificaciones', icon: Award },
   { href: '/cajas', label: 'Cajas y Recaudaciones', icon: Landmark },
   { href: '/almacen', label: 'Almacén de Libros', icon: Package },
-  { href: '/metodos-numericos', label: 'Analítica y Métodos', icon: LineChart },
+  { href: '/metodos-numericos', label: 'Modelos y Proyecciones', icon: LineChart },
 ];
 
 export type ThemeMode = 'dark' | 'light' | 'high-contrast';
@@ -401,6 +402,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('eie_auth');
         localStorage.removeItem('eie_role');
         localStorage.removeItem('eie_email');
+        localStorage.removeItem('eie_rol_activo');
+        sessionStorage.clear();
       } catch (e) {}
       signOut({ redirect: false });
       router.push('/');
@@ -479,6 +482,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="login-screen-wrapper">
           <div className="login-card animate-solemn-fade" style={{ maxWidth: '580px', width: '100%' }}>
             <div className="tricolor-stripe" />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                title="Volver a la vista anterior"
+              >
+                <ArrowLeft size={14} />
+                <span>Volver atrás</span>
+              </button>
+              <Link
+                href="/"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--military-gold-primary)', fontWeight: 600, textDecoration: 'none' }}
+                title="Regresar a la portada principal"
+              >
+                <Home size={14} />
+                <span>Volver a la página de inicio</span>
+              </Link>
+            </div>
 
             <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
               <img
@@ -571,7 +595,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             ) : authTab === 'login' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} className="animate-solemn-fade">
-                <form onSubmit={handleDemoLogin} style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <form onSubmit={handleDemoLogin} autoComplete="off" style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.3rem' }}>
                       Correo Institucional o Registrado *
@@ -583,6 +607,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       placeholder="usuario@idiomas.ejercito.mil.bo o su correo registrado"
                       className="input"
                       required
+                      autoComplete="off"
                       autoFocus
                       style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
                     />
@@ -599,6 +624,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       placeholder="Contraseña de acceso"
                       className="input"
                       required
+                      autoComplete="off"
                       style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
                     />
                   </div>
@@ -613,46 +639,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <button
                     type="submit"
                     className="btn btn-bolivia-green"
-                    style={{ width: '100%', padding: '0.7rem', fontWeight: 700, fontSize: '0.82rem', marginTop: '0.3rem' }}
+                    style={{ width: '100%', padding: '0.75rem', fontWeight: 700, fontSize: '0.85rem', marginTop: '0.3rem' }}
                   >
-                    <UserCheck size={16} /> Ingresar al Sistema SACA
-                  </button>
-                </form>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.1rem 0' }}>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    O Autenticación con Google Workspace
-                  </span>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-                </div>
-
-                <form onSubmit={handleLoginSubmit}>
-                  <button
-                    type="submit"
-                    className="btn"
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem',
-                      background: '#ffffff',
-                      color: '#3c4043',
-                      border: '1px solid #dadce0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.75rem',
-                      fontWeight: 600,
-                      borderRadius: '6px'
-                    }}
-                  >
-                    <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-                      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                      <path fill="none" d="M0 0h48v48H0z"/>
-                    </svg>
-                    <span>Ingresar con Google (Cuenta Institucional)</span>
+                    <UserCheck size={16} /> Iniciar Sesión Institucional SACA
                   </button>
                 </form>
 
@@ -664,7 +653,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             ) : (
               <div className="animate-solemn-fade">
-                <form onSubmit={handleRegistroSubmit} style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <form onSubmit={handleRegistroSubmit} autoComplete="off" style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   
                   {regSuccess && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontSize: '0.75rem', padding: '0.6rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>

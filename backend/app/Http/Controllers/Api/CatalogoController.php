@@ -15,11 +15,7 @@ use App\Models\Caja;
 
 class CatalogoController extends Controller
 {
-    /**
-     * MÓDULO 1: GESTIÓN DE CATÁLOGOS BASE (Sprint 1, Secuencia 12.1)
-     * Actor: Administrador del Sistema
-     * Parametrizaciones generales: gestiones, idiomas, aulas, horarios, tipos programa, modalidades, tipos pago, cajas.
-     */
+
     public function index()
     {
         return response()->json([
@@ -34,7 +30,6 @@ class CatalogoController extends Controller
         ]);
     }
 
-    // ── GESTIONES ANUALES ──
     public function gestiones()
     {
         return response()->json(Gestion::orderBy('anio_gestion', 'desc')->get());
@@ -79,7 +74,6 @@ class CatalogoController extends Controller
         return response()->json(['message' => 'Gestión eliminada del catálogo.']);
     }
 
-    // ── IDIOMAS OFERTADOS ──
     public function idiomas()
     {
         return response()->json(Idioma::orderBy('nombre_idioma')->get());
@@ -122,7 +116,6 @@ class CatalogoController extends Controller
         return response()->json(['message' => 'Idioma eliminado del catálogo.']);
     }
 
-    // ── AULAS Y ESPACIOS FÍSICOS ──
     public function aulas()
     {
         return response()->json(Aula::orderBy('nombre_aula')->get());
@@ -170,7 +163,6 @@ class CatalogoController extends Controller
         return response()->json(['message' => 'Aula eliminada del catálogo.']);
     }
 
-    // ── HORARIOS Y TURNOS ──
     public function horarios()
     {
         return response()->json(Horario::orderBy('hora_inicio_horario')->get());
@@ -214,7 +206,6 @@ class CatalogoController extends Controller
         return response()->json(['message' => 'Horario eliminado.']);
     }
 
-    // ── TIPOS DE PROGRAMA Y MODALIDADES ──
     public function tiposPrograma()
     {
         return response()->json(TipoPrograma::all());
@@ -245,7 +236,6 @@ class CatalogoController extends Controller
         return response()->json(['message' => 'Modalidad registrada.', 'data' => $item], 201);
     }
 
-    // ── TIPOS DE PAGO ──
     public function tiposPago()
     {
         return response()->json(TipoPago::all());
@@ -261,7 +251,6 @@ class CatalogoController extends Controller
         return response()->json(['message' => 'Tipo de pago registrado con éxito.', 'data' => $item], 201);
     }
 
-    // ── CAJAS ──
     public function cajas()
     {
         return response()->json(Caja::all());

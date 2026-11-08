@@ -41,27 +41,18 @@ class FichaAtencion extends Model
         return $this->hasMany(Pago::class, 'id_ficha', 'id_ficha');
     }
 
-    /**
-     * Scope FIFO: Obtiene los turnos en estricto orden de llegada
-     */
     public function scopeEnEspera($query)
     {
         return $query->where('estado_ficha', 'En espera')->orderBy('hora_llegada_ficha', 'asc');
     }
 
-    /**
-     * Scope FIFO: Retorna la siguiente ficha a ser atendida (First In, First Out)
-     */
-    public function scopeSiguienteTurnoFifo($query)
+    public function scopeSiguienteTurno($query)
     {
         return $query->where('estado_ficha', 'En espera')
                      ->orderBy('hora_llegada_ficha', 'asc')
                      ->first();
     }
 
-    /**
-     * Tiempo de espera en cola (minutos) antes de ser llamado
-     */
     public function getTiempoEsperaMinutosAttribute(): ?float
     {
         if (!$this->hora_inicio_atencion_ficha || !$this->hora_llegada_ficha) {
@@ -75,9 +66,6 @@ class FichaAtencion extends Model
         return round($llegada->diffInMinutes($inicio), 1);
     }
 
-    /**
-     * Tiempo de atención en ventanilla (minutos de servicio)
-     */
     public function getTiempoServicioMinutosAttribute(): ?float
     {
         if (!$this->hora_inicio_atencion_ficha || !$this->hora_fin_atencion_ficha) {

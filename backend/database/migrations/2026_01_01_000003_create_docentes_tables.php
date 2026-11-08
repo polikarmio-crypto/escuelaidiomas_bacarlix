@@ -6,13 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Módulo 3: Gestión de Docentes y Habilitación Idiomática (5NF Normalization)
-     * Docente y Docente_Idioma
-     */
+
     public function up(): void
     {
-        // 1.11 DOCENTE
+
         Schema::create('docente', function (Blueprint $table) {
             $table->id('id_docente');
             $table->string('ci_docente', 15)->unique()->comment('Documento de identidad nacional');
@@ -27,7 +24,6 @@ return new class extends Migration
             $table->index(['apellido_docente', 'nombre_docente'], 'idx_docente_apellidos_nombres');
         });
 
-        // 1.12 DOCENTE_IDIOMA (Descomposición 4NF/5NF para evitar anomalías multivaluadas)
         Schema::create('docente_idioma', function (Blueprint $table) {
             $table->foreignId('id_docente')->constrained('docente', 'id_docente')->onDelete('cascade')->onUpdate('cascade');
             $table->foreignId('id_idioma')->constrained('idioma', 'id_idioma')->onDelete('restrict')->onUpdate('cascade');

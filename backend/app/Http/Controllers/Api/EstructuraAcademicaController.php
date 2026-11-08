@@ -10,11 +10,7 @@ use App\Models\Libro;
 
 class EstructuraAcademicaController extends Controller
 {
-    /**
-     * MÓDULO 2: CREACIÓN DE LA ESTRUCTURA ACADÉMICA (Sprint 2, Casos de Uso 11.2, Secuencia 12.2)
-     * Actor: Jefe Académico
-     * Jerarquía: Programas -> Niveles -> Libros curriculares
-     */
+
     public function index()
     {
         $programas = Programa::with([
@@ -41,7 +37,6 @@ class EstructuraAcademicaController extends Controller
             'duracion_anios_programa' => 'nullable|integer|min:1|max:5',
         ]);
 
-        // Secuencia 12.2 paso 2: Verificar si el programa académico ya existe
         $existe = Programa::where('id_idioma', $validated['id_idioma'])
             ->where('id_tipo_programa', $validated['id_tipo_programa'])
             ->where('nombre_programa', 'ilike', trim($validated['nombre_programa']))
@@ -87,7 +82,6 @@ class EstructuraAcademicaController extends Controller
         return response()->json(['message' => 'Programa académico eliminado.']);
     }
 
-    // ── NIVELES CURRICULARES ──
     public function storeNivel(Request $request)
     {
         $validated = $request->validate([
@@ -131,7 +125,6 @@ class EstructuraAcademicaController extends Controller
         return response()->json(['message' => 'Nivel curricular eliminado.']);
     }
 
-    // ── LIBROS Y MÓDULOS DE TEXTO ──
     public function storeLibro(Request $request)
     {
         $validated = $request->validate([

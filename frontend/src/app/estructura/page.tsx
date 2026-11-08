@@ -51,8 +51,8 @@ export default function EstructuraAcademicaPage() {
     setLoading(true);
     try {
       const [resProg, resCat] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/estructura/programas'),
-        fetch('http://localhost:8000/api/v1/catalogos'),
+        fetch('/api/v1/estructura/programas'),
+        fetch('/api/v1/catalogos'),
       ]);
       if (resProg.ok) {
         const dataProg = await resProg.json();
@@ -90,7 +90,7 @@ export default function EstructuraAcademicaPage() {
   const handleCrearPrograma = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/v1/estructura/programas', {
+      const res = await fetch('/api/v1/estructura/programas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,7 +114,7 @@ export default function EstructuraAcademicaPage() {
     e.preventDefault();
     if (!programaSeleccionado) return;
     try {
-      const res = await fetch('http://localhost:8000/api/v1/estructura/niveles', {
+      const res = await fetch('/api/v1/estructura/niveles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -138,7 +138,7 @@ export default function EstructuraAcademicaPage() {
     e.preventDefault();
     if (!nivelSeleccionado) return;
     try {
-      const res = await fetch('http://localhost:8000/api/v1/estructura/libros', {
+      const res = await fetch('/api/v1/estructura/libros', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -63,10 +63,10 @@ export default function ParalelosPage() {
     setLoading(true);
     try {
       const [resPar, resDoc, resCat, resProg] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/paralelos'),
-        fetch('http://localhost:8000/api/v1/docentes'),
-        fetch('http://localhost:8000/api/v1/catalogos'),
-        fetch('http://localhost:8000/api/v1/estructura/programas'),
+        fetch('/api/v1/paralelos'),
+        fetch('/api/v1/docentes'),
+        fetch('/api/v1/catalogos'),
+        fetch('/api/v1/estructura/programas'),
       ]);
 
       if (resPar.ok) setParalelos(await resPar.json() || []);
@@ -109,7 +109,7 @@ export default function ParalelosPage() {
   const handleAperturarParalelo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/v1/paralelos', {
+      const res = await fetch('/api/v1/paralelos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

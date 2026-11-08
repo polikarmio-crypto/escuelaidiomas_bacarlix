@@ -8,14 +8,12 @@ use App\Models\Inscripcion;
 use App\Models\InscripcionLibro;
 use App\Models\Paralelo;
 use App\Models\Libro;
+use App\Services\AuditLogger;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class InscripcionController extends Controller
 {
-    /**
-     * Lista todas las inscripciones registradas
-     */
     public function index(Request $request)
     {
         $inscripciones = Inscripcion::with([
@@ -28,9 +26,6 @@ class InscripcionController extends Controller
         return response()->json($inscripciones);
     }
 
-    /**
-     * Formalización de inscripción validando cupos e inicializando el avance del primer libro
-     */
     public function inscribir(Request $request)
     {
         $validated = $request->validate([
@@ -41,14 +36,17 @@ class InscripcionController extends Controller
         return DB::transaction(function () use ($validated) {
             $paralelo = Paralelo::with('nivel.libros')->findOrFail($validated['id_paralelo']);
 
-            // 1. Validar que no se exceda la capacidad máxima
             if (!$paralelo->tiene_cupo_disponible) {
+                AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'INSCRIPCION_RECHAZADA_AFORO_COMPLETO', [
+                    'id_estudiante' => $validated['id_estudiante'],
+                    'id_paralelo' => $validated['id_paralelo'],
+                ]);
+
                 return response()->json([
                     'error' => 'Aforo completo: No existen cupos disponibles en el paralelo seleccionado.'
                 ], 422);
             }
 
-            // 2. Validar que el estudiante no tenga ya una inscripción activa en este paralelo
             $yaInscrito = Inscripcion::where('id_estudiante', $validated['id_estudiante'])
                 ->where('id_paralelo', $validated['id_paralelo'])
                 ->where('estado_inscripcion', 'Activa')
@@ -60,7 +58,6 @@ class InscripcionController extends Controller
                 ], 422);
             }
 
-            // 3. Crear la inscripción
             $inscripcion = Inscripcion::create([
                 'id_estudiante' => $validated['id_estudiante'],
                 'id_paralelo' => $validated['id_paralelo'],
@@ -68,7 +65,6 @@ class InscripcionController extends Controller
                 'estado_inscripcion' => 'Activa',
             ]);
 
-            // 4. Inicializar automáticamente el avance curricular libro a libro (Historia de Usuario 14, Secuencia 12.6)
             $librosNivel = $paralelo->nivel->libros()->orderBy('numero_libro')->get();
             $esPrimero = true;
             foreach ($librosNivel as $lib) {
@@ -81,6 +77,12 @@ class InscripcionController extends Controller
                 ]);
                 $esPrimero = false;
             }
+
+            AuditLogger::academico(AuditLogger::LEVEL_INFO, 'INSCRIPCION_FORMALIZADA', [
+                'id_inscripcion' => $inscripcion->id_inscripcion,
+                'id_estudiante' => $validated['id_estudiante'],
+                'id_paralelo' => $validated['id_paralelo'],
+            ], null, 'inscripcion', $inscripcion->id_inscripcion);
 
             return response()->json([
                 'message' => 'Estudiante matriculado exitosamente con avance curricular inicializado.',

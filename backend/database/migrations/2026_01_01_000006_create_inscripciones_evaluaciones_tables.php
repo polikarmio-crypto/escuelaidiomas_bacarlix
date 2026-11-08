@@ -6,13 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Módulos 6 y 7: Inscripciones, Avance de Libros y Evaluaciones (5NF Normalization)
-     * inscripcion, inscripcion_libro, evaluacion_libro, examen_nivel
-     */
+
     public function up(): void
     {
-        // 1.17 INSCRIPCIÓN
+
         Schema::create('inscripcion', function (Blueprint $table) {
             $table->id('id_inscripcion');
             $table->foreignId('id_estudiante')->constrained('estudiante', 'id_estudiante')->onDelete('restrict')->onUpdate('cascade');
@@ -21,12 +18,10 @@ return new class extends Migration
             $table->string('estado_inscripcion', 15)->default('Activa')->comment('Activa, Retirada, Concluida');
             $table->timestamps();
 
-            // Evitar doble inscripción activa en el mismo paralelo
             $table->unique(['id_estudiante', 'id_paralelo'], 'uq_estudiante_paralelo');
             $table->index(['id_paralelo', 'estado_inscripcion'], 'idx_inscripcion_paralelo_estado');
         });
 
-        // 1.18 INSCRIPCIÓN_LIBRO (Avance curricular libro a libro)
         Schema::create('inscripcion_libro', function (Blueprint $table) {
             $table->id('id_inscripcion_libro');
             $table->foreignId('id_inscripcion')->constrained('inscripcion', 'id_inscripcion')->onDelete('cascade')->onUpdate('cascade');
@@ -40,7 +35,6 @@ return new class extends Migration
             $table->index('estado_libro', 'idx_inscripcion_libro_estado');
         });
 
-        // 1.19 EVALUACIÓN_LIBRO (Desglose: Examen 80%, Oral 10%, Participación 10%)
         Schema::create('evaluacion_libro', function (Blueprint $table) {
             $table->id('id_evaluacion_libro');
             $table->foreignId('id_inscripcion_libro')->constrained('inscripcion_libro', 'id_inscripcion_libro')->onDelete('cascade')->onUpdate('cascade');
@@ -56,7 +50,6 @@ return new class extends Migration
             $table->index('nota_final_libro', 'idx_eval_nota_final');
         });
 
-        // 1.20 EXAMEN_NIVEL (Evaluación global independiente para concluir el nivel)
         Schema::create('examen_nivel', function (Blueprint $table) {
             $table->id('id_examen_nivel');
             $table->foreignId('id_inscripcion')->constrained('inscripcion', 'id_inscripcion')->onDelete('cascade')->onUpdate('cascade');

@@ -7,12 +7,10 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Módulo 11: Triggers, Roles/Permisos, Bajas Lógicas (Soft Deletes) y Tablas Particionadas
-     */
+
     public function up(): void
     {
-        // 1. Columnas de Baja Lógica (Soft Deletes)
+
         if (Schema::hasTable('estudiante') && !Schema::hasColumn('estudiante', 'deleted_at')) {
             Schema::table('estudiante', function (Blueprint $table) {
                 $table->softDeletes();
@@ -37,7 +35,6 @@ return new class extends Migration
             });
         }
 
-        // 2. Tabla Particionada por Rango de Fechas (Auditoría Histórica de Operaciones)
         DB::statement("
             CREATE TABLE IF NOT EXISTS auditoria_historica (
                 id_auditoria BIGSERIAL,
@@ -53,7 +50,6 @@ return new class extends Migration
             ) PARTITION BY RANGE (created_at);
         ");
 
-        // Particiones anuales
         DB::statement("
             CREATE TABLE IF NOT EXISTS auditoria_p2025 PARTITION OF auditoria_historica
             FOR VALUES FROM ('2025-01-01 00:00:00') TO ('2026-01-01 00:00:00');
@@ -67,7 +63,6 @@ return new class extends Migration
             FOR VALUES FROM ('2027-01-01 00:00:00') TO ('2028-01-01 00:00:00');
         ");
 
-        // 3. Trigger 1: Auditoría Automática ante Modificación o Baja de Estudiantes y Docentes
         DB::statement("
             CREATE OR REPLACE FUNCTION fn_trg_auditoria_seguridad()
             RETURNS TRIGGER AS $$
@@ -102,7 +97,6 @@ return new class extends Migration
             FOR EACH ROW EXECUTE FUNCTION fn_trg_auditoria_seguridad();
         ");
 
-        // 4. Trigger 2: Validación y Recálculo Automático de Ponderación Militar 80/10/10
         DB::statement("
             CREATE OR REPLACE FUNCTION fn_trg_validar_ponderacion_militar()
             RETURNS TRIGGER AS $$
@@ -120,9 +114,9 @@ return new class extends Migration
 
                 -- Ponderación Militar Oficial: 80% Examen + 10% Defensa Oral + 10% Participación
                 NEW.nota_final_libro := ROUND(
-                    (NEW.nota_examen_libro * 0.80) + 
-                    (NEW.nota_defensa_oral * 0.10) + 
-                    (NEW.nota_participacion_libro * 0.10), 
+                    (NEW.nota_examen_libro * 0.80) +
+                    (NEW.nota_defensa_oral * 0.10) +
+                    (NEW.nota_participacion_libro * 0.10),
                     2
                 );
 
@@ -138,7 +132,6 @@ return new class extends Migration
             FOR EACH ROW EXECUTE FUNCTION fn_trg_validar_ponderacion_militar();
         ");
 
-        // 5. Configuración de Roles y Privilegios en PostgreSQL (Grants)
         DB::statement("
             DO $$
             BEGIN
@@ -162,7 +155,6 @@ return new class extends Migration
             $$;
         ");
 
-        // Privilegios granulares sobre el esquema public
         DB::statement("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO eie_admin_role;");
         DB::statement("GRANT SELECT, INSERT, UPDATE, DELETE ON estudiante, inscripcion, paralelo TO eie_secretaria_role;");
         DB::statement("GRANT SELECT ON estudiante, paralelo TO eie_docente_role;");

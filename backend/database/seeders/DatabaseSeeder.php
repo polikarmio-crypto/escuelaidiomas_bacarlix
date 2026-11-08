@@ -9,19 +9,12 @@ use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seeder Maestro de la Escuela de Idiomas del Ejército (EIE) - SACA
-     * Cumplimiento estricto 5FN con ~450 estudiantes normalizados (Militares y Civiles),
-     * docentes, rotación quincenal, paralelos, avance libro a libro y almacén ROP.
-     */
+
     public function run(): void
     {
-        // Deshabilitar logs de queries para máxima velocidad de inserción
+
         DB::connection()->disableQueryLog();
 
-        // ─────────────────────────────────────────────────────────────
-        // 1. GESTIONES ACADÉMICAS
-        // ─────────────────────────────────────────────────────────────
         $idGestion2026 = DB::table('gestion')->insertGetId([
             'anio_gestion'   => 2026,
             'estado_gestion' => 'Activa',
@@ -36,9 +29,6 @@ class DatabaseSeeder extends Seeder
             'updated_at'     => now(),
         ], 'id_gestion');
 
-        // ─────────────────────────────────────────────────────────────
-        // 2. IDIOMAS OFERTADOS
-        // ─────────────────────────────────────────────────────────────
         $idiomasData = [
             ['nombre_idioma' => 'Inglés Militar'],
             ['nombre_idioma' => 'Francés Diplomático'],
@@ -58,9 +48,6 @@ class DatabaseSeeder extends Seeder
             ], 'id_idioma');
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 3. TIPOS DE PROGRAMA
-        // ─────────────────────────────────────────────────────────────
         $idProgMilitar = DB::table('tipo_programa')->insertGetId([
             'nombre_tipo_programa' => 'Militar Regular',
             'created_at' => now(), 'updated_at' => now()
@@ -76,17 +63,11 @@ class DatabaseSeeder extends Seeder
             'created_at' => now(), 'updated_at' => now()
         ], 'id_tipo_programa');
 
-        // ─────────────────────────────────────────────────────────────
-        // 4. MODALIDADES
-        // ─────────────────────────────────────────────────────────────
         $idModPresencial = DB::table('modalidad')->insertGetId(['nombre_modalidad' => 'Presencial', 'created_at' => now(), 'updated_at' => now()], 'id_modalidad');
         $idModVirtual    = DB::table('modalidad')->insertGetId(['nombre_modalidad' => 'Virtual', 'created_at' => now(), 'updated_at' => now()], 'id_modalidad');
         $idModSemi       = DB::table('modalidad')->insertGetId(['nombre_modalidad' => 'Semipresencial', 'created_at' => now(), 'updated_at' => now()], 'id_modalidad');
         $modalidades = [$idModPresencial, $idModVirtual, $idModSemi];
 
-        // ─────────────────────────────────────────────────────────────
-        // 5. HORARIOS MILITARES Y CIVILES
-        // ─────────────────────────────────────────────────────────────
         $horariosData = [
             ['07:00:00', '08:30:00'],
             ['08:30:00', '10:00:00'],
@@ -106,9 +87,6 @@ class DatabaseSeeder extends Seeder
             ], 'id_horario');
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 6. AULAS Y LABORATORIOS
-        // ─────────────────────────────────────────────────────────────
         $aulasData = [
             ['Aula 101 - Pabellón Alfa', 30],
             ['Aula 102 - Pabellón Alfa', 30],
@@ -131,26 +109,17 @@ class DatabaseSeeder extends Seeder
             ], 'id_aula');
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 7. TIPOS DE PAGO
-        // ─────────────────────────────────────────────────────────────
         $idPagoBeca        = DB::table('tipo_pago')->insertGetId(['nombre_tipo_pago' => 'Beca Militar 100% Exenta', 'created_at' => now(), 'updated_at' => now()], 'id_tipo_pago');
         $idPagoMatricula   = DB::table('tipo_pago')->insertGetId(['nombre_tipo_pago' => 'Matrícula Regular Civil', 'created_at' => now(), 'updated_at' => now()], 'id_tipo_pago');
         $idPagoMensualidad = DB::table('tipo_pago')->insertGetId(['nombre_tipo_pago' => 'Mensualidad Civil', 'created_at' => now(), 'updated_at' => now()], 'id_tipo_pago');
         $idPagoLibro       = DB::table('tipo_pago')->insertGetId(['nombre_tipo_pago' => 'Adquisición de Texto Oficial', 'created_at' => now(), 'updated_at' => now()], 'id_tipo_pago');
         $idPagoCertificado = DB::table('tipo_pago')->insertGetId(['nombre_tipo_pago' => 'Certificado de Suficiencia', 'created_at' => now(), 'updated_at' => now()], 'id_tipo_pago');
 
-        // ─────────────────────────────────────────────────────────────
-        // 8. CAJAS / VENTANILLAS
-        // ─────────────────────────────────────────────────────────────
         $idCaja1 = DB::table('caja')->insertGetId(['nombre_caja' => 'Ventanilla 1 - Militar', 'ubicacion_caja' => 'Hall Central - Bloque A', 'created_at' => now(), 'updated_at' => now()], 'id_caja');
         $idCaja2 = DB::table('caja')->insertGetId(['nombre_caja' => 'Ventanilla 2 - Civiles', 'ubicacion_caja' => 'Hall Central - Bloque B', 'created_at' => now(), 'updated_at' => now()], 'id_caja');
         $idCaja3 = DB::table('caja')->insertGetId(['nombre_caja' => 'Ventanilla 3 - Material & Libros', 'ubicacion_caja' => 'Planta Baja - Almacén', 'created_at' => now(), 'updated_at' => now()], 'id_caja');
         $cajas = [$idCaja1, $idCaja2, $idCaja3];
 
-        // ─────────────────────────────────────────────────────────────
-        // 9. PROGRAMAS, NIVELES Y LIBROS CON INVENTARIO ALMACÉN
-        // ─────────────────────────────────────────────────────────────
         $programasConfig = [
             [
                 'nombre' => 'Programa de Inglés Militar para Misiones de Paz',
@@ -268,8 +237,6 @@ class DatabaseSeeder extends Seeder
                     $librosList[] = $idLib;
                     $nivelIds[$lastNivKey]['libros'][] = $idLib;
 
-                    // Almacén ROP para este libro
-                    // Generar algunos en alerta de reposición y otros con stock óptimo
                     $stockActual = ($idxL % 3 === 0) ? rand(8, 16) : rand(35, 90);
                     $puntoReorden = 20;
                     $stockMinimo = 10;
@@ -287,7 +254,6 @@ class DatabaseSeeder extends Seeder
 
                     $almacenLibroIds[] = $idAlm;
 
-                    // Si stock <= punto de reorden, emitir pedido de reposición
                     if ($stockActual <= $puntoReorden) {
                         DB::table('pedido_reposicion')->insert([
                             'id_almacen_libro'        => $idAlm,
@@ -303,9 +269,6 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 10. DOCENTES E IDIOMAS HABILITADOS (22 Docentes Bolivianos)
-        // ─────────────────────────────────────────────────────────────
         $docentesData = [
             ['5849201 LP', 'Fernando', 'Ríos Torrico', '+591 76543210', 'f.rios@ejercito.mil.bo', 'Inglés Militar'],
             ['7120485 LP', 'Carlos', 'Ramos Siles', '+591 71234567', 'c.ramos@ejercito.mil.bo', 'Inglés Militar'],
@@ -346,7 +309,6 @@ class DatabaseSeeder extends Seeder
 
             $docenteIds[] = $idDoc;
 
-            // Vincular con su idioma principal
             $nomIdm = isset($idiomaIds[$doc[5]]) ? $doc[5] : 'Inglés Militar';
             DB::table('docente_idioma')->insert([
                 'id_docente' => $idDoc,
@@ -354,15 +316,12 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 11. PARALELOS Y ASIGNACIONES CON ROTACIÓN QUINCENAL
-        // ─────────────────────────────────────────────────────────────
         $paralelosList = [];
         $prefijosCodigos = ['ING', 'FRA', 'RUS', 'MAN', 'QUE', 'ALM', 'POR'];
 
         $paraleloCounter = 1;
         foreach ($nivelIds as $nivIdx => $nivInfo) {
-            // Crear 2 paralelos por nivel para tener amplia oferta
+
             for ($p = 1; $p <= 2; $p++) {
                 $codPrefix = substr($nivInfo['idioma'], 0, 3);
                 $codParalelo = sprintf('%s-%d0%d-%s', strtoupper($codPrefix), $nivIdx + 1, $p, ($p === 1 ? 'A' : 'B'));
@@ -385,17 +344,15 @@ class DatabaseSeeder extends Seeder
                     'updated_at'                 => now(),
                 ], 'id_paralelo');
 
-                // Asignar docente con rotación
                 $docenteAsignado = $docenteIds[($paraleloCounter) % count($docenteIds)];
 
-                // Generar algunos docentes con >= 14 días para activar la alerta quincenal
                 $diasEnAula = ($paraleloCounter % 3 === 0) ? rand(14, 18) : rand(2, 10);
 
                 DB::table('asignacion_docente_paralelo')->insert([
                     'id_paralelo'             => $idPar,
                     'id_docente'              => $docenteAsignado,
                     'fecha_inicio_asignacion' => Carbon::now()->subDays($diasEnAula)->toDateString(),
-                    'fecha_fin_asignacion'    => null, // Activo actualmente
+                    'fecha_fin_asignacion'    => null,
                     'created_at'              => now(),
                     'updated_at'              => now(),
                 ]);
@@ -414,9 +371,6 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 12. POBLACIÓN MASIVA DE ~450 ESTUDIANTES (280 Militares, 170 Civiles)
-        // ─────────────────────────────────────────────────────────────
         $nombresVarones = [
             'Carlos Fernando', 'Jorge Luis', 'Alejandro René', 'Diego Armando', 'Rodrigo Javier',
             'Marcelo Andrés', 'Cristian Eduardo', 'Alvaro Gonzalo', 'Mauricio David', 'Luis Fernando',
@@ -487,18 +441,17 @@ class DatabaseSeeder extends Seeder
         ];
 
         $totalEstudiantesObjetivo = 450;
-        $totalMilitares = 280; // ~62% militares
-        $totalCiviles = 170;   // ~38% civiles
+        $totalMilitares = 280;
+        $totalCiviles = 170;
 
         $estudianteIds = [];
         $matriculasGeneradas = [];
 
-        // Generar 450 estudiantes
         for ($i = 1; $i <= $totalEstudiantesObjetivo; $i++) {
             $esMilitar = ($i <= $totalMilitares);
             $tipoEstudiante = $esMilitar ? 'Militar' : 'Civil';
 
-            $esVaron = (rand(1, 10) <= 7); // 70% varones en contexto militar
+            $esVaron = (rand(1, 10) <= 7);
             $nombre = $esVaron ? $nombresVarones[array_rand($nombresVarones)] : $nombresMujeres[array_rand($nombresMujeres)];
             $apellidoP = $apellidosBolivianos[array_rand($apellidosBolivianos)];
             $apellidoM = $apellidosBolivianos[array_rand($apellidosBolivianos)];
@@ -559,10 +512,6 @@ class DatabaseSeeder extends Seeder
                 'nombre_completo' => "{$nombre} {$apellidoCompleto}",
             ];
 
-            // ─────────────────────────────────────────────────────────
-            // 13. INSCRIPCIÓN Y AVANCE CURRICULAR POR ESTUDIANTE
-            // ─────────────────────────────────────────────────────────
-            // Asignar al estudiante a uno de los paralelos de forma distribuida
             $paraleloElegido = $paralelosList[($i - 1) % count($paralelosList)];
 
             $idIns = DB::table('inscripcion')->insertGetId([
@@ -574,7 +523,6 @@ class DatabaseSeeder extends Seeder
                 'updated_at'         => now(),
             ], 'id_inscripcion');
 
-            // Asignar libro de avance
             if (!empty($paraleloElegido['libros'])) {
                 $idLibroElegido = $paraleloElegido['libros'][0];
 
@@ -588,7 +536,6 @@ class DatabaseSeeder extends Seeder
                     'updated_at'         => now(),
                 ], 'id_inscripcion_libro');
 
-                // Generar evaluación para todos los estudiantes matriculados
                 $notaExamen = rand(65, 98);
                 $notaOral = rand(70, 100);
                 $notaPart = rand(75, 100);
@@ -607,11 +554,8 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
 
-            // ─────────────────────────────────────────────────────────
-            // 14. PAGOS DEL ESTUDIANTE
-            // ─────────────────────────────────────────────────────────
             if ($esMilitar) {
-                // Militares con beca exenta 100%
+
                 DB::table('pago')->insert([
                     'id_estudiante' => $idEst,
                     'id_tipo_pago'  => $idPagoBeca,
@@ -624,7 +568,7 @@ class DatabaseSeeder extends Seeder
                     'updated_at'    => now(),
                 ]);
             } else {
-                // Civiles pagan matrícula regular y mensualidad
+
                 $cajaCivil = ($i % 2 === 0) ? $idCaja2 : $idCaja3;
 
                 DB::table('pago')->insert([
@@ -655,12 +599,8 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 15. COLA FIFO Y FICHAS DE ATENCIÓN DEL DÍA (Para simulador Quarkus)
-        // ─────────────────────────────────────────────────────────────
         $horaBase = Carbon::today()->setHour(8)->setMinute(0)->setSecond(0);
 
-        // Fichas ya atendidas (históricas y de hoy, total 440)
         for ($f = 1; $f <= 440; $f++) {
             $esHoy = ($f >= 400);
             $fechaFicha = $esHoy
@@ -685,7 +625,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // Fichas en espera actuales (10 en cola FIFO)
         for ($f = 441; $f <= 450; $f++) {
             $llegada = Carbon::now()->subMinutes((451 - $f) * 4);
             $idEstRandom = $estudianteIds[($f - 1) % count($estudianteIds)]['id_estudiante'];
@@ -703,9 +642,6 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 15.1. KARDEX DE ALMACÉN: 450 MOVIMIENTOS HISTÓRICOS
-        // ─────────────────────────────────────────────────────────────
         $motivosEntrada = [
             'Adquisición oficial según Orden de Compra CEDMIL',
             'Reabastecimiento trimestral Editorial Militar EIE',
@@ -737,12 +673,8 @@ class DatabaseSeeder extends Seeder
             ]);
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 16. USUARIOS INSTITUCIONALES (6 ROLES CON PREFIJOS DE CORREO)
-        // ─────────────────────────────────────────────────────────────
         $passwordHash = Hash::make('Password123!');
 
-        // Admin: Único que puede alternar libremente de rol
         $idUserAdmin = DB::table('usuario')->insertGetId([
             'nombre_usuario'        => 'Cnl. DAEN. Roberto Méndez Silva',
             'email_usuario'         => 'admin.mendez@ejercito.mil.bo',
@@ -755,7 +687,6 @@ class DatabaseSeeder extends Seeder
             'updated_at'            => now(),
         ], 'id_usuario');
 
-        // Jefe Académico
         DB::table('usuario')->insert([
             'nombre_usuario'        => 'Tcnl. DEM. Hugo Banzer Rivera',
             'email_usuario'         => 'jef.banzer@ejercito.mil.bo',
@@ -768,7 +699,6 @@ class DatabaseSeeder extends Seeder
             'updated_at'            => now(),
         ]);
 
-        // Docente vinculado
         DB::table('usuario')->insert([
             'nombre_usuario'        => 'Cap. Fernando Ríos Torrico',
             'email_usuario'         => 'doc.rios@ejercito.mil.bo',
@@ -781,7 +711,6 @@ class DatabaseSeeder extends Seeder
             'updated_at'            => now(),
         ]);
 
-        // Secretaria
         DB::table('usuario')->insert([
             'nombre_usuario'        => 'Sgto. 1ro. Patricia Morales Guzmán',
             'email_usuario'         => 'sec.morales@ejercito.mil.bo',
@@ -794,7 +723,6 @@ class DatabaseSeeder extends Seeder
             'updated_at'            => now(),
         ]);
 
-        // Cajero
         DB::table('usuario')->insert([
             'nombre_usuario'        => 'Sof. My. David Choquehuanca',
             'email_usuario'         => 'caj.choquehuanca@ejercito.mil.bo',
@@ -807,7 +735,6 @@ class DatabaseSeeder extends Seeder
             'updated_at'            => now(),
         ]);
 
-        // Almacenero
         DB::table('usuario')->insert([
             'nombre_usuario'        => 'Sgto. 2do. Marcelo Justiniano',
             'email_usuario'         => 'alm.justiniano@ejercito.mil.bo',
@@ -820,7 +747,6 @@ class DatabaseSeeder extends Seeder
             'updated_at'            => now(),
         ]);
 
-        // Estudiante institucional
         DB::table('usuario')->insert([
             'nombre_usuario'        => 'Cad. Carlos Fernando Mamani',
             'email_usuario'         => 'est.mamani@ejercito.mil.bo',
@@ -833,9 +759,6 @@ class DatabaseSeeder extends Seeder
             'updated_at'            => now(),
         ]);
 
-        // ─────────────────────────────────────────────────────────────
-        // 17. AUDITORÍA INICIAL
-        // ─────────────────────────────────────────────────────────────
         DB::table('log_auditoria')->insert([
             'id_usuario'           => $idUserAdmin,
             'accion_log'           => 'SEED_COMPLETE_450_5FN',

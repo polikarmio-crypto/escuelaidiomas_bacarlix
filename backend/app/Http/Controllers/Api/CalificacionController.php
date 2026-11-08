@@ -8,15 +8,13 @@ use App\Models\EvaluacionLibro;
 use App\Models\InscripcionLibro;
 use App\Models\ExamenNivel;
 use App\Models\Paralelo;
-use App\Models\Libro;
+use App\Models\AsignacionDocenteParalelo;
+use App\Services\AuditLogger;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class CalificacionController extends Controller
 {
-    /**
-     * Matriz de calificaciones de un paralelo determinado
-     */
     public function notasParalelo($idParalelo)
     {
         $paralelo = Paralelo::with([
@@ -48,7 +46,7 @@ class CalificacionController extends Controller
                         'nota_participacion' => $eval ? $eval->nota_participacion_libro : null,
                         'nota_final' => $eval ? $eval->nota_final_libro : null,
                         'aprobado' => $eval ? $eval->esAprobado() : false,
-                        'docente_calificador' => $eval ? "{$eval->docenteCalificador->nombre_docente} {$eval->docenteCalificador->apellido_docente}" : null,
+                        'docente_calificador' => $eval && $eval->docenteCalificador ? "{$eval->docenteCalificador->nombre_docente} {$eval->docenteCalificador->apellido_docente}" : null,
                     ];
                 }),
             ];
@@ -61,9 +59,6 @@ class CalificacionController extends Controller
         ]);
     }
 
-    /**
-     * Registro de notas con ponderación oficial militar (Examen 80%, Oral 10%, Participación 10%)
-     */
     public function registrarNotaLibro(Request $request)
     {
         $validated = $request->validate([
@@ -76,18 +71,55 @@ class CalificacionController extends Controller
             'id_docente_calificador'   => 'required|exists:docente,id_docente',
         ]);
 
-        return DB::transaction(function () use ($validated) {
-            $inscripcionLibro = InscripcionLibro::with(['libro', 'inscripcion.paralelo.nivel.libros'])
-                ->findOrFail($validated['id_inscripcion_libro']);
+        $inscripcionLibro = InscripcionLibro::with(['libro', 'inscripcion.paralelo.nivel.programa.idioma', 'inscripcion.estudiante'])
+            ->findOrFail($validated['id_inscripcion_libro']);
 
+        $paralelo = $inscripcionLibro->inscripcion->paralelo;
+        $docenteId = (int) $validated['id_docente_calificador'];
+
+        $esDocenteAsignado = AsignacionDocenteParalelo::where('id_paralelo', $paralelo->id_paralelo)
+            ->where('id_docente', $docenteId)
+            ->whereNull('fecha_fin_asignacion')
+            ->exists();
+
+        if (!$esDocenteAsignado) {
+            AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'RESTRICCION_DOCENTE_NO_ASIGNADO', [
+                'id_docente' => $docenteId,
+                'id_paralelo' => $paralelo->id_paralelo,
+                'codigo_paralelo' => $paralelo->codigo_paralelo,
+                'id_estudiante' => $inscripcionLibro->inscripcion->id_estudiante,
+            ], null, 'evaluacion_libro');
+
+            return response()->json([
+                'error' => "Restricción académica activa: El docente no se encuentra asignado oficialmente al paralelo {$paralelo->codigo_paralelo}."
+            ], 403);
+        }
+
+        $idIdiomaRequerido = $paralelo->nivel->programa->id_idioma;
+        $tieneIdioma = DB::table('docente_idioma')
+            ->where('id_docente', $docenteId)
+            ->where('id_idioma', $idIdiomaRequerido)
+            ->exists();
+
+        if (!$tieneIdioma) {
+            AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'RESTRICCION_DOCENTE_IDIOMA_INCOMPATIBLE', [
+                'id_docente' => $docenteId,
+                'id_idioma' => $idIdiomaRequerido,
+                'idioma' => $paralelo->nivel->programa->idioma->nombre_idioma,
+            ], null, 'evaluacion_libro');
+
+            return response()->json([
+                'error' => "Restricción idiomática: El docente no posee habilitación para calificar en el idioma {$paralelo->nivel->programa->idioma->nombre_idioma}."
+            ], 403);
+        }
+
+        return DB::transaction(function () use ($validated, $inscripcionLibro) {
             if (isset($validated['nota_final_directa']) && $validated['nota_final_directa'] !== null) {
-                // Caso: Docente coloca directamente la nota promedio final
                 $notaFinal = round((float) $validated['nota_final_directa'], 2);
                 $notaExamen = $validated['nota_examen_libro'] ?? $notaFinal;
                 $notaOral = $validated['nota_defensa_oral'] ?? $notaFinal;
                 $notaPart = $validated['nota_participacion_libro'] ?? $notaFinal;
             } else {
-                // Ponderación institucional oficial: 80% Examen + 10% Oral + 10% Participación
                 $notaExamen = (float) ($validated['nota_examen_libro'] ?? 0);
                 $notaOral   = (float) ($validated['nota_defensa_oral'] ?? 0);
                 $notaPart   = (float) ($validated['nota_participacion_libro'] ?? 0);
@@ -96,7 +128,6 @@ class CalificacionController extends Controller
 
             $esAprobado = $notaFinal >= 71.0;
 
-            // Guardar o actualizar la evaluación
             $evaluacion = EvaluacionLibro::updateOrCreate(
                 ['id_inscripcion_libro' => $validated['id_inscripcion_libro']],
                 [
@@ -109,13 +140,11 @@ class CalificacionController extends Controller
                 ]
             );
 
-            // Actualizar el estado del libro cursado
             $inscripcionLibro->update([
                 'fecha_fin_libro' => Carbon::now()->toDateString(),
                 'estado_libro' => $esAprobado ? 'Aprobado' : 'Reprobado',
             ]);
 
-            // Si aprobó, avanzar al siguiente libro del nivel de forma automática
             if ($esAprobado) {
                 $libroActual = $inscripcionLibro->libro;
                 $siguienteLibro = $inscripcionLibro->inscripcion->paralelo->nivel->libros()
@@ -137,8 +166,15 @@ class CalificacionController extends Controller
                 }
             }
 
+            AuditLogger::academico(AuditLogger::LEVEL_INFO, 'CALIFICACION_REGISTRADA', [
+                'id_inscripcion_libro' => $validated['id_inscripcion_libro'],
+                'id_docente' => $validated['id_docente_calificador'],
+                'nota_final' => $notaFinal,
+                'resultado' => $esAprobado ? 'APROBADO' : 'REPROBADO',
+            ], null, 'evaluacion_libro', $evaluacion->id_evaluacion_libro);
+
             return response()->json([
-                'message' => 'Calificación procesada exitosamente.',
+                'message' => 'Calificación procesada exitosamente bajo normativa institucional.',
                 'nota_final' => $notaFinal,
                 'resultado' => $esAprobado ? 'APROBADO' : 'REPROBADO',
                 'data' => $evaluacion,
@@ -146,9 +182,6 @@ class CalificacionController extends Controller
         });
     }
 
-    /**
-     * Registro de examen global de nivel
-     */
     public function registrarExamenNivel(Request $request)
     {
         $validated = $request->validate([
@@ -165,10 +198,17 @@ class CalificacionController extends Controller
             [
                 'nota_examen_nivel' => $validated['nota_examen_nivel'],
                 'id_docente_calificador' => $validated['id_docente_calificador'],
-                'fecha_examen_nivel' => Carbon::now()->toDateString(),
+                'fecha_examen_nivel' => $validated['fecha_examen_nivel'] ?? Carbon::now()->toDateString(),
                 'estado_examen_nivel' => $aprobado ? 'Aprobado' : 'Reprobado',
             ]
         );
+
+        AuditLogger::academico(AuditLogger::LEVEL_INFO, 'EXAMEN_NIVEL_REGISTRADO', [
+            'id_inscripcion' => $validated['id_inscripcion'],
+            'id_docente' => $validated['id_docente_calificador'],
+            'nota' => $validated['nota_examen_nivel'],
+            'resultado' => $aprobado ? 'APROBADO' : 'REPROBADO',
+        ], null, 'examen_nivel', $examen->id_examen_nivel);
 
         return response()->json([
             'message' => 'Examen de suficiencia de nivel registrado con éxito',

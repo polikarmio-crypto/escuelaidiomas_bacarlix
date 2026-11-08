@@ -225,7 +225,7 @@ export default function IndexPage() {
     const ciCompleto = `${ci} ${formInscripcion.expedido}`;
 
     try {
-      const res = await fetch('http://localhost:8000/api/v1/estudiantes', {
+      const res = await fetch('/api/v1/estudiantes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
@@ -291,7 +291,7 @@ export default function IndexPage() {
     }
 
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/estudiantes?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`/api/v1/estudiantes?q=${encodeURIComponent(q)}`);
       if (!res.ok) throw new Error('No se pudo verificar la inscripción');
       const json = await res.json();
       const lista = json.data || [];

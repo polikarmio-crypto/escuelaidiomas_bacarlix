@@ -7,14 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\Docente;
 use App\Models\AsignacionDocenteParalelo;
 use App\Models\Paralelo;
+use App\Services\AuditLogger;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DocenteController extends Controller
 {
-    /**
-     * Lista todos los docentes con sus idiomas habilitados y estado de rotación
-     */
     public function index()
     {
         $docentes = Docente::with(['idiomas', 'asignacionActiva.paralelo.nivel.programa.idioma'])->get();
@@ -41,9 +39,6 @@ class DocenteController extends Controller
         return response()->json($data);
     }
 
-    /**
-     * Alerta del Estado Mayor: Docentes que alcanzaron 14 o 15 días continuos en aula
-     */
     public function alertarRotaciones()
     {
         $asignaciones = AsignacionDocenteParalelo::with(['docente', 'paralelo.nivel.programa.idioma'])
@@ -69,9 +64,6 @@ class DocenteController extends Controller
         ]);
     }
 
-    /**
-     * Ejecución de Rotación Docente (Cierra ciclo del saliente y asigna docente entrante)
-     */
     public function rotarDocente(Request $request)
     {
         $validated = $request->validate([
@@ -83,30 +75,38 @@ class DocenteController extends Controller
             $paralelo = Paralelo::with('nivel.programa.idioma')->findOrFail($validated['id_paralelo']);
             $idIdiomaRequerido = $paralelo->nivel->programa->id_idioma;
 
-            // Validar que el docente nuevo tenga la competencia del idioma
             $tieneIdioma = DB::table('docente_idioma')
                 ->where('id_docente', $validated['id_docente_nuevo'])
                 ->where('id_idioma', $idIdiomaRequerido)
                 ->exists();
 
             if (!$tieneIdioma) {
+                AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'ROTACION_FALLIDA_IDIOMA_NO_HABILITADO', [
+                    'id_paralelo' => $validated['id_paralelo'],
+                    'id_docente' => $validated['id_docente_nuevo'],
+                ], null, 'asignacion_docente_paralelo');
+
                 return response()->json([
                     'error' => 'El docente seleccionado no cuenta con la habilitación idiomática requerida para este paralelo.'
                 ], 422);
             }
 
-            // Cerrar asignación anterior
             AsignacionDocenteParalelo::where('id_paralelo', $validated['id_paralelo'])
                 ->whereNull('fecha_fin_asignacion')
                 ->update(['fecha_fin_asignacion' => Carbon::now()->toDateString()]);
 
-            // Crear nueva asignación con inicio hoy
             $nuevaAsignacion = AsignacionDocenteParalelo::create([
                 'id_paralelo' => $validated['id_paralelo'],
                 'id_docente' => $validated['id_docente_nuevo'],
                 'fecha_inicio_asignacion' => Carbon::now()->toDateString(),
                 'fecha_fin_asignacion' => null,
             ]);
+
+            AuditLogger::academico(AuditLogger::LEVEL_INFO, 'ROTACION_DOCENTE_EXITOSA', [
+                'id_paralelo' => $validated['id_paralelo'],
+                'id_docente' => $validated['id_docente_nuevo'],
+                'id_asignacion' => $nuevaAsignacion->id_asignacion,
+            ], null, 'asignacion_docente_paralelo', $nuevaAsignacion->id_asignacion);
 
             return response()->json([
                 'message' => 'Orden de relevo quincenal ejecutada exitosamente.',
@@ -115,9 +115,114 @@ class DocenteController extends Controller
         });
     }
 
-    /**
-     * Registro de nuevo docente
-     */
+    public function asignacionAutomatica(Request $request)
+    {
+        return DB::transaction(function () {
+            $paralelosSinDocente = Paralelo::with(['nivel.programa.idioma', 'horario', 'aula'])
+                ->where('estado_paralelo', 'Activo')
+                ->whereDoesntHave('asignacionesDocente', function ($q) {
+                    $q->whereNull('fecha_fin_asignacion');
+                })
+                ->get();
+
+            if ($paralelosSinDocente->isEmpty()) {
+                return response()->json([
+                    'message' => 'Todos los paralelos activos ya cuentan con docentes asignados.',
+                    'total_asignados' => 0,
+                    'asignaciones' => [],
+                ]);
+            }
+
+            $docentesActivos = Docente::with('idiomas')
+                ->where('estado_docente', 'Activo')
+                ->get();
+
+            $aulas = DB::table('aula')->where('estado_aula', 'Activo')->get();
+
+            $asignacionesRealizadas = [];
+
+            foreach ($paralelosSinDocente as $paralelo) {
+                $idIdioma = $paralelo->nivel->programa->id_idioma;
+
+                $candidatos = $docentesActivos->filter(function ($doc) use ($idIdioma) {
+                    return $doc->idiomas->contains('id_idioma', $idIdioma);
+                });
+
+                if ($candidatos->isEmpty()) {
+                    continue;
+                }
+
+                $docenteSeleccionado = null;
+                $menorCarga = PHP_INT_MAX;
+
+                foreach ($candidatos as $doc) {
+                    $carga = AsignacionDocenteParalelo::where('id_docente', $doc->id_docente)
+                        ->whereNull('fecha_fin_asignacion')
+                        ->count();
+
+                    $conflictoHorario = AsignacionDocenteParalelo::where('id_docente', $doc->id_docente)
+                        ->whereNull('fecha_fin_asignacion')
+                        ->whereHas('paralelo', function ($pq) use ($paralelo) {
+                            $pq->where('id_horario', $paralelo->id_horario);
+                        })
+                        ->exists();
+
+                    if (!$conflictoHorario && $carga < $menorCarga) {
+                        $menorCarga = $carga;
+                        $docenteSeleccionado = $doc;
+                    }
+                }
+
+                if (!$docenteSeleccionado) {
+                    $docenteSeleccionado = $candidatos->first();
+                }
+
+                if (!$paralelo->id_aula && $aulas->isNotEmpty()) {
+                    $aulaDisponible = $aulas->first(function ($a) use ($paralelo) {
+                        return !Paralelo::where('id_aula', $a->id_aula)
+                            ->where('id_horario', $paralelo->id_horario)
+                            ->where('estado_paralelo', 'Activo')
+                            ->exists();
+                    });
+
+                    if ($aulaDisponible) {
+                        $paralelo->update(['id_aula' => $aulaDisponible->id_aula]);
+                    }
+                }
+
+                $asignacion = AsignacionDocenteParalelo::create([
+                    'id_paralelo' => $paralelo->id_paralelo,
+                    'id_docente' => $docenteSeleccionado->id_docente,
+                    'fecha_inicio_asignacion' => Carbon::now()->toDateString(),
+                    'fecha_fin_asignacion' => null,
+                ]);
+
+                AuditLogger::academico(AuditLogger::LEVEL_INFO, 'ASIGNACION_AUTOMATICA_DOCENTE', [
+                    'id_paralelo' => $paralelo->id_paralelo,
+                    'codigo_paralelo' => $paralelo->codigo_paralelo,
+                    'id_docente' => $docenteSeleccionado->id_docente,
+                    'nombre_docente' => "{$docenteSeleccionado->nombre_docente} {$docenteSeleccionado->apellido_docente}",
+                    'idioma' => $paralelo->nivel->programa->idioma->nombre_idioma,
+                ], null, 'asignacion_docente_paralelo', $asignacion->id_asignacion);
+
+                $asignacionesRealizadas[] = [
+                    'id_asignacion' => $asignacion->id_asignacion,
+                    'paralelo' => $paralelo->codigo_paralelo,
+                    'idioma' => $paralelo->nivel->programa->idioma->nombre_idioma,
+                    'docente' => "{$docenteSeleccionado->nombre_docente} {$docenteSeleccionado->apellido_docente}",
+                    'aula' => $paralelo->aula ? $paralelo->aula->nombre_aula : 'Aula Asignada',
+                    'fecha_inicio' => $asignacion->fecha_inicio_asignacion->toDateString(),
+                ];
+            }
+
+            return response()->json([
+                'message' => 'Proceso de asignación docente automatizada concluido satisfactoriamente.',
+                'total_asignados' => count($asignacionesRealizadas),
+                'asignaciones' => $asignacionesRealizadas,
+            ]);
+        });
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -141,6 +246,12 @@ class DocenteController extends Controller
             ]);
 
             $doc->idiomas()->sync($validated['idiomas_ids']);
+
+            AuditLogger::academico(AuditLogger::LEVEL_INFO, 'DOCENTE_CREADO', [
+                'id_docente' => $doc->id_docente,
+                'nombre' => "{$doc->nombre_docente} {$doc->apellido_docente}",
+            ], null, 'docente', $doc->id_docente);
+
             return $doc;
         });
 
@@ -153,9 +264,6 @@ class DocenteController extends Controller
         return response()->json($docente);
     }
 
-    /**
-     * Actualización de datos del docente (CRUD - Update)
-     */
     public function update(Request $request, $id)
     {
         $docente = Docente::findOrFail($id);
@@ -175,6 +283,10 @@ class DocenteController extends Controller
             if (isset($validated['idiomas_ids'])) {
                 $docente->idiomas()->sync($validated['idiomas_ids']);
             }
+
+            AuditLogger::academico(AuditLogger::LEVEL_INFO, 'DOCENTE_ACTUALIZADO', [
+                'id_docente' => $docente->id_docente,
+            ], null, 'docente', $docente->id_docente);
         });
 
         return response()->json([
@@ -183,14 +295,16 @@ class DocenteController extends Controller
         ]);
     }
 
-    /**
-     * Baja Lógica (Desactivación del docente)
-     */
     public function bajaLogica($id)
     {
         $docente = Docente::findOrFail($id);
         $nuevoEstado = ($docente->estado_docente === 'Activo') ? 'Inactivo' : 'Activo';
         $docente->update(['estado_docente' => $nuevoEstado]);
+
+        AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'DOCENTE_ESTADO_CAMBIADO', [
+            'id_docente' => $docente->id_docente,
+            'nuevo_estado' => $nuevoEstado,
+        ], null, 'docente', $docente->id_docente);
 
         return response()->json([
             'message' => "Baja lógica procesada: Docente {$docente->nombre_docente} cambiado a estado {$nuevoEstado}.",
@@ -198,9 +312,6 @@ class DocenteController extends Controller
         ]);
     }
 
-    /**
-     * Baja Física (Eliminación definitiva tras confirmación militar)
-     */
     public function destroy($id)
     {
         $docente = Docente::withTrashed()->findOrFail($id);
@@ -211,6 +322,10 @@ class DocenteController extends Controller
             AsignacionDocenteParalelo::where('id_docente', $docente->id_docente)->delete();
             $docente->forceDelete();
         });
+
+        AuditLogger::academico(AuditLogger::LEVEL_CRITICAL, 'DOCENTE_ELIMINADO_DEFINITIVO', [
+            'nombre' => $nombre,
+        ], null, 'docente');
 
         return response()->json([
             'message' => "Baja física definitiva ejecutada para el docente {$nombre}."

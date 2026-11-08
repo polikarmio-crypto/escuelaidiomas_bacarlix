@@ -3,17 +3,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Package,
-  Shield,
   Search,
-  Filter,
   AlertTriangle,
   CheckCircle2,
   Plus,
-  ArrowDownRight,
-  ArrowUpRight,
-  BookOpen,
-  FileText,
-  Truck,
   RefreshCw,
   ShieldAlert,
   X,
@@ -23,6 +16,7 @@ import {
 import { useAuthRole } from '@/context/AuthRoleContext';
 
 const PER_PAGE = 10;
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
 
 export default function AlmacenPage() {
   const { esAlmacenero, esAdmin, rolConfig } = useAuthRole();
@@ -47,7 +41,7 @@ export default function AlmacenPage() {
     id_almacen_libro: 1,
     tipo: 'Salida' as 'Entrada' | 'Salida',
     cantidad: 10,
-    motivo: 'Entrega por apertura de paralelo académico',
+    motivo: 'Entrega para inicio de ciclo académico',
   });
 
   const [formPed, setFormPed] = useState({
@@ -64,30 +58,33 @@ export default function AlmacenPage() {
     setLoading(true);
     try {
       const [resStock, resRop, resPed] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/almacen/stock'),
-        fetch('http://localhost:8000/api/v1/almacen/alertas-rop'),
-        fetch('http://localhost:8000/api/v1/almacen/pedidos'),
+        fetch(`${API_BASE}/almacen/stock`).catch(() => null),
+        fetch(`${API_BASE}/almacen/alertas-rop`).catch(() => null),
+        fetch(`${API_BASE}/almacen/pedidos`).catch(() => null),
       ]);
 
-      if (resStock.ok) {
+      if (resStock && resStock.ok) {
         const dataS = await resStock.json();
-        setInventario(dataS.inventario || []);
+        const inv = dataS.inventario || [];
+        setInventario(inv);
         setResumen(dataS.resumen);
-        if (dataS.inventario?.length > 0 && formMov.id_almacen_libro === 1) {
-          setFormMov((f) => ({ ...f, id_almacen_libro: dataS.inventario[0].id_almacen_libro }));
-          setFormPed((f) => ({ ...f, id_almacen_libro: dataS.inventario[0].id_almacen_libro }));
+        if (inv.length > 0 && formMov.id_almacen_libro === 1) {
+          setFormMov((f) => ({ ...f, id_almacen_libro: inv[0].id_almacen_libro }));
+          setFormPed((f) => ({ ...f, id_almacen_libro: inv[0].id_almacen_libro }));
         }
       }
-      if (resRop.ok) {
+
+      if (resRop && resRop.ok) {
         const dataR = await resRop.json();
         setAlertasRop(dataR.alertas || []);
       }
-      if (resPed.ok) {
+
+      if (resPed && resPed.ok) {
         const dataP = await resPed.json();
-        setPedidos(dataP || []);
+        const listaPedidos = Array.isArray(dataP) ? dataP : (dataP.data || []);
+        setPedidos(listaPedidos);
       }
     } catch (e) {
-      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -100,7 +97,7 @@ export default function AlmacenPage() {
   const handleRegistrarMovimiento = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/v1/almacen/movimiento', {
+      const res = await fetch(`${API_BASE}/almacen/movimiento`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -111,9 +108,9 @@ export default function AlmacenPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al procesar movimiento de kardex.');
+      if (!res.ok) throw new Error(data.error || 'Error al procesar movimiento de inventario.');
 
-      mostrarMensaje('ok', data.message || 'Movimiento de inventario registrado.');
+      mostrarMensaje('ok', data.message || 'Movimiento de inventario registrado correctamente.');
       setModalMovimiento(false);
       cargarDatosAlmacen();
     } catch (err: any) {
@@ -124,7 +121,7 @@ export default function AlmacenPage() {
   const handleCrearPedido = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:8000/api/v1/almacen/pedidos', {
+      const res = await fetch(`${API_BASE}/almacen/pedidos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -135,7 +132,7 @@ export default function AlmacenPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al solicitar pedido de reposición.');
 
-      mostrarMensaje('ok', data.message);
+      mostrarMensaje('ok', data.message || 'Solicitud de reposición registrada.');
       setModalPedido(false);
       cargarDatosAlmacen();
     } catch (err: any) {
@@ -144,14 +141,14 @@ export default function AlmacenPage() {
   };
 
   const handleRecibirPedido = async (id: number) => {
-    if (!confirm('¿Confirma la recepción física del pedido? El stock actual se incrementará automáticamente.')) return;
+    if (!confirm('¿Confirma la recepción física del lote? Las existencias se incrementarán automáticamente.')) return;
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/almacen/pedidos/${id}/recibir`, {
+      const res = await fetch(`${API_BASE}/almacen/pedidos/${id}/recibir`, {
         method: 'PUT',
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al recepcionar pedido.');
-      mostrarMensaje('ok', data.message);
+      mostrarMensaje('ok', data.message || 'Lote recepcionado.');
       cargarDatosAlmacen();
     } catch (err: any) {
       mostrarMensaje('error', err.message);
@@ -180,11 +177,12 @@ export default function AlmacenPage() {
     return inventarioFiltrado.slice(start, start + PER_PAGE);
   }, [inventarioFiltrado, pageStock]);
 
-  const totalPagesPedidos = Math.max(1, Math.ceil(pedidos.length / PER_PAGE));
+  const pedidosValidos = useMemo(() => Array.isArray(pedidos) ? pedidos : [], [pedidos]);
+  const totalPagesPedidos = Math.max(1, Math.ceil(pedidosValidos.length / PER_PAGE));
   const pedidosPaginados = useMemo(() => {
     const start = (pagePedidos - 1) * PER_PAGE;
-    return pedidos.slice(start, start + PER_PAGE);
-  }, [pedidos, pagePedidos]);
+    return pedidosValidos.slice(start, start + PER_PAGE);
+  }, [pedidosValidos, pagePedidos]);
 
   if (!puedeOperarAlmacen) {
     return (
@@ -193,9 +191,9 @@ export default function AlmacenPage() {
           <ShieldAlert className="w-16 h-16 text-red-500 mx-auto" />
           <h2 className="text-2xl font-bold text-white">Acceso Restringido</h2>
           <p className="text-neutral-300 max-w-xl mx-auto">
-            La administración de existencias de material bibliográfico y control de ROP corresponde exclusivamente al{' '}
+            La administración de existencias de material bibliográfico corresponde exclusivamente al{' '}
             <strong className="text-pink-400">Encargado de Almacén</strong>.
-            Tu rol activo es <span className="px-2 py-0.5 rounded bg-neutral-800 text-amber-400 font-semibold">{rolConfig.titulo}</span>.
+            Rol actual: <span className="px-2 py-0.5 rounded bg-neutral-800 text-amber-400 font-semibold">{rolConfig.titulo}</span>.
           </p>
         </div>
       </div>
@@ -216,7 +214,7 @@ export default function AlmacenPage() {
               <span className="text-pink-400 font-semibold">Almacén</span>
             </div>
             <h1 className="text-xl md:text-2xl font-extrabold text-white">
-              Inventario de Textos y Control de Stock
+              Inventario de Textos y Control de Existencias
             </h1>
           </div>
         </div>
@@ -254,24 +252,24 @@ export default function AlmacenPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
         <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
-          <span className="text-neutral-400 text-[11px] block truncate">Títulos en Catálogo</span>
+          <span className="text-neutral-400 text-[11px] block truncate">Títulos Registrados</span>
           <p className="text-xl font-bold font-mono text-white mt-0.5">{resumen?.total_titulos || 0}</p>
-          <span className="text-[10px] text-neutral-500">Registrados</span>
+          <span className="text-[10px] text-neutral-500">En catálogo</span>
         </div>
         <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
-          <span className="text-neutral-400 text-[11px] block truncate">Stock Total Físico</span>
+          <span className="text-neutral-400 text-[11px] block truncate">Stock Físico Total</span>
           <p className="text-xl font-bold font-mono text-sky-400 mt-0.5">{resumen?.total_unidades || 0}</p>
-          <span className="text-[10px] text-neutral-500">Libros disponibles</span>
+          <span className="text-[10px] text-neutral-500">Unidades en depósito</span>
         </div>
         <div className="bg-neutral-900/60 border border-amber-500/30 p-2.5 rounded-lg">
-          <span className="text-amber-400 text-[11px] font-semibold block truncate">Bajo Punto ROP</span>
+          <span className="text-amber-400 text-[11px] font-semibold block truncate">Por Reabastecer</span>
           <p className="text-xl font-bold font-mono text-amber-400 mt-0.5">{resumen?.bajo_rop || 0}</p>
-          <span className="text-[10px] text-neutral-400">Requiere reposición</span>
+          <span className="text-[10px] text-neutral-400">Próximos al umbral</span>
         </div>
         <div className="bg-neutral-900/60 border border-red-500/30 p-2.5 rounded-lg">
-          <span className="text-red-400 text-[11px] font-semibold block truncate">Stock Crítico (Mín.)</span>
+          <span className="text-red-400 text-[11px] font-semibold block truncate">Nivel Crítico</span>
           <p className="text-xl font-bold font-mono text-red-400 mt-0.5">{resumen?.alerta_critica || 0}</p>
-          <span className="text-[10px] text-neutral-400">Bajo stock mínimo</span>
+          <span className="text-[10px] text-neutral-400">Bajo existencia mínima</span>
         </div>
       </div>
 
@@ -282,7 +280,7 @@ export default function AlmacenPage() {
             tab === 'stock' ? 'bg-pink-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'
           }`}
         >
-          Inventario Físico ({inventario.length})
+          Inventario de Textos ({inventario.length})
         </button>
         <button
           onClick={() => setTab('alertas')}
@@ -290,7 +288,7 @@ export default function AlmacenPage() {
             tab === 'alertas' ? 'bg-amber-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'
           }`}
         >
-          Alertas ROP
+          Alertas de Reabastecimiento
           {alertasRop.length > 0 && (
             <span className="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[10px]">
               {alertasRop.length}
@@ -303,7 +301,7 @@ export default function AlmacenPage() {
             tab === 'pedidos' ? 'bg-purple-600 text-white' : 'bg-neutral-900 text-neutral-400 hover:text-white'
           }`}
         >
-          Pedidos de Reposición ({pedidos.length})
+          Órdenes de Reposición ({pedidosValidos.length})
         </button>
       </div>
 
@@ -321,7 +319,7 @@ export default function AlmacenPage() {
               />
             </div>
             <span className="text-xs text-neutral-400">
-              Inventario de textos
+              Control de existencias bibliográficas
             </span>
           </div>
 
@@ -331,10 +329,10 @@ export default function AlmacenPage() {
                 <tr>
                   <th className="p-3">Título / Texto Guía</th>
                   <th className="p-3">Idioma & Nivel</th>
-                  <th className="p-3 text-center">Stock Físico Actual</th>
-                  <th className="p-3 text-center">Punto Reorden (ROP)</th>
+                  <th className="p-3 text-center">Stock Actual</th>
+                  <th className="p-3 text-center">Umbral Reorden</th>
                   <th className="p-3 text-center">Stock Mínimo</th>
-                  <th className="p-3 text-center">Estado ROP</th>
+                  <th className="p-3 text-center">Estado</th>
                   <th className="p-3 text-right">Acción</th>
                 </tr>
               </thead>
@@ -364,7 +362,7 @@ export default function AlmacenPage() {
                         </span>
                       ) : item.requiere_reposicion ? (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                          BAJO ROP
+                          POR REPONER
                         </span>
                       ) : (
                         <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -381,7 +379,7 @@ export default function AlmacenPage() {
                           }}
                           className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-neutral-950 font-bold text-[11px] transition shadow"
                         >
-                          Pedir Reposición
+                          Solicitar Reposición
                         </button>
                       )}
                     </td>
@@ -427,9 +425,9 @@ export default function AlmacenPage() {
           <div className="p-3.5 border-b border-neutral-800 bg-neutral-950 flex items-center justify-between">
             <h3 className="text-xs font-bold text-white flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
-              Alertas de Reorden Generadas Automáticamente
+              Títulos que Requieren Reabastecimiento
             </h3>
-            <span className="text-xs text-neutral-400">{alertasRop.length} alertas activas</span>
+            <span className="text-xs text-neutral-400">{alertasRop.length} alertas registradas</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
@@ -438,7 +436,7 @@ export default function AlmacenPage() {
                   <th className="p-3">Texto Guía</th>
                   <th className="p-3">Idioma</th>
                   <th className="p-3 text-center">Stock Actual</th>
-                  <th className="p-3 text-center">Umbral ROP</th>
+                  <th className="p-3 text-center">Umbral Mínimo</th>
                   <th className="p-3 text-center">Déficit</th>
                   <th className="p-3 text-center">Sugerencia Compra</th>
                   <th className="p-3 text-right">Acción</th>
@@ -461,7 +459,7 @@ export default function AlmacenPage() {
                         }}
                         className="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs"
                       >
-                        Solicitar Pedido
+                        Emitir Orden
                       </button>
                     </td>
                   </tr>
@@ -469,7 +467,7 @@ export default function AlmacenPage() {
                 {alertasRop.length === 0 && (
                   <tr>
                     <td colSpan={7} className="p-8 text-center text-neutral-500">
-                      Todos los títulos se encuentran dentro del rango de stock óptimo.
+                      Todos los títulos se encuentran con existencias suficientes.
                     </td>
                   </tr>
                 )}
@@ -480,14 +478,14 @@ export default function AlmacenPage() {
       )}
 
       {tab === 'pedidos' && (
-        <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl overflow-hidden">
+        <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
           <table className="w-full text-left text-xs">
             <thead className="bg-neutral-950 text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
               <tr>
-                <th className="p-3">ID Pedido</th>
+                <th className="p-3">ID Orden</th>
                 <th className="p-3">Texto Solicitado</th>
                 <th className="p-3 text-center">Cantidad</th>
-                <th className="p-3">Fecha Pedido</th>
+                <th className="p-3">Fecha</th>
                 <th className="p-3 text-center">Estado</th>
                 <th className="p-3 text-right">Acción</th>
               </tr>
@@ -512,25 +510,25 @@ export default function AlmacenPage() {
                         onClick={() => handleRecibirPedido(p.id_pedido)}
                         className="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
                       >
-                        Recibir Lote
+                        Confirmar Ingreso
                       </button>
                     )}
                   </td>
                 </tr>
               ))}
-              {pedidos.length === 0 && !loading && (
+              {pedidosValidos.length === 0 && !loading && (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-neutral-500">
-                    No se han registrado pedidos de reposición.
+                    No se han registrado órdenes de reposición.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
 
-          {pedidos.length > PER_PAGE && (
+          {pedidosValidos.length > PER_PAGE && (
             <div className="flex items-center justify-between p-3 border-t border-neutral-800 text-xs text-neutral-400 bg-neutral-950/40">
-              <span>Página {pagePedidos} de {totalPagesPedidos} ({pedidos.length} pedidos)</span>
+              <span>Página {pagePedidos} de {totalPagesPedidos} ({pedidosValidos.length} órdenes)</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPagePedidos((p) => Math.max(1, p - 1))}
@@ -556,7 +554,7 @@ export default function AlmacenPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-base font-bold text-white">Registrar Movimiento de Almacén</h3>
+              <h3 className="text-base font-bold text-white">Registrar Entrada / Salida de Depósito</h3>
               <button onClick={() => setModalMovimiento(false)} className="text-neutral-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
@@ -564,7 +562,7 @@ export default function AlmacenPage() {
 
             <form onSubmit={handleRegistrarMovimiento} className="space-y-3 text-xs">
               <div>
-                <label className="text-neutral-300 block mb-1">Libro / Texto</label>
+                <label className="text-neutral-300 block mb-1">Texto Guía</label>
                 <select
                   value={formMov.id_almacen_libro}
                   onChange={(e) => setFormMov({ ...formMov, id_almacen_libro: parseInt(e.target.value) || 1 })}
@@ -572,14 +570,14 @@ export default function AlmacenPage() {
                 >
                   {inventario.map((i) => (
                     <option key={i.id_almacen_libro} value={i.id_almacen_libro}>
-                      {i.libro} ({i.idioma}) — Stock: {i.stock_actual}
+                      {i.libro} ({i.idioma}) — Existencias: {i.stock_actual}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-neutral-300 block mb-1">Tipo de Movimiento</label>
+                <label className="text-neutral-300 block mb-1">Tipo de Operación</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -588,7 +586,7 @@ export default function AlmacenPage() {
                       formMov.tipo === 'Salida' ? 'bg-red-600 text-white border-red-500' : 'bg-neutral-950 text-neutral-400 border-neutral-800'
                     }`}
                   >
-                    Salida (Entrega / Paralelo)
+                    Salida (Entrega)
                   </button>
                   <button
                     type="button"
@@ -597,13 +595,13 @@ export default function AlmacenPage() {
                       formMov.tipo === 'Entrada' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-neutral-950 text-neutral-400 border-neutral-800'
                     }`}
                   >
-                    Entrada (Abastecimiento)
+                    Entrada (Ingreso)
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="text-neutral-300 block mb-1">Cantidad de Unidades</label>
+                <label className="text-neutral-300 block mb-1">Cantidad de Ejemplares</label>
                 <input
                   type="number"
                   min="1"
@@ -619,7 +617,7 @@ export default function AlmacenPage() {
                 <label className="text-neutral-300 block mb-1">Motivo / Justificación</label>
                 <input
                   type="text"
-                  placeholder="Ej: Apertura de paralelo ING-101-A"
+                  placeholder="Ej: Asignación a paralelo académico"
                   value={formMov.motivo}
                   onChange={(e) => setFormMov({ ...formMov, motivo: e.target.value })}
                   className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
@@ -639,7 +637,7 @@ export default function AlmacenPage() {
                   type="submit"
                   className="px-4 py-1.5 rounded bg-pink-600 hover:bg-pink-500 text-white font-bold transition shadow"
                 >
-                  Registrar Movimiento
+                  Registrar en Inventario
                 </button>
               </div>
             </form>
@@ -651,7 +649,7 @@ export default function AlmacenPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-base font-bold text-white">Generar Solicitud de Reposición</h3>
+              <h3 className="text-base font-bold text-white">Solicitud de Reposición</h3>
               <button onClick={() => setModalPedido(false)} className="text-neutral-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
@@ -659,7 +657,7 @@ export default function AlmacenPage() {
 
             <form onSubmit={handleCrearPedido} className="space-y-3 text-xs">
               <div>
-                <label className="text-neutral-300 block mb-1">Texto a Reponer</label>
+                <label className="text-neutral-300 block mb-1">Texto a Solicitar</label>
                 <select
                   value={formPed.id_almacen_libro}
                   onChange={(e) => setFormPed({ ...formPed, id_almacen_libro: parseInt(e.target.value) || 1 })}
@@ -667,14 +665,14 @@ export default function AlmacenPage() {
                 >
                   {inventario.map((i) => (
                     <option key={i.id_almacen_libro} value={i.id_almacen_libro}>
-                      {i.libro} — Stock: {i.stock_actual} / ROP: {i.punto_reorden_rop}
+                      {i.libro} — Stock: {i.stock_actual}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-neutral-300 block mb-1">Cantidad a Solicitar</label>
+                <label className="text-neutral-300 block mb-1">Cantidad Requerida</label>
                 <input
                   type="number"
                   min="10"
@@ -699,7 +697,7 @@ export default function AlmacenPage() {
                   type="submit"
                   className="px-4 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold transition shadow"
                 >
-                  Emitir Orden a Proveedor
+                  Emitir Orden
                 </button>
               </div>
             </form>

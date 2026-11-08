@@ -6,13 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Módulo 9: Gestión de Almacén e Inventario de Libros (5NF Normalization + ROP/EOQ)
-     * almacen_libro, movimiento_almacen, pedido_reposicion
-     */
+
     public function up(): void
     {
-        // 1.24 ALMACÉN_LIBRO (Control de stock físico, ROP, Mínimos y Máximos)
+
         Schema::create('almacen_libro', function (Blueprint $table) {
             $table->id('id_almacen_libro');
             $table->foreignId('id_libro')->unique()->constrained('libro', 'id_libro')->onDelete('restrict')->onUpdate('cascade');
@@ -22,11 +19,9 @@ return new class extends Migration
             $table->smallInteger('stock_maximo_almacen')->default(100)->comment('Capacidad máxima de almacenaje del ítem');
             $table->timestamps();
 
-            // Índice para filtrado ultrarrápido de alertas de desabastecimiento ROP
             $table->index(['stock_actual_almacen', 'punto_reorden_almacen'], 'idx_almacen_alerta_rop');
         });
 
-        // 1.25 MOVIMIENTO_ALMACÉN (Kardex transaccional de entradas y salidas)
         Schema::create('movimiento_almacen', function (Blueprint $table) {
             $table->id('id_movimiento');
             $table->foreignId('id_almacen_libro')->constrained('almacen_libro', 'id_almacen_libro')->onDelete('cascade')->onUpdate('cascade');
@@ -40,7 +35,6 @@ return new class extends Migration
             $table->index(['id_almacen_libro', 'tipo_movimiento', 'fecha_movimiento'], 'idx_movimiento_kardex');
         });
 
-        // 1.26 PEDIDO_REPOSICIÓN (Solicitudes de compra o abastecimiento a proveedores)
         Schema::create('pedido_reposicion', function (Blueprint $table) {
             $table->id('id_pedido');
             $table->foreignId('id_almacen_libro')->constrained('almacen_libro', 'id_almacen_libro')->onDelete('cascade')->onUpdate('cascade');

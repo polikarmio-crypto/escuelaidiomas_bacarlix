@@ -21,7 +21,9 @@ import {
   ShieldAlert,
   ArrowRightLeft,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Wand2,
+  Check
 } from 'lucide-react';
 import { useAuthRole } from '@/context/AuthRoleContext';
 
@@ -48,6 +50,31 @@ export default function DocentesPage() {
   const [modalRotar, setModalRotar] = useState(false);
   const [paraleloARotar, setParaleloARotar] = useState<any | null>(null);
   const [docenteNuevoId, setDocenteNuevoId] = useState<string>('');
+  const [ejecutandoAsignacion, setEjecutandoAsignacion] = useState(false);
+  const [resultadoAsignacion, setResultadoAsignacion] = useState<any | null>(null);
+  const [modalResultadoAsignacion, setModalResultadoAsignacion] = useState(false);
+
+  const ejecutarAsignacionAutomatica = async () => {
+    setEjecutandoAsignacion(true);
+    try {
+      const res = await fetch('/api/v1/docentes/asignacion-automatica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResultadoAsignacion(data);
+        setModalResultadoAsignacion(true);
+        cargarDatos();
+      } else {
+        mostrarMensaje('error', data.error || 'Error al ejecutar asignación automática.');
+      }
+    } catch (e) {
+      mostrarMensaje('error', 'Error de conexión con el servidor.');
+    } finally {
+      setEjecutandoAsignacion(false);
+    }
+  };
 
   const [formDoc, setFormDoc] = useState({
     ci_docente: '',
@@ -68,10 +95,10 @@ export default function DocentesPage() {
     setLoading(true);
     try {
       const [resDoc, resAlertas, resIdm, resPar] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/docentes'),
-        fetch('http://localhost:8000/api/v1/docentes/alertas/rotacion'),
-        fetch('http://localhost:8000/api/v1/catalogos/idiomas'),
-        fetch('http://localhost:8000/api/v1/paralelos'),
+        fetch('/api/v1/docentes'),
+        fetch('/api/v1/docentes/alertas/rotacion'),
+        fetch('/api/v1/catalogos/idiomas'),
+        fetch('/api/v1/paralelos'),
       ]);
 
       if (resDoc.ok) setDocentes(await resDoc.json() || []);
@@ -111,8 +138,8 @@ export default function DocentesPage() {
     e.preventDefault();
     try {
       const url = modoEdicion
-        ? `http://localhost:8000/api/v1/docentes/${idDocenteSeleccionado}`
-        : 'http://localhost:8000/api/v1/docentes';
+        ? `/api/v1/docentes/${idDocenteSeleccionado}`
+        : '/api/v1/docentes';
       const method = modoEdicion ? 'PUT' : 'POST';
 
       const res = await fetch(url, {
@@ -137,7 +164,7 @@ export default function DocentesPage() {
     if (!paraleloARotar || !docenteNuevoId) return;
 
     try {
-      const res = await fetch('http://localhost:8000/api/v1/docentes/rotar', {
+      const res = await fetch('/api/v1/docentes/rotar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -219,6 +246,15 @@ export default function DocentesPage() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Sincronizar
+          </button>
+          <button
+            onClick={ejecutarAsignacionAutomatica}
+            disabled={ejecutandoAsignacion || !puedeAdministrar}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition shadow-md shadow-amber-600/20"
+            title="Asigna automáticamente docentes a paralelos sin docente según especialidad y carga lectiva"
+          >
+            <Wand2 className={`w-3.5 h-3.5 ${ejecutandoAsignacion ? 'animate-spin' : ''}`} />
+            <span>{ejecutandoAsignacion ? 'Asignando...' : 'Asignación Automática'}</span>
           </button>
           <button
             onClick={abrirModalNuevo}
@@ -571,6 +607,63 @@ export default function DocentesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {modalResultadoAsignacion && resultadoAsignacion && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-amber-500/40 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-white animate-solemn-fade">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2 text-amber-400">
+                <Wand2 className="w-5 h-5" />
+                <h3 className="font-bold text-base">Asignación Automatizada de Periodo</h3>
+              </div>
+              <button
+                onClick={() => setModalResultadoAsignacion(false)}
+                className="text-neutral-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-300">
+              {resultadoAsignacion.message}
+            </p>
+
+            <div className="bg-neutral-950 p-4 rounded-lg border border-neutral-800 space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-neutral-400 font-semibold">Total Asignaciones Realizadas:</span>
+                <span className="text-emerald-400 font-bold text-sm">{resultadoAsignacion.total_asignados}</span>
+              </div>
+
+              {resultadoAsignacion.asignaciones && resultadoAsignacion.asignaciones.length > 0 && (
+                <div className="mt-3 space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {resultadoAsignacion.asignaciones.map((asig: any, idx: number) => (
+                    <div key={idx} className="p-2.5 rounded bg-neutral-900 border border-neutral-800 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-amber-300">{asig.paralelo} ({asig.idioma})</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+                          {asig.aula}
+                        </span>
+                      </div>
+                      <div className="text-neutral-300 mt-1">
+                        Docente: <strong className="text-white">{asig.docente}</strong>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setModalResultadoAsignacion(false)}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition"
+              >
+                Entendido
+              </button>
+            </div>
           </div>
         </div>
       )}

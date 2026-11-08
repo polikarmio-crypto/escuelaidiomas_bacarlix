@@ -33,9 +33,6 @@ class AlmacenLibro extends Model
         return $this->hasMany(PedidoReposicion::class, 'id_almacen_libro', 'id_almacen_libro');
     }
 
-    /**
-     * Scope para filtrar libros bajo Punto de Reorden (ROP crítico)
-     */
     public function scopeBajoPuntoReorden($query)
     {
         return $query->whereColumn('stock_actual_almacen', '<=', 'punto_reorden_almacen');
