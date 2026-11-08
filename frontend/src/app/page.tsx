@@ -225,7 +225,7 @@ export default function IndexPage() {
     const ciCompleto = `${ci} ${formInscripcion.expedido}`;
 
     try {
-      const res = await fetch('http://localhost:8000/api/v1/estudiantes', {
+      const res = await fetch('/api/v1/estudiantes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
@@ -291,7 +291,7 @@ export default function IndexPage() {
     }
 
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/estudiantes?q=${encodeURIComponent(q)}`);
+      const res = await fetch(`/api/v1/estudiantes?q=${encodeURIComponent(q)}`);
       if (!res.ok) throw new Error('No se pudo verificar la inscripción');
       const json = await res.json();
       const lista = json.data || [];
@@ -450,19 +450,6 @@ export default function IndexPage() {
                   <Moon className="w-4 h-4 text-amber-300" />
                 )}
               </button>
-
-              <Link
-                href="/dashboard"
-                className={`hidden sm:inline-flex whitespace-nowrap items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition shrink-0 ${
-                  theme === 'light'
-                    ? 'bg-white border-amber-500/40 text-slate-800 hover:bg-slate-100 shadow-sm'
-                    : 'bg-[#0f1d33] border-amber-500/40 text-amber-300 hover:bg-[#162a4a]'
-                }`}
-                title="Iniciar Sesión o Registro"
-              >
-                <LogIn className="w-3.5 h-3.5 text-amber-500" />
-                <span>Ingresar</span>
-              </Link>
 
               <Link
                 href="/dashboard"

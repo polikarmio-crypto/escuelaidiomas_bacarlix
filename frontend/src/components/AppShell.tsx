@@ -108,10 +108,11 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/estudiantes', label: 'Estudiantes', icon: Users },
   { href: '/paralelos', label: 'Paralelos', icon: Layers },
   { href: '/inscripciones', label: 'Inscripciones', icon: ClipboardEdit },
+  { href: '/asistencia', label: 'Control de Asistencia', icon: UserCheck },
   { href: '/calificaciones', label: 'Calificaciones', icon: Award },
   { href: '/cajas', label: 'Cajas y Recaudaciones', icon: Landmark },
   { href: '/almacen', label: 'Almacén de Libros', icon: Package },
-  { href: '/metodos-numericos', label: 'Analítica y Métodos', icon: LineChart },
+  { href: '/metodos-numericos', label: 'Modelos y Proyecciones', icon: LineChart },
 ];
 
 export type ThemeMode = 'dark' | 'light' | 'high-contrast';
@@ -297,6 +298,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     const rolDetectado = detectarRolPorEmail(emailTrim);
     const config = ROLES_CONFIG[rolDetectado];
+    if (typeof window !== 'undefined' && window.navigator && 'credentials' in window.navigator) {
+      try {
+        (window.navigator as any).credentials?.preventSilentAccess?.();
+      } catch (e) {}
+    }
+    setLoginPassword('');
     triggerCurtain(`Acceso Concedido: ${config.titulo}`, Shield, () => {
       cambiarRol(rolDetectado);
       setDemoAuth(true);
@@ -396,11 +403,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     triggerCurtain('Cierre de Sesión Operativa', LogOut, () => {
       setDemoAuth(false);
       setLoginEmail('');
+      setLoginPassword('');
       setLoginEmailError(null);
       try {
-        localStorage.removeItem('eie_auth');
-        localStorage.removeItem('eie_role');
-        localStorage.removeItem('eie_email');
+        localStorage.clear();
+        sessionStorage.clear();
       } catch (e) {}
       signOut({ redirect: false });
       router.push('/');
@@ -480,6 +487,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="login-card animate-solemn-fade" style={{ maxWidth: '580px', width: '100%' }}>
             <div className="tricolor-stripe" />
 
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                title="Volver a la vista anterior"
+              >
+                <ArrowLeft size={14} />
+                <span>Volver atrás</span>
+              </button>
+              <Link
+                href="/"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--military-gold-primary)', fontWeight: 600, textDecoration: 'none' }}
+                title="Regresar a la portada principal"
+              >
+                <Home size={14} />
+                <span>Volver a la página de inicio</span>
+              </Link>
+            </div>
+
             <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
               <img
                 src="/images/logos/logo-eie.png"
@@ -502,54 +530,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginBottom: '1.25rem', background: 'var(--bg-surface-elevated)', padding: '0.3rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-              <button
-                type="button"
-                onClick={() => { setAuthTab('login'); setLoginEmailError(null); }}
-                className="btn"
-                style={{
-                  padding: '0.55rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  background: authTab === 'login' ? '#15803d' : 'transparent',
-                  color: authTab === 'login' ? '#ffffff' : 'var(--text-muted)',
-                  border: authTab === 'login' ? '1px solid #16a34a' : 'none',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <LogIn size={14} />
-                <span>Iniciar Sesión</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAuthTab('registro'); setRegErrors({}); }}
-                className="btn"
-                style={{
-                  padding: '0.55rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  background: authTab === 'registro' ? '#b91c1c' : 'transparent',
-                  color: authTab === 'registro' ? '#ffffff' : 'var(--text-muted)',
-                  border: authTab === 'registro' ? '1px solid #dc2626' : 'none',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <UserPlus size={14} />
-                <span>Registrar Nueva Cuenta</span>
-              </button>
-            </div>
+
 
             {isAuthenticating ? (
               <div className="military-loader animate-solemn-fade">
@@ -571,18 +552,31 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             ) : authTab === 'login' ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} className="animate-solemn-fade">
-                <form onSubmit={handleDemoLogin} style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <form onSubmit={handleDemoLogin} autoComplete="off" data-form-type="other" noValidate style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }} aria-hidden="true">
+                    <input type="text" name="fake_username_remember" tabIndex={-1} autoComplete="off" />
+                    <input type="password" name="fake_password_remember" tabIndex={-1} autoComplete="new-password" />
+                  </div>
+
                   <div>
                     <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.3rem' }}>
                       Correo Institucional o Registrado *
                     </label>
                     <input
                       type="email"
+                      name="modal_access_identity"
+                      id="modal_access_identity"
                       value={loginEmail}
                       onChange={(e) => { setLoginEmail(e.target.value); setLoginEmailError(null); }}
                       placeholder="usuario@idiomas.ejercito.mil.bo o su correo registrado"
                       className="input"
                       required
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
+                      data-lpignore="true"
+                      data-form-type="other"
                       autoFocus
                       style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
                     />
@@ -594,11 +588,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     </label>
                     <input
                       type="password"
+                      name="military_session_auth_modal"
+                      id="military_session_auth_modal"
                       value={loginPassword}
                       onChange={(e) => { setLoginPassword(e.target.value); setLoginEmailError(null); }}
                       placeholder="Contraseña de acceso"
                       className="input"
                       required
+                      autoComplete="new-password"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true"
+                      data-form-type="other"
                       style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
                     />
                   </div>
@@ -613,9 +617,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <button
                     type="submit"
                     className="btn btn-bolivia-green"
-                    style={{ width: '100%', padding: '0.7rem', fontWeight: 700, fontSize: '0.82rem', marginTop: '0.3rem' }}
+                    style={{ width: '100%', padding: '0.75rem', fontWeight: 700, fontSize: '0.85rem', marginTop: '0.3rem' }}
                   >
-                    <UserCheck size={16} /> Ingresar al Sistema SACA
+                    <UserCheck size={16} /> Iniciar Sesión Institucional SACA
                   </button>
                 </form>
 
@@ -656,6 +660,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   </button>
                 </form>
 
+                <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>¿No tiene cuenta de acceso? </span>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthTab('registro'); setRegErrors({}); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--military-gold-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Crear cuenta aquí
+                  </button>
+                </div>
+
                 <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.6rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                     &ldquo;Subordinación y Constancia &bull; ¡Viva Bolivia hacia el mar!&rdquo;
@@ -664,7 +679,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             ) : (
               <div className="animate-solemn-fade">
-                <form onSubmit={handleRegistroSubmit} style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <form onSubmit={handleRegistroSubmit} autoComplete="off" style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   
                   {regSuccess && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontSize: '0.75rem', padding: '0.6rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
@@ -889,6 +904,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <UserPlus size={16} /> Registrar Cuenta Institucional
                   </button>
                 </form>
+
+                <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>¿Ya cuenta con credenciales? </span>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthTab('login'); setLoginEmailError(null); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--military-gold-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Volver al Inicio de Sesión
+                  </button>
+                </div>
               </div>
             )}
           </div>
