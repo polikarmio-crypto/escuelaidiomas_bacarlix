@@ -526,54 +526,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginBottom: '1.25rem', background: 'var(--bg-surface-elevated)', padding: '0.3rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
-              <button
-                type="button"
-                onClick={() => { setAuthTab('login'); setLoginEmailError(null); }}
-                className="btn"
-                style={{
-                  padding: '0.55rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  background: authTab === 'login' ? '#15803d' : 'transparent',
-                  color: authTab === 'login' ? '#ffffff' : 'var(--text-muted)',
-                  border: authTab === 'login' ? '1px solid #16a34a' : 'none',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <LogIn size={14} />
-                <span>Iniciar Sesión</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => { setAuthTab('registro'); setRegErrors({}); }}
-                className="btn"
-                style={{
-                  padding: '0.55rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  background: authTab === 'registro' ? '#b91c1c' : 'transparent',
-                  color: authTab === 'registro' ? '#ffffff' : 'var(--text-muted)',
-                  border: authTab === 'registro' ? '1px solid #dc2626' : 'none',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <UserPlus size={14} />
-                <span>Registrar Nueva Cuenta</span>
-              </button>
-            </div>
+
 
             {isAuthenticating ? (
               <div className="military-loader animate-solemn-fade">
@@ -644,6 +597,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <UserCheck size={16} /> Iniciar Sesión Institucional SACA
                   </button>
                 </form>
+
+                <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>¿No tiene cuenta de acceso? </span>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthTab('registro'); setRegErrors({}); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--military-gold-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Crear cuenta aquí
+                  </button>
+                </div>
 
                 <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.6rem', textAlign: 'center' }}>
                   <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
@@ -878,6 +842,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     <UserPlus size={16} /> Registrar Cuenta Institucional
                   </button>
                 </form>
+
+                <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>¿Ya cuenta con credenciales? </span>
+                  <button
+                    type="button"
+                    onClick={() => { setAuthTab('login'); setLoginEmailError(null); }}
+                    style={{ background: 'none', border: 'none', color: 'var(--military-gold-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Volver al Inicio de Sesión
+                  </button>
+                </div>
               </div>
             )}
           </div>
