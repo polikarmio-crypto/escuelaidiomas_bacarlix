@@ -50,9 +50,13 @@ class DocenteController extends Controller
         })->map(function ($asig) {
             return [
                 'id_asignacion' => $asig->id_asignacion,
-                'paralelo' => $asig->paralelo->codigo_paralelo,
-                'idioma' => $asig->paralelo->nivel->programa->idioma->nombre_idioma,
-                'docente_actual' => "{$asig->docente->nombre_docente} {$asig->docente->apellido_docente}",
+                'id_paralelo' => $asig->id_paralelo,
+                'paralelo' => $asig->paralelo ? $asig->paralelo->codigo_paralelo : 'Sin código',
+                'idioma' => $asig->paralelo && $asig->paralelo->nivel && $asig->paralelo->nivel->programa && $asig->paralelo->nivel->programa->idioma
+                    ? $asig->paralelo->nivel->programa->idioma->nombre_idioma
+                    : 'Inglés',
+                'id_docente' => $asig->id_docente,
+                'docente_actual' => $asig->docente ? "{$asig->docente->nombre_docente} {$asig->docente->apellido_docente}" : 'Sin asignar',
                 'dias_en_aula' => $asig->dias_en_aula,
                 'estado' => $asig->dias_en_aula >= 15 ? 'RELEVO_OBLIGATORIO_CUMPLIDO' : 'RELEVO_INMINENTE_14_DIAS',
             ];
@@ -62,6 +66,114 @@ class DocenteController extends Controller
             'total_alertas' => $alertas->count(),
             'alertas' => $alertas,
         ]);
+    }
+
+    public function rotarTodasPendientes(Request $request)
+    {
+        return DB::transaction(function () {
+            $asignacionesPendientes = AsignacionDocenteParalelo::with(['docente', 'paralelo.nivel.programa.idioma'])
+                ->whereNull('fecha_fin_asignacion')
+                ->get()
+                ->filter(function ($asig) {
+                    return $asig->dias_en_aula >= 14;
+                });
+
+            if ($asignacionesPendientes->isEmpty()) {
+                return response()->json([
+                    'message' => 'No existen rotaciones o relevos de docentes pendientes en este momento.',
+                    'total_rotados' => 0,
+                    'rotaciones' => [],
+                    'no_rotados' => [],
+                ]);
+            }
+
+            $rotacionesRealizadas = [];
+            $noRotados = [];
+
+            $docentesActivos = Docente::with('idiomas')
+                ->where('estado_docente', 'Activo')
+                ->get();
+
+            foreach ($asignacionesPendientes as $asig) {
+                $paralelo = $asig->paralelo;
+                if (!$paralelo || !$paralelo->nivel || !$paralelo->nivel->programa) {
+                    continue;
+                }
+
+                $idIdiomaRequerido = $paralelo->nivel->programa->id_idioma;
+                $nombreIdioma = $paralelo->nivel->programa->idioma->nombre_idioma ?? 'Idioma';
+                $idDocenteActual = $asig->id_docente;
+
+                // Candidatos que dominan el idioma correspondiente al paralelo y no sean el docente que está rotando
+                $candidatos = $docentesActivos->filter(function ($doc) use ($idIdiomaRequerido, $idDocenteActual) {
+                    return $doc->id_docente !== $idDocenteActual && $doc->idiomas->contains('id_idioma', $idIdiomaRequerido);
+                });
+
+                if ($candidatos->isEmpty()) {
+                    $noRotados[] = [
+                        'paralelo' => $paralelo->codigo_paralelo,
+                        'idioma' => $nombreIdioma,
+                        'motivo' => "No se encontró otro docente activo habilitado en {$nombreIdioma}.",
+                    ];
+                    continue;
+                }
+
+                // Elegir el docente con menor cantidad de paralelos activos en este momento
+                $docenteSeleccionado = null;
+                $menorCarga = PHP_INT_MAX;
+
+                foreach ($candidatos as $doc) {
+                    $carga = AsignacionDocenteParalelo::where('id_docente', $doc->id_docente)
+                        ->whereNull('fecha_fin_asignacion')
+                        ->count();
+
+                    if ($carga < $menorCarga) {
+                        $menorCarga = $carga;
+                        $docenteSeleccionado = $doc;
+                    }
+                }
+
+                if (!$docenteSeleccionado) {
+                    continue;
+                }
+
+                // Cerrar ciclo del docente saliente
+                $asig->update([
+                    'fecha_fin_asignacion' => Carbon::now()->toDateString(),
+                ]);
+
+                // Asignar docente de relevo
+                $nuevaAsignacion = AsignacionDocenteParalelo::create([
+                    'id_paralelo' => $paralelo->id_paralelo,
+                    'id_docente' => $docenteSeleccionado->id_docente,
+                    'fecha_inicio_asignacion' => Carbon::now()->toDateString(),
+                    'fecha_fin_asignacion' => null,
+                ]);
+
+                AuditLogger::academico(AuditLogger::LEVEL_INFO, 'ROTACION_AUTOMATICA_MASIVA_DOCENTE', [
+                    'id_paralelo' => $paralelo->id_paralelo,
+                    'codigo_paralelo' => $paralelo->codigo_paralelo,
+                    'id_docente_anterior' => $idDocenteActual,
+                    'id_docente_nuevo' => $docenteSeleccionado->id_docente,
+                    'idioma' => $nombreIdioma,
+                ], null, 'asignacion_docente_paralelo', $nuevaAsignacion->id_asignacion);
+
+                $rotacionesRealizadas[] = [
+                    'paralelo' => $paralelo->codigo_paralelo,
+                    'idioma' => $nombreIdioma,
+                    'docente_saliente' => $asig->docente ? "{$asig->docente->nombre_docente} {$asig->docente->apellido_docente}" : 'Docente',
+                    'docente_entrante' => "{$docenteSeleccionado->nombre_docente} {$docenteSeleccionado->apellido_docente}",
+                    'dias_anteriores' => $asig->dias_en_aula,
+                ];
+            }
+
+            return response()->json([
+                'message' => 'Proceso de rotación automática masiva ejecutado exitosamente según idioma del paralelo.',
+                'total_rotados' => count($rotacionesRealizadas),
+                'rotaciones' => $rotacionesRealizadas,
+                'no_rotados' => $noRotados,
+            ]);
+        });
     }
 
     public function rotarDocente(Request $request)

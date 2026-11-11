@@ -49,6 +49,8 @@ backend-laravel/bootstrap/cache/*
 .idea/
 .vscode/
 *.iml
+
+Captura de pantalla*.jpg
 *.swp
 *.swo
 .DS_Store

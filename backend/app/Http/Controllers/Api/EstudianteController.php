@@ -86,6 +86,7 @@ class EstudianteController extends Controller
             return [
                 'id'              => $est->id_estudiante,
                 'id_estudiante'   => $est->id_estudiante,
+                'nombre_completo' => "{$est->nombre_estudiante} {$est->apellido_estudiante}",
                 'codigoMatricula' => $matricula,
                 'nombres'         => $est->nombre_estudiante,
                 'nombre_estudiante' => $est->nombre_estudiante,
@@ -99,8 +100,14 @@ class EstudianteController extends Controller
                 'gradoMilitar'    => $est->militar?->grado_militar,
                 'unidadMilitar'   => $est->militar?->unidad_militar,
                 'idiomaActual'    => $idioma?->nombre_idioma ?? 'Sin asignar',
+                'id_idioma_actual'=> $idioma?->id_idioma ?? null,
                 'nivelActual'     => $nivel?->nombre_nivel ?? 'Sin asignar',
                 'paralelo'        => $paralelo?->codigo_paralelo ?? 'Sin asignar',
+                'id_paralelo_actual' => $paralelo?->id_paralelo ?? null,
+                'inscripciones_ids' => $est->inscripciones->pluck('id_paralelo')->filter()->values()->toArray(),
+                'idiomas_inscritos' => $est->inscripciones->map(function ($ins) {
+                    return $ins->paralelo?->nivel?->programa?->idioma?->nombre_idioma;
+                })->filter()->unique()->values()->toArray(),
                 'telefono'        => $est->telefono_estudiante ?? '+591 70000000',
                 'correo'          => $est->email_estudiante ?? 'alumno@ejercito.mil.bo',
                 'estado'          => ($actIns && $actIns->estado_inscripcion === 'Concluida') ? 'INACTIVO' : 'ACTIVO',

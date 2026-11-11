@@ -54,6 +54,33 @@ export default function DocentesPage() {
   const [resultadoAsignacion, setResultadoAsignacion] = useState<any | null>(null);
   const [modalResultadoAsignacion, setModalResultadoAsignacion] = useState(false);
 
+  const [ejecutandoRotacionMasiva, setEjecutandoRotacionMasiva] = useState(false);
+  const [resultadoRotacionMasiva, setResultadoRotacionMasiva] = useState<any | null>(null);
+  const [modalResultadoRotacion, setModalResultadoRotacion] = useState(false);
+
+  const handleRotarTodosPendientes = async () => {
+    setEjecutandoRotacionMasiva(true);
+    try {
+      const res = await fetch('/api/v1/docentes/rotar-pendientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResultadoRotacionMasiva(data);
+        setModalResultadoRotacion(true);
+        mostrarMensaje('ok', data.message || `Rotación completada: ${data.total_rotados} relevos ejecutados.`);
+        cargarDatos();
+      } else {
+        mostrarMensaje('error', data.error || 'Error al ejecutar rotación masiva.');
+      }
+    } catch (e) {
+      mostrarMensaje('error', 'Error de conexión con el servidor al rotar pendientes.');
+    } finally {
+      setEjecutandoRotacionMasiva(false);
+    }
+  };
+
   const ejecutarAsignacionAutomatica = async () => {
     setEjecutandoAsignacion(true);
     try {
@@ -200,6 +227,39 @@ export default function DocentesPage() {
     return docentesFiltrados.slice(start, start + PER_PAGE);
   }, [docentesFiltrados, page]);
 
+  const idiomaParaleloRelevo = useMemo(() => {
+    if (!paraleloARotar) return '';
+    if (paraleloARotar.idioma) return paraleloARotar.idioma;
+    if (paraleloARotar.nivel?.programa?.idioma?.nombre_idioma) return paraleloARotar.nivel.programa.idioma.nombre_idioma;
+    const cod = (paraleloARotar.codigo_paralelo || '').toUpperCase();
+    if (cod.startsWith('ING')) return 'Inglés';
+    if (cod.startsWith('FRA')) return 'Francés';
+    if (cod.startsWith('ALE')) return 'Alemán';
+    if (cod.startsWith('POR')) return 'Portugués';
+    if (cod.startsWith('CHI') || cod.startsWith('MAN')) return 'Mandarín';
+    if (cod.startsWith('RUS')) return 'Ruso';
+    if (cod.startsWith('QUE')) return 'Quechua';
+    if (cod.startsWith('AYM')) return 'Aymara';
+    return '';
+  }, [paraleloARotar]);
+
+  const docentesCandidatosRelevo = useMemo(() => {
+    if (!paraleloARotar) return docentes;
+    const idm = idiomaParaleloRelevo.toLowerCase().trim();
+    const docActualId = paraleloARotar.id_docente || paraleloARotar.id_docente_actual;
+    const docActualNombre = (paraleloARotar.docente_actual || '').toLowerCase().trim();
+
+    return docentes.filter((d) => {
+      if (docActualId && d.id_docente === docActualId) return false;
+      if (docActualNombre && d.nombre_completo?.toLowerCase() === docActualNombre) return false;
+      if (!idm) return true;
+      return d.idiomas?.some((i: string) => {
+        const lang = i.toLowerCase().trim();
+        return lang.includes(idm) || idm.includes(lang);
+      });
+    });
+  }, [paraleloARotar, idiomaParaleloRelevo, docentes]);
+
   useEffect(() => {
     setPage(1);
   }, [busqueda]);
@@ -280,26 +340,46 @@ export default function DocentesPage() {
       )}
 
       {alertasRotacion.length > 0 && (
-        <div className="flex items-center gap-3 p-4 rounded-xl border border-amber-500/50 bg-amber-950/30 text-sm">
-          <Clock className="w-5 h-5 text-amber-400 animate-pulse shrink-0" />
-          <div className="flex-1">
-            <span className="font-bold text-amber-300">
-              {alertasRotacion.length} relevo(s) pendiente(s)
-            </span>
-            <span className="text-neutral-400 ml-2 text-xs">
-              Docentes con ≥14 días continuos en aula
-            </span>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 rounded-xl border border-amber-500/50 bg-amber-950/30 text-sm">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-amber-400 animate-pulse shrink-0" />
+            <div>
+              <span className="font-bold text-amber-300">
+                {alertasRotacion.length} relevo(s) pendiente(s)
+              </span>
+              <span className="text-neutral-400 ml-2 text-xs">
+                Docentes con ≥14 días continuos en aula
+              </span>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleRotarTodosPendientes}
+              disabled={ejecutandoRotacionMasiva}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-extrabold rounded-lg text-xs transition shadow-md disabled:opacity-50"
+              title="Ejecuta de forma automática todas las rotaciones pendientes asignando docentes del mismo idioma"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${ejecutandoRotacionMasiva ? 'animate-spin' : ''}`} />
+              <span>{ejecutandoRotacionMasiva ? 'Rotando todas...' : 'Rotar Todas las Pendientes'}</span>
+            </button>
+            <div className="h-4 w-px bg-amber-700/50 hidden sm:block mx-1" />
             {alertasRotacion.slice(0, 4).map((a, idx) => (
               <button
                 key={idx}
                 onClick={() => {
                   const par = paralelos.find((p) => p.codigo_paralelo === a.paralelo);
-                  setParaleloARotar(par || { id_paralelo: a.id_asignacion, codigo_paralelo: a.paralelo, idioma: a.idioma });
+                  setParaleloARotar(par || {
+                    id_paralelo: a.id_paralelo || a.id_asignacion,
+                    codigo_paralelo: a.paralelo,
+                    idioma: a.idioma,
+                    id_docente: a.id_docente,
+                    docente_actual: a.docente_actual,
+                  });
+                  setDocenteNuevoId('');
                   setModalRotar(true);
                 }}
                 className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded-lg text-xs flex items-center gap-1 shadow"
+                title={`Relevar manualmente ${a.paralelo} (${a.idioma})`}
               >
                 <ArrowRightLeft className="w-3 h-3" />
                 {a.paralelo} ({a.dias_en_aula}d)
@@ -569,12 +649,22 @@ export default function DocentesPage() {
             <form onSubmit={handleEjecutarRotacion} className="space-y-4 text-xs">
               <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
                 <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">Paralelo a Relevar</span>
-                <p className="font-bold text-white text-base font-mono">{paraleloARotar.codigo_paralelo}</p>
+                <div className="flex items-center justify-between">
+                  <p className="font-bold text-white text-base font-mono">{paraleloARotar.codigo_paralelo}</p>
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 font-bold text-[11px]">
+                    Idioma: {idiomaParaleloRelevo || 'Todos'}
+                  </span>
+                </div>
+                {paraleloARotar.docente_actual && (
+                  <p className="text-[11px] text-neutral-400">
+                    Docente saliente: <span className="text-amber-300 font-semibold">{paraleloARotar.docente_actual}</span>
+                  </p>
+                )}
               </div>
 
               <div>
                 <label className="text-neutral-300 font-semibold block mb-1">
-                  Seleccionar Docente Entrante (Debe estar habilitado en el idioma)
+                  Docente Entrante Habilitado en {idiomaParaleloRelevo || 'el Idioma'}
                 </label>
                 <select
                   value={docenteNuevoId}
@@ -582,13 +672,23 @@ export default function DocentesPage() {
                   className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white"
                   required
                 >
-                  <option value="">Seleccione docente de relevo...</option>
-                  {docentes.map((d) => (
+                  <option value="">
+                    {docentesCandidatosRelevo.length > 0
+                      ? `— Seleccione docente de relevo (${docentesCandidatosRelevo.length} disponibles) —`
+                      : `— No hay docentes disponibles para ${idiomaParaleloRelevo} —`}
+                  </option>
+                  {docentesCandidatosRelevo.map((d) => (
                     <option key={d.id_docente} value={d.id_docente}>
                       {d.nombre_completo} ({d.idiomas?.join(', ')})
                     </option>
                   ))}
                 </select>
+                {docentesCandidatosRelevo.length === 0 && (
+                  <p className="text-amber-400 text-xs mt-1.5 flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                    No hay otros docentes activos habilitados en {idiomaParaleloRelevo} para relevar este paralelo.
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-800">
@@ -601,7 +701,8 @@ export default function DocentesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold transition shadow"
+                  disabled={docentesCandidatosRelevo.length === 0}
+                  className="px-4 py-1.5 rounded bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-neutral-950 font-bold transition shadow"
                 >
                   Confirmar Relevo
                 </button>
@@ -662,6 +763,74 @@ export default function DocentesPage() {
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition"
               >
                 Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalResultadoRotacion && resultadoRotacionMasiva && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-neutral-900 border border-amber-500/50 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4 text-white animate-solemn-fade">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2 text-amber-400">
+                <ArrowRightLeft className="w-5 h-5" />
+                <h3 className="font-bold text-base">Rotación Automática Masiva de Periodo</h3>
+              </div>
+              <button
+                onClick={() => setModalResultadoRotacion(false)}
+                className="text-neutral-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-300">
+              {resultadoRotacionMasiva.message}
+            </p>
+
+            <div className="bg-neutral-950 p-4 rounded-lg border border-neutral-800 space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-neutral-400 font-semibold">Total Relevos Realizados:</span>
+                <span className="text-emerald-400 font-bold text-sm">{resultadoRotacionMasiva.total_rotados}</span>
+              </div>
+
+              {resultadoRotacionMasiva.rotaciones && resultadoRotacionMasiva.rotaciones.length > 0 && (
+                <div className="mt-3 space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {resultadoRotacionMasiva.rotaciones.map((rot: any, idx: number) => (
+                    <div key={idx} className="p-2.5 rounded bg-neutral-900 border border-neutral-800 text-xs">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-amber-300">{rot.paralelo} ({rot.idioma})</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">
+                          Relevado tras {rot.dias_anteriores} días
+                        </span>
+                      </div>
+                      <div className="text-neutral-300 mt-1 flex flex-col gap-0.5">
+                        <div>Saliente: <strong className="text-neutral-400">{rot.docente_saliente}</strong></div>
+                        <div>Entrante: <strong className="text-emerald-300">{rot.docente_entrante}</strong></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {resultadoRotacionMasiva.no_rotados && resultadoRotacionMasiva.no_rotados.length > 0 && (
+                <div className="mt-2 p-2 bg-amber-950/40 border border-amber-800/40 rounded text-[11px] text-amber-300 space-y-1">
+                  <span className="font-bold">Avisos ({resultadoRotacionMasiva.no_rotados.length}):</span>
+                  {resultadoRotacionMasiva.no_rotados.map((nr: any, i: number) => (
+                    <p key={i}>• {nr.paralelo}: {nr.motivo}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setModalResultadoRotacion(false)}
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs rounded-lg transition"
+              >
+                Aceptar
               </button>
             </div>
           </div>
