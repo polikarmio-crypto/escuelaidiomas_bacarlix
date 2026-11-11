@@ -125,6 +125,53 @@ class ParaleloController extends Controller
         ], 201);
     }
 
+    public function asignarDocente(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'id_docente' => 'required|exists:docente,id_docente',
+        ]);
+
+        $paralelo = Paralelo::findOrFail($id);
+
+        DB::transaction(function () use ($paralelo, $validated) {
+            AsignacionDocenteParalelo::where('id_paralelo', $paralelo->id_paralelo)
+                ->whereNull('fecha_fin_asignacion')
+                ->update(['fecha_fin_asignacion' => Carbon::now()->toDateString()]);
+
+            AsignacionDocenteParalelo::create([
+                'id_paralelo' => $paralelo->id_paralelo,
+                'id_docente' => $validated['id_docente'],
+                'fecha_inicio_asignacion' => Carbon::now()->toDateString(),
+                'fecha_fin_asignacion' => null,
+            ]);
+
+            AuditLogger::academico(AuditLogger::LEVEL_INFO, 'DOCENTE_ASIGNADO_MANUALMENTE', [
+                'id_paralelo' => $paralelo->id_paralelo,
+                'id_docente' => $validated['id_docente'],
+            ], null, 'paralelo', $paralelo->id_paralelo);
+        });
+
+        return response()->json(['message' => 'Docente asignado correctamente.']);
+    }
+
+    public function asignarAula(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'id_aula' => 'required|exists:aula,id_aula',
+        ]);
+
+        $paralelo = Paralelo::findOrFail($id);
+        $paralelo->id_aula = $validated['id_aula'];
+        $paralelo->save();
+
+        AuditLogger::academico(AuditLogger::LEVEL_INFO, 'AULA_ASIGNADA_MANUALMENTE', [
+            'id_paralelo' => $paralelo->id_paralelo,
+            'id_aula' => $validated['id_aula'],
+        ], null, 'paralelo', $paralelo->id_paralelo);
+
+        return response()->json(['message' => 'Aula reasignada correctamente.', 'data' => $paralelo->load('aula')]);
+    }
+
     public function show($id)
     {
         $paralelo = Paralelo::with([

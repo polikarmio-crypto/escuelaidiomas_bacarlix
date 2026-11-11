@@ -4,10 +4,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import {
   Layers,
   Plus,
-  Calendar,
   Users,
   Search,
-  Filter,
   BookOpen,
   Clock,
   CheckCircle2,
@@ -18,19 +16,23 @@ import {
   RefreshCw,
   DoorOpen,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  UserCheck,
+  UserPlus,
 } from 'lucide-react';
 import { useAuthRole } from '@/context/AuthRoleContext';
 
 const PER_PAGE = 9;
 
 export default function ParalelosPage() {
-  const { esJefeAcademico, esDocente, esAdmin, rolConfig, usuario } = useAuthRole();
+  const { esJefeAcademico, esDocente, esAdmin, usuario } = useAuthRole();
   const puedeCrear = esJefeAcademico || esAdmin;
+  const puedeAsignar = esJefeAcademico || esAdmin;
 
   const [loading, setLoading] = useState(false);
   const [paralelos, setParalelos] = useState<any[]>([]);
   const [docentes, setDocentes] = useState<any[]>([]);
+  const [estudiantes, setEstudiantes] = useState<any[]>([]);
   const [aulas, setAulas] = useState<any[]>([]);
   const [horarios, setHorarios] = useState<any[]>([]);
   const [modalidades, setModalidades] = useState<any[]>([]);
@@ -42,6 +44,14 @@ export default function ParalelosPage() {
   const [alerta, setAlerta] = useState<{ tipo: 'ok' | 'error'; mensaje: string } | null>(null);
 
   const [modalApertura, setModalApertura] = useState(false);
+  const [modalDocente, setModalDocente] = useState<{ paralelo: any } | null>(null);
+  const [modalEstudiante, setModalEstudiante] = useState<{ paralelo: any } | null>(null);
+  const [modalAula, setModalAula] = useState<{ paralelo: any } | null>(null);
+  const [idDocenteSeleccionado, setIdDocenteSeleccionado] = useState('');
+  const [idEstudianteSeleccionado, setIdEstudianteSeleccionado] = useState('');
+  const [idAulaSeleccionada, setIdAulaSeleccionada] = useState('');
+  const [guardando, setGuardando] = useState(false);
+
   const [formParalelo, setFormParalelo] = useState({
     codigo_paralelo: '',
     id_nivel: 1,
@@ -49,7 +59,7 @@ export default function ParalelosPage() {
     id_horario: 1,
     id_modalidad: 1,
     id_gestion: 1,
-    id_docente_inicial: 1,
+    id_docente_inicial: '',
     capacidad_maxima: 30,
     capacidad_minima: 10,
   });
@@ -62,15 +72,20 @@ export default function ParalelosPage() {
   const cargarDatos = async () => {
     setLoading(true);
     try {
-      const [resPar, resDoc, resCat, resProg] = await Promise.all([
+      const [resPar, resDoc, resEst, resCat, resProg] = await Promise.all([
         fetch('/api/v1/paralelos'),
         fetch('/api/v1/docentes'),
+        fetch('/api/v1/estudiantes'),
         fetch('/api/v1/catalogos'),
         fetch('/api/v1/estructura/programas'),
       ]);
 
       if (resPar.ok) setParalelos(await resPar.json() || []);
       if (resDoc.ok) setDocentes(await resDoc.json() || []);
+      if (resEst.ok) {
+        const estData = await resEst.json();
+        setEstudiantes(Array.isArray(estData) ? estData : (estData.data || []));
+      }
       if (resCat.ok) {
         const cat = await resCat.json();
         setAulas(cat.aulas || []);
@@ -109,31 +124,103 @@ export default function ParalelosPage() {
   const handleAperturarParalelo = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const body: any = {
+        codigo_paralelo: formParalelo.codigo_paralelo,
+        id_nivel: formParalelo.id_nivel,
+        id_aula: formParalelo.id_aula,
+        id_horario: formParalelo.id_horario,
+        id_modalidad: formParalelo.id_modalidad,
+        id_gestion: formParalelo.id_gestion,
+        capacidad_maxima_paralelo: formParalelo.capacidad_maxima,
+        capacidad_minima_apertura: formParalelo.capacidad_minima,
+        estado_paralelo: 'Abierto',
+      };
+      if (formParalelo.id_docente_inicial) {
+        body.id_docente_inicial = parseInt(formParalelo.id_docente_inicial);
+      }
       const res = await fetch('/api/v1/paralelos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          codigo_paralelo: formParalelo.codigo_paralelo,
-          id_nivel: formParalelo.id_nivel,
-          id_aula: formParalelo.id_aula,
-          id_horario: formParalelo.id_horario,
-          id_modalidad: formParalelo.id_modalidad,
-          id_gestion: formParalelo.id_gestion,
-          id_docente_inicial: formParalelo.id_docente_inicial,
-          capacidad_maxima_paralelo: formParalelo.capacidad_maxima,
-          capacidad_minima_apertura: formParalelo.capacidad_minima,
-          estado_paralelo: 'Abierto',
-        }),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al aperturar paralelo.');
 
-      mostrarMensaje('ok', data.message || 'Paralelo aperturado exitosamente con docente asignado.');
+      mostrarMensaje('ok', data.message || 'Paralelo aperturado exitosamente.');
       setModalApertura(false);
       cargarDatos();
     } catch (err: any) {
       mostrarMensaje('error', err.message);
+    }
+  };
+
+  const handleAsignarDocente = async () => {
+    if (!modalDocente || !idDocenteSeleccionado) return;
+    setGuardando(true);
+    try {
+      const res = await fetch(`/api/v1/paralelos/${modalDocente.paralelo.id_paralelo}/asignar-docente`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_docente: parseInt(idDocenteSeleccionado) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al asignar docente.');
+      mostrarMensaje('ok', `Docente asignado a ${modalDocente.paralelo.codigo_paralelo}.`);
+      setModalDocente(null);
+      setIdDocenteSeleccionado('');
+      cargarDatos();
+    } catch (err: any) {
+      mostrarMensaje('error', err.message);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleInscribirEstudiante = async () => {
+    if (!modalEstudiante || !idEstudianteSeleccionado) return;
+    setGuardando(true);
+    try {
+      const res = await fetch('/api/v1/inscripciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_estudiante: parseInt(idEstudianteSeleccionado),
+          id_paralelo: modalEstudiante.paralelo.id_paralelo,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al inscribir estudiante.');
+      mostrarMensaje('ok', `Estudiante inscrito en ${modalEstudiante.paralelo.codigo_paralelo}.`);
+      setModalEstudiante(null);
+      setIdEstudianteSeleccionado('');
+      cargarDatos();
+    } catch (err: any) {
+      mostrarMensaje('error', err.message);
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const handleAsignarAula = async () => {
+    if (!modalAula || !idAulaSeleccionada) return;
+    setGuardando(true);
+    try {
+      const res = await fetch(`/api/v1/paralelos/${modalAula.paralelo.id_paralelo}/asignar-aula`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_aula: parseInt(idAulaSeleccionada) }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al asignar aula.');
+      mostrarMensaje('ok', `Aula actualizada para ${modalAula.paralelo.codigo_paralelo}.`);
+      setModalAula(null);
+      setIdAulaSeleccionada('');
+      cargarDatos();
+    } catch (err: any) {
+      mostrarMensaje('error', err.message);
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -220,8 +307,8 @@ export default function ParalelosPage() {
               onClick={() => setModalApertura(true)}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition shadow-md shadow-purple-600/20"
             >
-              <Plus className="w-4 h-4" />
-              + Aperturar Nuevo Paralelo
+              <Plus className="w-4 h-4 shrink-0" />
+              <span>+ Aperturar Paralelo</span>
             </button>
           )}
         </div>
@@ -244,7 +331,7 @@ export default function ParalelosPage() {
           <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            placeholder="Buscar por código de paralelo, idioma o aula..."
+            placeholder="Buscar por código, idioma o aula..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white"
@@ -264,7 +351,7 @@ export default function ParalelosPage() {
           {paralelosPaginados.map((p) => {
             const inscritos = p.inscritos ?? p.inscripciones_count ?? 0;
             const capMax = p.capacidad_maxima ?? p.capacidad_maxima_paralelo ?? 30;
-            const cuposDisp = p.cupos_disponibles ?? Math.max(0, capMax - inscritos);
+            const cuposDisp = Math.max(0, capMax - inscritos);
             const porcentaje = Math.min(100, Math.round((inscritos / capMax) * 100));
             const estadoTexto = p.estado || p.estado_paralelo || 'Abierto';
 
@@ -276,6 +363,7 @@ export default function ParalelosPage() {
             const nombreDocente = typeof p.docente_actual === 'string'
               ? p.docente_actual
               : (p.docente_actual?.nombre_docente ? `${p.docente_actual.nombre_docente} ${p.docente_actual.apellido_docente}` : 'Sin asignar');
+            const sinDocente = nombreDocente === 'Sin asignar' || nombreDocente === 'Sin docente asignado';
 
             return (
               <div
@@ -310,8 +398,8 @@ export default function ParalelosPage() {
                         Horario: <span className="font-mono text-neutral-200">{horarioTexto}</span>
                       </p>
                       <p className="flex items-center gap-2">
-                        <GraduationCap className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        Docente: <strong className="text-emerald-300 truncate">
+                        <GraduationCap className={`w-3.5 h-3.5 shrink-0 ${sinDocente ? 'text-amber-400' : 'text-emerald-400'}`} />
+                        Docente: <strong className={sinDocente ? 'text-amber-300' : 'text-emerald-300'}>
                           {nombreDocente}
                         </strong>
                       </p>
@@ -335,6 +423,35 @@ export default function ParalelosPage() {
                     <span>Mín. apertura: {p.capacidad_minima_apertura || 10} alumnos</span>
                     <span>{porcentaje}% cubierto</span>
                   </div>
+
+                  {puedeAsignar && (
+                    <div className="grid grid-cols-3 gap-1.5 pt-1">
+                      <button
+                        onClick={() => { setModalDocente({ paralelo: p }); setIdDocenteSeleccionado(p.id_docente_actual ? String(p.id_docente_actual) : ''); }}
+                        className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-sky-900/40 hover:bg-sky-800/60 border border-sky-700/40 text-sky-300 text-[10px] font-semibold transition"
+                        title="Asignar Docente"
+                      >
+                        <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                        <span>Docente</span>
+                      </button>
+                      <button
+                        onClick={() => { setModalEstudiante({ paralelo: p }); setIdEstudianteSeleccionado(''); }}
+                        className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 text-[10px] font-semibold transition"
+                        title="Inscribir Estudiante"
+                      >
+                        <UserPlus className="w-3.5 h-3.5 shrink-0" />
+                        <span>Alumno</span>
+                      </button>
+                      <button
+                        onClick={() => { setModalAula({ paralelo: p }); setIdAulaSeleccionada(p.id_aula ? String(p.id_aula) : ''); }}
+                        className="flex items-center justify-center gap-1 py-1.5 rounded-lg bg-amber-900/40 hover:bg-amber-800/60 border border-amber-700/40 text-amber-300 text-[10px] font-semibold transition"
+                        title="Asignar Aula"
+                      >
+                        <DoorOpen className="w-3.5 h-3.5 shrink-0" />
+                        <span>Aula</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -434,12 +551,13 @@ export default function ParalelosPage() {
               </div>
 
               <div>
-                <label className="text-neutral-300 block mb-1">Docente Inicial Asignado</label>
+                <label className="text-neutral-300 block mb-1">Docente Inicial (opcional)</label>
                 <select
                   value={formParalelo.id_docente_inicial}
-                  onChange={(e) => setFormParalelo({ ...formParalelo, id_docente_inicial: parseInt(e.target.value) || 1 })}
+                  onChange={(e) => setFormParalelo({ ...formParalelo, id_docente_inicial: e.target.value })}
                   className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
                 >
+                  <option value="">— Sin asignar por ahora —</option>
                   {docentes.map((d) => (
                     <option key={d.id_docente} value={d.id_docente}>
                       {d.nombre_completo} ({d.idiomas?.join(', ')})
@@ -450,7 +568,7 @@ export default function ParalelosPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-neutral-300 block mb-1">Capacidad Máxima (Aforo)</label>
+                  <label className="text-neutral-300 block mb-1">Capacidad Máxima</label>
                   <input
                     type="number"
                     min="5"
@@ -491,6 +609,150 @@ export default function ParalelosPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {modalDocente && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white">Asignar Docente</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">Paralelo: <span className="text-sky-400 font-mono font-bold">{modalDocente.paralelo.codigo_paralelo}</span></p>
+              </div>
+              <button onClick={() => setModalDocente(null)} className="text-neutral-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-neutral-300 block mb-1">Seleccionar Docente</label>
+                <select
+                  value={idDocenteSeleccionado}
+                  onChange={(e) => setIdDocenteSeleccionado(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
+                >
+                  <option value="">— Selecciona un docente —</option>
+                  {docentes.map((d) => (
+                    <option key={d.id_docente} value={d.id_docente}>
+                      {d.nombre_completo} ({d.idiomas?.join(', ')})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+                <button
+                  onClick={() => setModalDocente(null)}
+                  className="px-3 py-1.5 rounded bg-neutral-800 text-white font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleAsignarDocente}
+                  disabled={!idDocenteSeleccionado || guardando}
+                  className="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-white font-bold transition shadow disabled:opacity-50"
+                >
+                  {guardando ? 'Guardando...' : 'Confirmar Asignación'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalEstudiante && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white">Inscribir Estudiante</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">Paralelo: <span className="text-emerald-400 font-mono font-bold">{modalEstudiante.paralelo.codigo_paralelo}</span></p>
+              </div>
+              <button onClick={() => setModalEstudiante(null)} className="text-neutral-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-neutral-300 block mb-1">Seleccionar Estudiante</label>
+                <select
+                  value={idEstudianteSeleccionado}
+                  onChange={(e) => setIdEstudianteSeleccionado(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
+                >
+                  <option value="">— Selecciona un estudiante —</option>
+                  {estudiantes.map((est: any) => (
+                    <option key={est.id_estudiante} value={est.id_estudiante}>
+                      {est.nombre_completo || `${est.nombre_estudiante || ''} ${est.apellido_estudiante || ''}`.trim()} — {est.ci || est.cedula || ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+                <button
+                  onClick={() => setModalEstudiante(null)}
+                  className="px-3 py-1.5 rounded bg-neutral-800 text-white font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleInscribirEstudiante}
+                  disabled={!idEstudianteSeleccionado || guardando}
+                  className="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow disabled:opacity-50"
+                >
+                  {guardando ? 'Inscribiendo...' : 'Confirmar Inscripción'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {modalAula && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div>
+                <h3 className="text-base font-bold text-white">Asignar Aula</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">Paralelo: <span className="text-amber-400 font-mono font-bold">{modalAula.paralelo.codigo_paralelo}</span></p>
+              </div>
+              <button onClick={() => setModalAula(null)} className="text-neutral-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-neutral-300 block mb-1">Seleccionar Aula</label>
+                <select
+                  value={idAulaSeleccionada}
+                  onChange={(e) => setIdAulaSeleccionada(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
+                >
+                  <option value="">— Selecciona un aula —</option>
+                  {aulas.map((a: any) => (
+                    <option key={a.id_aula} value={a.id_aula}>
+                      {a.nombre_aula} (Capacidad: {a.capacidad_aula || 30})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+                <button
+                  onClick={() => setModalAula(null)}
+                  className="px-3 py-1.5 rounded bg-neutral-800 text-white font-semibold"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleAsignarAula}
+                  disabled={!idAulaSeleccionada || guardando}
+                  className="px-4 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white font-bold transition shadow disabled:opacity-50"
+                >
+                  {guardando ? 'Guardando...' : 'Confirmar Aula'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

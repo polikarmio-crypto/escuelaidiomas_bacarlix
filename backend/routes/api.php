@@ -105,6 +105,8 @@ Route::prefix('v1')->group(function () {
     Route::get('/paralelos', [ParaleloController::class, 'index']);
     Route::post('/paralelos', [ParaleloController::class, 'store']);
     Route::get('/paralelos/{id}', [ParaleloController::class, 'show']);
+    Route::post('/paralelos/{id}/asignar-docente', [ParaleloController::class, 'asignarDocente']);
+    Route::post('/paralelos/{id}/asignar-aula', [ParaleloController::class, 'asignarAula']);
 
     Route::get('/inscripciones', [InscripcionController::class, 'index']);
     Route::post('/inscripciones', [InscripcionController::class, 'inscribir']);
