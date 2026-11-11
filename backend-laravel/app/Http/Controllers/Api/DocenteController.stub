@@ -1,5 +1,0 @@
-// TODO (Compañero): Implementar DocenteController
-// Endpoints requeridos:
-//   GET  /api/v1/docentes                    -> index
-//   GET  /api/v1/docentes/alertas/rotacion  -> alertarRotaciones (regla 15 días)
-//   POST /api/v1/docentes/rotar             -> rotarDocente
