@@ -1,5 +1,0 @@
-// TODO (Compañero): Implementar EstudianteController
-// Endpoints requeridos:
-//   GET  /api/v1/estudiantes          -> index (con filtro civil/militar)
-//   POST /api/v1/estudiantes          -> store (registro civil + militar con grado/unidad)
-//   GET  /api/v1/estudiantes/{id}     -> show (con inscripciones, notas, pagos)
