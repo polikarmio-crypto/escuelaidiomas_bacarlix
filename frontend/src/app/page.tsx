@@ -61,7 +61,7 @@ export default function IndexPage() {
       } else {
         document.documentElement.classList.remove('dark');
       }
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const slides = [
@@ -336,24 +336,21 @@ export default function IndexPage() {
   const [tabIdioma, setTabIdioma] = useState<'INGLES' | 'NATIVOS' | 'EXTRANJEROS'>('INGLES');
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
-      theme === 'light' ? 'bg-[#f4f6f8] text-[#1e293b]' : 'bg-[#0b131f] text-slate-100'
-    }`}>
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${theme === 'light' ? 'bg-[#f4f6f8] text-[#1e293b]' : 'bg-[#0b131f] text-slate-100'
+      }`}>
 
-      <header className={`sticky top-0 z-50 backdrop-blur-md border-b transition-all ${
-        theme === 'light'
+      <header className={`sticky top-0 z-50 backdrop-blur-md border-b transition-all ${theme === 'light'
           ? 'bg-white/95 border-slate-200 shadow-sm'
           : 'bg-[#0b131f]/95 border-[#24354a] shadow-lg'
-      }`}>
+        }`}>
         <div className="tricolor-stripe" />
         <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 gap-2 sm:gap-4">
-            
+
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <a href="#inicio" className="flex items-center gap-2.5 sm:gap-3 group">
-                <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl border p-1 shadow-sm flex items-center justify-center transition shrink-0 ${
-                  theme === 'light' ? 'bg-slate-50 border-amber-400/50' : 'bg-[#121d2b] border-[#b8860b]/60'
-                }`}>
+                <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl border p-1 shadow-sm flex items-center justify-center transition shrink-0 ${theme === 'light' ? 'bg-slate-50 border-amber-400/50' : 'bg-[#121d2b] border-[#b8860b]/60'
+                  }`}>
                   <img
                     src="/images/logos/logo-eie.png"
                     alt="Escudo de la Escuela de Idiomas del Ejército"
@@ -361,14 +358,12 @@ export default function IndexPage() {
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className={`text-[9px] sm:text-[10px] font-mono font-bold tracking-wider uppercase whitespace-nowrap ${
-                    theme === 'light' ? 'text-[#855810]' : 'text-[#d4af37]'
-                  }`}>
+                  <span className={`text-[9px] sm:text-[10px] font-mono font-bold tracking-wider uppercase whitespace-nowrap ${theme === 'light' ? 'text-[#855810]' : 'text-[#d4af37]'
+                    }`}>
                     THINK GLOBALLY, ACT LOCALLY
                   </span>
-                  <span className={`text-xs sm:text-sm lg:text-[15px] font-extrabold tracking-tight leading-snug whitespace-nowrap transition ${
-                    theme === 'light' ? 'text-[#0f172a] group-hover:text-[#1b4332]' : 'text-white group-hover:text-amber-300'
-                  }`}>
+                  <span className={`text-xs sm:text-sm lg:text-[15px] font-extrabold tracking-tight leading-snug whitespace-nowrap transition ${theme === 'light' ? 'text-[#0f172a] group-hover:text-[#1b4332]' : 'text-white group-hover:text-amber-300'
+                    }`}>
                     ESCUELA DE IDIOMAS DEL EJÉRCITO
                   </span>
                   <span className="text-[10px] text-slate-500 hidden md:block whitespace-nowrap">
@@ -381,11 +376,10 @@ export default function IndexPage() {
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className={`p-1.5 rounded-lg border transition ${
-                    theme === 'light'
+                  className={`p-1.5 rounded-lg border transition ${theme === 'light'
                       ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
                       : 'bg-[#121d2b] hover:bg-[#1a2738] border-[#24354a] text-slate-300'
-                  }`}
+                    }`}
                   title="Página anterior (Atrás)"
                   aria-label="Atrás"
                 >
@@ -394,11 +388,10 @@ export default function IndexPage() {
                 <button
                   type="button"
                   onClick={() => router.forward()}
-                  className={`p-1.5 rounded-lg border transition ${
-                    theme === 'light'
+                  className={`p-1.5 rounded-lg border transition ${theme === 'light'
                       ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
                       : 'bg-[#121d2b] hover:bg-[#1a2738] border-[#24354a] text-slate-300'
-                  }`}
+                    }`}
                   title="Página siguiente (Adelante)"
                   aria-label="Adelante"
                 >
@@ -406,11 +399,10 @@ export default function IndexPage() {
                 </button>
                 <a
                   href="#inicio"
-                  className={`p-1.5 rounded-lg border transition ${
-                    theme === 'light'
+                  className={`p-1.5 rounded-lg border transition ${theme === 'light'
                       ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
                       : 'bg-[#121d2b] hover:bg-[#1a2738] border-[#24354a] text-slate-300'
-                  }`}
+                    }`}
                   title="Volver al Inicio"
                   aria-label="Inicio"
                 >
@@ -419,9 +411,8 @@ export default function IndexPage() {
               </div>
             </div>
 
-            <nav className={`hidden xl:flex items-center gap-3.5 2xl:gap-6 text-xs font-semibold ${
-              theme === 'light' ? 'text-slate-700' : 'text-slate-300'
-            }`}>
+            <nav className={`hidden xl:flex items-center gap-3.5 2xl:gap-6 text-xs font-semibold ${theme === 'light' ? 'text-slate-700' : 'text-slate-300'
+              }`}>
               <a href="#mision-vision" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Misión</a>
               <a href="#carrusel" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Galería</a>
               <a href="#oferta-academica" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Idiomas</a>
@@ -432,15 +423,14 @@ export default function IndexPage() {
             </nav>
 
             <div className="flex items-center gap-2 shrink-0">
-              
+
               <button
                 type="button"
                 onClick={alternarTema}
-                className={`p-2 rounded-xl border transition shadow-sm flex items-center justify-center shrink-0 ${
-                  theme === 'light'
+                className={`p-2 rounded-xl border transition shadow-sm flex items-center justify-center shrink-0 ${theme === 'light'
                     ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
                     : 'bg-[#121d2b] border-[#364d68] text-amber-300 hover:bg-[#1a2738]'
-                }`}
+                  }`}
                 title={theme === 'light' ? 'Cambiar a Modo Oscuro' : 'Cambiar a Modo Claro'}
                 aria-label="Cambiar tema de color"
               >
@@ -462,9 +452,8 @@ export default function IndexPage() {
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className={`xl:hidden p-2 rounded-xl border transition shrink-0 ${
-                  theme === 'light' ? 'bg-white border-slate-300 text-slate-700' : 'bg-[#121d2b] border-[#24354a] text-slate-300'
-                }`}
+                className={`xl:hidden p-2 rounded-xl border transition shrink-0 ${theme === 'light' ? 'bg-white border-slate-300 text-slate-700' : 'bg-[#121d2b] border-[#24354a] text-slate-300'
+                  }`}
                 aria-label="Abrir menú de navegación"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -473,9 +462,8 @@ export default function IndexPage() {
           </div>
 
           {mobileMenuOpen && (
-            <div className={`xl:hidden border-t py-4 space-y-1.5 animate-solemn-fade ${
-              theme === 'light' ? 'bg-white border-slate-200 shadow-lg' : 'bg-[#0b131f] border-[#24354a] shadow-lg'
-            }`}>
+            <div className={`xl:hidden border-t py-4 space-y-1.5 animate-solemn-fade ${theme === 'light' ? 'bg-white border-slate-200 shadow-lg' : 'bg-[#0b131f] border-[#24354a] shadow-lg'
+              }`}>
               <div className="flex items-center gap-2 px-3 pb-2 mb-2 border-b border-slate-200 dark:border-[#24354a]">
                 <button
                   type="button"
@@ -515,7 +503,7 @@ export default function IndexPage() {
               <a href="#inscripciones" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-100 dark:hover:bg-[#121d2b]">Pre-Inscripción Digital</a>
               <a href="#correo-institucional" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-100 dark:hover:bg-[#121d2b]">Correo Institucional</a>
               <a href="#contacto" onClick={() => setMobileMenuOpen(false)} className="block px-3 py-2 rounded-lg text-xs font-medium hover:bg-slate-100 dark:hover:bg-[#121d2b]">Contacto</a>
-              
+
               <div className="pt-2 sm:hidden border-t border-slate-200 dark:border-[#24354a]">
                 <Link
                   href="/login"
@@ -532,14 +520,13 @@ export default function IndexPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16 flex-1 w-full">
 
-        <section id="inicio" className={`relative overflow-hidden rounded-3xl border p-6 md:p-10 transition-all ${
-          theme === 'light'
+        <section id="inicio" className={`relative overflow-hidden rounded-3xl border p-6 md:p-10 transition-all ${theme === 'light'
             ? 'bg-white border-slate-200 shadow-md'
             : 'bg-[#121d2b] border-[#24354a] shadow-2xl'
-        }`}>
+          }`}>
           <div className="tricolor-stripe absolute top-0 left-0 right-0" />
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2">
-            
+
             <div className="lg:col-span-8 space-y-5">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className="badge-bolivia-tricolor shadow-xs">
@@ -553,15 +540,13 @@ export default function IndexPage() {
                 </span>
               </div>
 
-              <h1 className={`text-3xl md:text-5xl font-extrabold tracking-tight leading-tight ${
-                theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-              }`}>
+              <h1 className={`text-3xl md:text-5xl font-extrabold tracking-tight leading-tight ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+                }`}>
                 Excelencia Lingüística para la Soberanía y el Futuro
               </h1>
 
-              <p className={`text-sm md:text-base leading-relaxed max-w-3xl ${
-                theme === 'light' ? 'text-slate-600' : 'text-slate-300'
-              }`}>
+              <p className={`text-sm md:text-base leading-relaxed max-w-3xl ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'
+                }`}>
                 La Escuela de Idiomas del Ejército es la máxima institución de formación lingüística de las Fuerzas Armadas del Estado Plurinacional de Bolivia. Capacitamos a personal de cuadros militares y ciudadanos civiles bajo rigurosos estándares pedagógicos, rotación docente cada 15 días y certificación internacional STANAG 6001.
               </p>
 
@@ -591,27 +576,23 @@ export default function IndexPage() {
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-slate-200 dark:border-[#24354a]">
-                <div className={`p-3.5 rounded-xl border border-l-4 border-l-[#dc2626] ${
-                  theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
-                }`}>
+                <div className={`p-3.5 rounded-xl border border-l-4 border-l-[#dc2626] ${theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
+                  }`}>
                   <p className="text-xl md:text-2xl font-bold font-mono text-[#dc2626] dark:text-[#f87171]">36 Libros</p>
                   <p className="text-xs text-slate-500 font-medium">Plan Continuo ALC</p>
                 </div>
-                <div className={`p-3.5 rounded-xl border border-l-4 border-l-[#f59e0b] ${
-                  theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
-                }`}>
+                <div className={`p-3.5 rounded-xl border border-l-4 border-l-[#f59e0b] ${theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
+                  }`}>
                   <p className="text-xl md:text-2xl font-bold font-mono text-[#d97706] dark:text-[#fbbf24]">15 Días</p>
                   <p className="text-xs text-slate-500 font-medium">Rotación Docente</p>
                 </div>
-                <div className={`p-3.5 rounded-xl border border-l-4 border-l-[#15803d] ${
-                  theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
-                }`}>
+                <div className={`p-3.5 rounded-xl border border-l-4 border-l-[#15803d] ${theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
+                  }`}>
                   <p className="text-xl md:text-2xl font-bold font-mono text-[#15803d] dark:text-[#4ade80]">9 Filiales</p>
                   <p className="text-xs text-slate-500 font-medium">Cobertura Nacional</p>
                 </div>
-                <div className={`p-3.5 rounded-xl border border-l-4 border-l-[#1e3a8a] ${
-                  theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
-                }`}>
+                <div className={`p-3.5 rounded-xl border border-l-4 border-l-[#1e3a8a] ${theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
+                  }`}>
                   <p className="text-xl md:text-2xl font-bold font-mono text-[#1e3a8a] dark:text-[#60a5fa]">STANAG</p>
                   <p className="text-xs text-slate-500 font-medium">Norma 6001 / TOEFL</p>
                 </div>
@@ -619,22 +600,19 @@ export default function IndexPage() {
             </div>
 
             <div className="lg:col-span-4 flex flex-col items-center justify-center">
-              <div className={`p-6 rounded-2xl border text-center max-w-xs w-full shadow-lg relative overflow-hidden ${
-                theme === 'light' ? 'bg-slate-50 border-slate-300' : 'bg-[#0b131f] border-[#24354a]'
-              }`}>
-                <div className="tricolor-stripe absolute top-0 left-0 right-0" />
-                <div className={`w-28 h-28 mx-auto mt-2 mb-4 p-2 rounded-2xl border flex items-center justify-center shadow-md ${
-                  theme === 'light' ? 'bg-white border-amber-400/60' : 'bg-[#121d2b] border-[#b8860b]/60'
+              <div className={`p-6 rounded-2xl border text-center max-w-xs w-full shadow-lg relative overflow-hidden ${theme === 'light' ? 'bg-slate-50 border-slate-300' : 'bg-[#0b131f] border-[#24354a]'
                 }`}>
+                <div className="tricolor-stripe absolute top-0 left-0 right-0" />
+                <div className={`w-28 h-28 mx-auto mt-2 mb-4 p-2 rounded-2xl border flex items-center justify-center shadow-md ${theme === 'light' ? 'bg-white border-amber-400/60' : 'bg-[#121d2b] border-[#b8860b]/60'
+                  }`}>
                   <img
                     src="/images/logos/logo-eie.png"
                     alt="Escudo Oficial de la EIE"
                     className="w-full h-full object-contain filter drop-shadow"
                   />
                 </div>
-                <h2 className={`text-xs font-bold uppercase tracking-wider ${
-                  theme === 'light' ? 'text-slate-800' : 'text-white'
-                }`}>
+                <h2 className={`text-xs font-bold uppercase tracking-wider ${theme === 'light' ? 'text-slate-800' : 'text-white'
+                  }`}>
                   ESCUELA DE IDIOMAS DEL EJÉRCITO
                 </h2>
                 <p className="text-[11px] font-mono mt-1 font-bold text-[#b8860b]">
@@ -656,35 +634,32 @@ export default function IndexPage() {
               <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#b8860b]">
                 Galería y Convocatorias Oficiales
               </p>
-              <h2 className={`text-2xl md:text-3xl font-extrabold mt-1 ${
-                theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-              }`}>
+              <h2 className={`text-2xl md:text-3xl font-extrabold mt-1 ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+                }`}>
                 Nuestra Realidad Institucional en Imágenes
               </h2>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-slate-500 mr-2">
                 {String(currentSlide + 1).padStart(2, '0')} / {String(slides.length).padStart(2, '0')}
               </span>
               <button
                 onClick={prevSlide}
-                className={`p-2.5 rounded-xl border transition shadow-sm ${
-                  theme === 'light'
+                className={`p-2.5 rounded-xl border transition shadow-sm ${theme === 'light'
                     ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
                     : 'bg-[#121d2b] border-[#24354a] text-slate-300 hover:bg-[#1a2738]'
-                }`}
+                  }`}
                 aria-label="Diapositiva anterior"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={nextSlide}
-                className={`p-2.5 rounded-xl border transition shadow-sm ${
-                  theme === 'light'
+                className={`p-2.5 rounded-xl border transition shadow-sm ${theme === 'light'
                     ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
                     : 'bg-[#121d2b] border-[#24354a] text-slate-300 hover:bg-[#1a2738]'
-                }`}
+                  }`}
                 aria-label="Siguiente diapositiva"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -692,35 +667,31 @@ export default function IndexPage() {
             </div>
           </div>
 
-          <div className={`rounded-3xl border overflow-hidden transition-all ${
-            theme === 'light'
+          <div className={`rounded-3xl border overflow-hidden transition-all ${theme === 'light'
               ? 'bg-white border-slate-200 shadow-md'
               : 'bg-[#121d2b] border-[#24354a] shadow-2xl'
-          }`}>
+            }`}>
             {slides.map((s, idx) => {
               if (idx !== currentSlide) return null;
               return (
                 <div key={s.id} className="grid grid-cols-1 lg:grid-cols-12 gap-0 items-stretch animate-solemn-fade">
-                  
+
                   <div className="lg:col-span-6 p-6 md:p-10 flex flex-col justify-between space-y-6">
                     <div className="space-y-4">
-                      <h3 className={`text-2xl md:text-3xl font-extrabold leading-tight ${
-                        theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-                      }`}>
+                      <h3 className={`text-2xl md:text-3xl font-extrabold leading-tight ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+                        }`}>
                         {s.titulo}
                       </h3>
 
-                      <p className={`text-xs md:text-sm leading-relaxed ${
-                        theme === 'light' ? 'text-slate-600' : 'text-slate-300'
-                      }`}>
+                      <p className={`text-xs md:text-sm leading-relaxed ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'
+                        }`}>
                         {s.subtitulo}
                       </p>
 
-                      <div className={`p-3.5 rounded-xl border text-xs font-mono font-medium ${
-                        theme === 'light'
+                      <div className={`p-3.5 rounded-xl border text-xs font-mono font-medium ${theme === 'light'
                           ? 'bg-slate-50 border-slate-200 text-[#855810]'
                           : 'bg-[#0b131f] border-[#24354a] text-[#d4af37]'
-                      }`}>
+                        }`}>
                         {s.infoExtra}
                       </div>
                     </div>
@@ -735,25 +706,22 @@ export default function IndexPage() {
                       </a>
                       <a
                         href="#contacto"
-                        className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition ${
-                          theme === 'light'
+                        className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition ${theme === 'light'
                             ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
                             : 'bg-[#1a2738] hover:bg-[#223247] text-slate-300 border-[#364d68]'
-                        }`}
+                          }`}
                       >
                         Consultar en Ventanilla
                       </a>
                     </div>
                   </div>
 
-                  <div className={`lg:col-span-6 border-t lg:border-t-0 lg:border-l relative flex items-center justify-center p-3 md:p-6 min-h-[320px] md:min-h-[440px] ${
-                    theme === 'light'
+                  <div className={`lg:col-span-6 border-t lg:border-t-0 lg:border-l relative flex items-center justify-center p-3 md:p-6 min-h-[320px] md:min-h-[440px] ${theme === 'light'
                       ? 'bg-slate-100/70 border-slate-200'
                       : 'bg-[#070d15] border-[#24354a]'
-                  }`}>
-                    <div className={`w-full h-full max-h-[460px] rounded-2xl overflow-hidden border flex items-center justify-center shadow-sm ${
-                      theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
                     }`}>
+                    <div className={`w-full h-full max-h-[460px] rounded-2xl overflow-hidden border flex items-center justify-center shadow-sm ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
+                      }`}>
                       <img
                         src={s.imagen}
                         alt={s.titulo}
@@ -772,19 +740,17 @@ export default function IndexPage() {
               <button
                 key={slideItem.id}
                 onClick={() => setCurrentSlide(i)}
-                className={`p-2.5 rounded-xl border text-left transition flex items-center gap-3 ${
-                  i === currentSlide
+                className={`p-2.5 rounded-xl border text-left transition flex items-center gap-3 ${i === currentSlide
                     ? theme === 'light'
                       ? 'border-[#b8860b] bg-amber-50/60 ring-2 ring-[#b8860b]/30 shadow-sm'
                       : 'border-[#b8860b] bg-[#1a2738] ring-2 ring-[#b8860b]/40 shadow-md'
                     : theme === 'light'
                       ? 'border-slate-200 bg-white hover:bg-slate-50 opacity-80 hover:opacity-100'
                       : 'border-[#24354a] bg-[#121d2b]/60 hover:bg-[#121d2b] opacity-75 hover:opacity-100'
-                }`}
+                  }`}
               >
-                <div className={`w-12 h-12 rounded-lg overflow-hidden shrink-0 border ${
-                  theme === 'light' ? 'border-slate-200 bg-slate-100' : 'border-[#24354a] bg-[#0b131f]'
-                }`}>
+                <div className={`w-12 h-12 rounded-lg overflow-hidden shrink-0 border ${theme === 'light' ? 'border-slate-200 bg-slate-100' : 'border-[#24354a] bg-[#0b131f]'
+                  }`}>
                   <img
                     src={slideItem.imagen}
                     alt=""
@@ -792,9 +758,8 @@ export default function IndexPage() {
                   />
                 </div>
                 <div className="overflow-hidden">
-                  <span className={`text-xs font-bold truncate block ${
-                    theme === 'light' ? 'text-slate-900' : 'text-white'
-                  }`}>
+                  <span className={`text-xs font-bold truncate block ${theme === 'light' ? 'text-slate-900' : 'text-white'
+                    }`}>
                     {slideItem.labelMiniatura}
                   </span>
                   <span className="text-[11px] text-slate-500 truncate block">
@@ -811,9 +776,8 @@ export default function IndexPage() {
             <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#b8860b]">
               Doctrina Institucional
             </p>
-            <h2 className={`text-2xl md:text-3xl font-extrabold ${
-              theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-            }`}>
+            <h2 className={`text-2xl md:text-3xl font-extrabold ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+              }`}>
               Misión y Visión
             </h2>
             <p className="text-xs md:text-sm text-slate-500">
@@ -822,12 +786,11 @@ export default function IndexPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            <div className={`rounded-2xl border border-t-4 border-t-[#15803d] p-7 shadow-sm transition flex flex-col justify-between ${
-              theme === 'light'
+
+            <div className={`rounded-2xl border border-t-4 border-t-[#15803d] p-7 shadow-sm transition flex flex-col justify-between ${theme === 'light'
                 ? 'bg-white border-slate-200 hover:border-[#15803d]'
                 : 'bg-[#121d2b] border-[#24354a] hover:border-[#2d6a4f]'
-            }`}>
+              }`}>
               <div className="space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-[#24354a]">
                   <span className="text-xs font-mono font-bold text-[#15803d] dark:text-[#4ade80] uppercase">
@@ -835,14 +798,12 @@ export default function IndexPage() {
                   </span>
                   <span className="text-xs font-mono text-slate-400">Constitución Política</span>
                 </div>
-                <h3 className={`text-xl md:text-2xl font-bold ${
-                  theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-                }`}>
+                <h3 className={`text-xl md:text-2xl font-bold ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+                  }`}>
                   Misión
                 </h3>
-                <p className={`text-xs md:text-sm leading-relaxed text-justify ${
-                  theme === 'light' ? 'text-slate-600' : 'text-slate-300'
-                }`}>
+                <p className={`text-xs md:text-sm leading-relaxed text-justify ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'
+                  }`}>
                   La Escuela de Idiomas del Ejército planifica, coordina y desarrolla de forma permanente el sistema de enseñanza y aprendizaje de idiomas extranjeros y nativos en sus distintas filiales en todo el territorio nacional. Su objetivo es capacitar al recurso humano del Ejército y al personal civil con un elevado nivel de dominio lingüístico para satisfacer sus requerimientos y cumplir con la misión educativa del Comando de Institutos Militares y su función constitucional.
                 </p>
               </div>
@@ -852,11 +813,10 @@ export default function IndexPage() {
               </div>
             </div>
 
-            <div className={`rounded-2xl border border-t-4 border-t-[#dc2626] p-7 shadow-sm transition flex flex-col justify-between ${
-              theme === 'light'
+            <div className={`rounded-2xl border border-t-4 border-t-[#dc2626] p-7 shadow-sm transition flex flex-col justify-between ${theme === 'light'
                 ? 'bg-white border-slate-200 hover:border-[#dc2626]'
                 : 'bg-[#121d2b] border-[#24354a] hover:border-[#ef4444]'
-            }`}>
+              }`}>
               <div className="space-y-3">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-[#24354a]">
                   <span className="text-xs font-mono font-bold text-[#b8860b] uppercase">
@@ -864,14 +824,12 @@ export default function IndexPage() {
                   </span>
                   <span className="text-xs font-mono text-slate-400">Proyección 2030</span>
                 </div>
-                <h3 className={`text-xl md:text-2xl font-bold ${
-                  theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-                }`}>
+                <h3 className={`text-xl md:text-2xl font-bold ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+                  }`}>
                   Visión
                 </h3>
-                <p className={`text-xs md:text-sm leading-relaxed text-justify ${
-                  theme === 'light' ? 'text-slate-600' : 'text-slate-300'
-                }`}>
+                <p className={`text-xs md:text-sm leading-relaxed text-justify ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'
+                  }`}>
                   Es una institución líder y competitiva en la enseñanza de idiomas nativos y extranjeros con excelencia académica, que forma talento humano especializado en lingüística capaz de afrontar los desafíos de un mundo globalizado y competitivo, consolidando además la interculturalidad a través de su personal académico y profesional.
                 </p>
               </div>
@@ -890,43 +848,38 @@ export default function IndexPage() {
               <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#1b4332] dark:text-[#74c69d]">
                 Oferta Formativa
               </p>
-              <h2 className={`text-2xl md:text-3xl font-extrabold mt-1 ${
-                theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-              }`}>
+              <h2 className={`text-2xl md:text-3xl font-extrabold mt-1 ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+                }`}>
                 Catálogo de Idiomas y Programas
               </h2>
             </div>
 
-            <div className={`inline-flex border p-1 rounded-xl text-xs font-semibold ${
-              theme === 'light' ? 'bg-slate-100 border-slate-300' : 'bg-[#0b131f] border-[#24354a]'
-            }`}>
+            <div className={`inline-flex border p-1 rounded-xl text-xs font-semibold ${theme === 'light' ? 'bg-slate-100 border-slate-300' : 'bg-[#0b131f] border-[#24354a]'
+              }`}>
               <button
                 onClick={() => setTabIdioma('INGLES')}
-                className={`px-3.5 py-1.5 rounded-lg transition ${
-                  tabIdioma === 'INGLES'
+                className={`px-3.5 py-1.5 rounded-lg transition ${tabIdioma === 'INGLES'
                     ? 'bg-[#d97706] text-white font-bold shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
-                Inglés ALC (36 Libros)
+                Inglés ALC
               </button>
               <button
                 onClick={() => setTabIdioma('NATIVOS')}
-                className={`px-3.5 py-1.5 rounded-lg transition ${
-                  tabIdioma === 'NATIVOS'
+                className={`px-3.5 py-1.5 rounded-lg transition ${tabIdioma === 'NATIVOS'
                     ? 'bg-[#15803d] text-white font-bold shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 Lenguas Nativas
               </button>
               <button
                 onClick={() => setTabIdioma('EXTRANJEROS')}
-                className={`px-3.5 py-1.5 rounded-lg transition ${
-                  tabIdioma === 'EXTRANJEROS'
+                className={`px-3.5 py-1.5 rounded-lg transition ${tabIdioma === 'EXTRANJEROS'
                     ? 'bg-[#b91c1c] text-white font-bold shadow-sm'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                  }`}
               >
                 Idiomas Extranjeros
               </button>
@@ -934,16 +887,14 @@ export default function IndexPage() {
           </div>
 
           {tabIdioma === 'INGLES' && (
-            <div className={`border rounded-2xl p-6 md:p-8 space-y-6 shadow-sm ${
-              theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
-            }`}>
+            <div className={`border rounded-2xl p-6 md:p-8 space-y-6 shadow-sm ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
+              }`}>
               <div className="pb-3 border-b border-slate-200 dark:border-[#24354a]">
                 <p className="text-xs font-bold text-[#b8860b] uppercase tracking-wider">
                   Plan Curricular de Inglés
                 </p>
-                <h3 className={`text-xl md:text-2xl font-bold ${
-                  theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-                }`}>
+                <h3 className={`text-xl md:text-2xl font-bold ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+                  }`}>
                   Inglés Técnico Superior &bull; 36 Libros y 6 Niveles Formativos
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
@@ -960,22 +911,19 @@ export default function IndexPage() {
                   { nivel: 'Nivel 5', libros: 'Libros 25 al 30', tit: 'Inglés Avanzado Profesional', eval: 'Examen de Nivel en Libro 30', border: 'border-l-4 border-l-[#dc2626]' },
                   { nivel: 'Nivel 6', libros: 'Libros 31 al 36', tit: 'Suficiencia & Especialidad Militar', eval: 'Defensa de Grado Técnico Superior', border: 'border-l-4 border-l-[#1e3a8a] dark:border-l-[#38bdf8]' },
                 ].map((item, idx) => (
-                  <div key={idx} className={`border p-4 rounded-xl space-y-2 ${item.border} ${
-                    theme === 'light'
+                  <div key={idx} className={`border p-4 rounded-xl space-y-2 ${item.border} ${theme === 'light'
                       ? 'bg-slate-50 border-slate-200'
                       : 'bg-[#0b131f] border-[#24354a]'
-                  }`}>
+                    }`}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-mono font-bold text-[#b8860b]">{item.nivel}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${
-                        theme === 'light' ? 'bg-slate-200 text-slate-700' : 'bg-[#1a2738] text-slate-300'
-                      }`}>
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-mono ${theme === 'light' ? 'bg-slate-200 text-slate-700' : 'bg-[#1a2738] text-slate-300'
+                        }`}>
                         {item.libros}
                       </span>
                     </div>
-                    <h4 className={`text-sm font-bold ${
-                      theme === 'light' ? 'text-slate-800' : 'text-white'
-                    }`}>
+                    <h4 className={`text-sm font-bold ${theme === 'light' ? 'text-slate-800' : 'text-white'
+                      }`}>
                       {item.tit}
                     </h4>
                     <p className="text-xs text-slate-500">{item.eval}</p>
@@ -1007,20 +955,17 @@ export default function IndexPage() {
                   niveles: 'Básico, Intermedio y Avanzado (6 módulos)',
                 },
               ].map((nat, i) => (
-                <div key={i} className={`border rounded-2xl p-6 space-y-3 shadow-sm ${
-                  theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
-                }`}>
+                <div key={i} className={`border rounded-2xl p-6 space-y-3 shadow-sm ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
+                  }`}>
                   <div className="flex items-center justify-between">
-                    <h3 className={`text-xl font-bold ${
-                      theme === 'light' ? 'text-slate-900' : 'text-white'
-                    }`}>
+                    <h3 className={`text-xl font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'
+                      }`}>
                       {nat.idioma}
                     </h3>
                     <span className="text-xs font-mono text-slate-500">{nat.sub}</span>
                   </div>
-                  <p className={`text-xs leading-relaxed ${
-                    theme === 'light' ? 'text-slate-600' : 'text-slate-300'
-                  }`}>
+                  <p className={`text-xs leading-relaxed ${theme === 'light' ? 'text-slate-600' : 'text-slate-300'
+                    }`}>
                     {nat.desc}
                   </p>
                   <p className="text-xs text-slate-500 font-mono pt-2 border-t border-slate-200 dark:border-[#24354a]">
@@ -1039,12 +984,10 @@ export default function IndexPage() {
                 { lang: 'Ruso', pais: 'Federación Rusa', enfoque: 'Cooperación Técnica Militar' },
                 { lang: 'Chino Mandarín', pais: 'R.P. China', enfoque: 'Comercio y Relaciones Bilaterales' },
               ].map((ext, idx) => (
-                <div key={idx} className={`border p-4 rounded-xl space-y-1.5 ${
-                  theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
-                }`}>
-                  <h4 className={`font-bold text-sm ${
-                    theme === 'light' ? 'text-slate-800' : 'text-white'
+                <div key={idx} className={`border p-4 rounded-xl space-y-1.5 ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
                   }`}>
+                  <h4 className={`font-bold text-sm ${theme === 'light' ? 'text-slate-800' : 'text-white'
+                    }`}>
                     {ext.lang}
                   </h4>
                   <p className="text-xs font-mono text-[#b8860b]">{ext.pais}</p>
@@ -1060,9 +1003,8 @@ export default function IndexPage() {
             <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#b8860b]">
               Presencia Territorial
             </p>
-            <h2 className={`text-2xl md:text-3xl font-extrabold ${
-              theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-            }`}>
+            <h2 className={`text-2xl md:text-3xl font-extrabold ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+              }`}>
               Nuestras 9 Sedes y Filiales en Bolivia
             </h2>
             <p className="text-xs md:text-sm text-slate-500">
@@ -1082,14 +1024,12 @@ export default function IndexPage() {
               { ciudad: 'Uncía (Potosí)', dir: 'Regimiento de Caballería 7 Chichas', tel: '2-5810294' },
               { ciudad: 'Riberalta (Beni)', dir: 'Guarnición Militar de la Amazonía', tel: '3-8529104' },
             ].map((sede, i) => (
-              <div key={i} className={`border p-4 rounded-xl space-y-1.5 transition ${
-                theme === 'light'
+              <div key={i} className={`border p-4 rounded-xl space-y-1.5 transition ${theme === 'light'
                   ? 'bg-white border-slate-200 hover:border-slate-400'
                   : 'bg-[#121d2b] border-[#24354a] hover:border-slate-500'
-              }`}>
-                <h4 className={`font-bold text-sm ${
-                  theme === 'light' ? 'text-slate-900' : 'text-white'
                 }`}>
+                <h4 className={`font-bold text-sm ${theme === 'light' ? 'text-slate-900' : 'text-white'
+                  }`}>
                   {sede.ciudad}
                 </h4>
                 <p className="text-xs text-slate-500">{sede.dir}</p>
@@ -1100,17 +1040,15 @@ export default function IndexPage() {
         </section>
 
         <section id="inscripciones" className="space-y-6">
-          <div className={`border rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden ${
-            theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
-          }`}>
+          <div className={`border rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
+            }`}>
             <div className="tricolor-stripe absolute top-0 left-0 right-0" />
             <div className="max-w-2xl space-y-1 mb-8 pt-2">
               <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#b8860b]">
                 Matriculación Digital II-2026
               </p>
-              <h2 className={`text-2xl md:text-3xl font-extrabold ${
-                theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-              }`}>
+              <h2 className={`text-2xl md:text-3xl font-extrabold ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+                }`}>
                 Inscripción en Línea / Pre-Matrícula
               </h2>
               <p className="text-xs md:text-sm text-slate-500">
@@ -1120,26 +1058,23 @@ export default function IndexPage() {
             </div>
 
             {comprobanteInscripcion ? (
-              <div className={`border-2 rounded-2xl p-6 md:p-8 space-y-5 animate-solemn-fade ${
-                theme === 'light'
+              <div className={`border-2 rounded-2xl p-6 md:p-8 space-y-5 animate-solemn-fade ${theme === 'light'
                   ? 'bg-emerald-50/50 border-emerald-500'
                   : 'bg-[#0b131f] border-[#2d6a4f]'
-              }`}>
+                }`}>
                 <div className="flex items-center gap-3 text-emerald-600 dark:text-[#74c69d]">
                   <CheckCircle2 className="w-8 h-8 shrink-0" />
                   <div>
-                    <h3 className={`text-xl font-bold ${
-                      theme === 'light' ? 'text-slate-900' : 'text-white'
-                    }`}>
+                    <h3 className={`text-xl font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'
+                      }`}>
                       ¡Pre-Inscripción Registrada Exitosamente!
                     </h3>
                     <p className="text-xs text-slate-500">Su solicitud ha sido asentada en la base de datos de la Escuela de Idiomas del Ejército.</p>
                   </div>
                 </div>
 
-                <div className={`border rounded-xl p-5 space-y-4 ${
-                  theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
-                }`}>
+                <div className={`border rounded-xl p-5 space-y-4 ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
+                  }`}>
                   <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#24354a] pb-3 flex-wrap gap-2">
                     <div className="flex items-center gap-3">
                       <img src="/images/logos/logo-eie.png" alt="Logo" className="w-9 h-9 object-contain" />
@@ -1206,11 +1141,10 @@ export default function IndexPage() {
 
                   <button
                     onClick={() => setComprobanteInscripcion(null)}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-medium border ${
-                      theme === 'light'
+                    className={`px-4 py-2.5 rounded-xl text-xs font-medium border ${theme === 'light'
                         ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
                         : 'bg-[#1a2738] border-[#364d68] text-slate-300 hover:bg-[#223247]'
-                    }`}
+                      }`}
                   >
                     Registrar Otra Pre-Inscripción
                   </button>
@@ -1233,22 +1167,20 @@ export default function IndexPage() {
                     <button
                       type="button"
                       onClick={() => setFormInscripcion({ ...formInscripcion, tipo_estudiante: 'Civil' })}
-                      className={`p-3 rounded-xl border text-xs font-bold text-center transition ${
-                        formInscripcion.tipo_estudiante === 'Civil'
+                      className={`p-3 rounded-xl border text-xs font-bold text-center transition ${formInscripcion.tipo_estudiante === 'Civil'
                           ? 'border-[#b8860b] bg-amber-50 dark:bg-[#b8860b]/20 text-amber-900 dark:text-white'
                           : 'border-slate-300 dark:border-[#24354a] text-slate-500'
-                      }`}
+                        }`}
                     >
                       Estudiante Civil
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormInscripcion({ ...formInscripcion, tipo_estudiante: 'Militar' })}
-                      className={`p-3 rounded-xl border text-xs font-bold text-center transition ${
-                        formInscripcion.tipo_estudiante === 'Militar'
+                      className={`p-3 rounded-xl border text-xs font-bold text-center transition ${formInscripcion.tipo_estudiante === 'Militar'
                           ? 'border-[#1b4332] bg-emerald-50 dark:bg-[#1b4332]/40 text-[#1b4332] dark:text-white'
                           : 'border-slate-300 dark:border-[#24354a] text-slate-500'
-                      }`}
+                        }`}
                     >
                       Personal Militar (FF.AA.)
                     </button>
@@ -1256,9 +1188,8 @@ export default function IndexPage() {
                 </div>
 
                 {formInscripcion.tipo_estudiante === 'Militar' && (
-                  <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl border ${
-                    theme === 'light' ? 'bg-slate-50 border-slate-300' : 'bg-[#0b131f] border-[#2d6a4f]'
-                  }`}>
+                  <div className={`grid grid-cols-1 md:grid-cols-3 gap-4 p-4 rounded-xl border ${theme === 'light' ? 'bg-slate-50 border-slate-300' : 'bg-[#0b131f] border-[#2d6a4f]'
+                    }`}>
                     <div>
                       <label className="block text-xs font-semibold mb-1">
                         Grado Militar *
@@ -1444,9 +1375,8 @@ export default function IndexPage() {
                   </div>
                 </div>
 
-                <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl border ${
-                  theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
-                }`}>
+                <div className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-xl border ${theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-[#0b131f] border-[#24354a]'
+                  }`}>
                   <div>
                     <label className="block text-xs font-semibold mb-1 text-slate-500">
                       Sede o Filial
@@ -1538,17 +1468,15 @@ export default function IndexPage() {
         </section>
 
         <section id="correo-institucional" className="space-y-6">
-          <div className={`border rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden ${
-            theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
-          }`}>
+          <div className={`border rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
+            }`}>
             <div className="tricolor-stripe absolute top-0 left-0 right-0" />
             <div className="max-w-2xl space-y-1 mb-6 pt-2">
               <p className="text-xs font-mono font-bold uppercase tracking-wider text-[#1b4332] dark:text-[#74c69d]">
                 Google Workspace Institucional
               </p>
-              <h2 className={`text-2xl md:text-3xl font-extrabold ${
-                theme === 'light' ? 'text-[#0f172a]' : 'text-white'
-              }`}>
+              <h2 className={`text-2xl md:text-3xl font-extrabold ${theme === 'light' ? 'text-[#0f172a]' : 'text-white'
+                }`}>
                 Solicitud y Activación de Correo Institucional
               </h2>
               <p className="text-xs md:text-sm text-slate-500">
@@ -1593,14 +1521,12 @@ export default function IndexPage() {
             </form>
 
             {resultadoCorreo && (
-              <div className={`mt-8 border rounded-2xl p-6 md:p-8 space-y-5 max-w-2xl animate-solemn-fade shadow-sm ${
-                theme === 'light' ? 'bg-slate-50 border-slate-300' : 'bg-[#0b131f] border-[#b8860b]/50'
-              }`}>
+              <div className={`mt-8 border rounded-2xl p-6 md:p-8 space-y-5 max-w-2xl animate-solemn-fade shadow-sm ${theme === 'light' ? 'bg-slate-50 border-slate-300' : 'bg-[#0b131f] border-[#b8860b]/50'
+                }`}>
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-[#24354a] pb-4">
                   <div>
-                    <h3 className={`text-base md:text-lg font-bold ${
-                      theme === 'light' ? 'text-slate-900' : 'text-white'
-                    }`}>
+                    <h3 className={`text-base md:text-lg font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'
+                      }`}>
                       Credenciales de Correo Institucional
                     </h3>
                     <p className="text-xs text-slate-500">
@@ -1613,9 +1539,8 @@ export default function IndexPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className={`border p-3.5 rounded-xl flex items-center justify-between ${
-                    theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
-                  }`}>
+                  <div className={`border p-3.5 rounded-xl flex items-center justify-between ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
+                    }`}>
                     <div>
                       <span className="text-[10px] text-slate-400 font-mono block">DIRECCIÓN DE CORREO:</span>
                       <strong className="text-sm font-mono text-[#1b4332] dark:text-[#74c69d] break-all">
@@ -1624,9 +1549,8 @@ export default function IndexPage() {
                     </div>
                   </div>
 
-                  <div className={`border p-3.5 rounded-xl flex items-center justify-between ${
-                    theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
-                  }`}>
+                  <div className={`border p-3.5 rounded-xl flex items-center justify-between ${theme === 'light' ? 'bg-white border-slate-200' : 'bg-[#121d2b] border-[#24354a]'
+                    }`}>
                     <div>
                       <span className="text-[10px] text-slate-400 font-mono block">CONTRASEÑA TEMPORAL:</span>
                       <strong className="text-sm font-mono text-[#b8860b]">{resultadoCorreo.passwordTemporal}</strong>
@@ -1634,9 +1558,8 @@ export default function IndexPage() {
                     <span className="text-xs text-slate-400">Cambiar al primer acceso</span>
                   </div>
 
-                  <div className={`p-3 rounded-lg space-y-1 text-xs text-slate-500 ${
-                    theme === 'light' ? 'bg-slate-100' : 'bg-[#121d2b]/60'
-                  }`}>
+                  <div className={`p-3 rounded-lg space-y-1 text-xs text-slate-500 ${theme === 'light' ? 'bg-slate-100' : 'bg-[#121d2b]/60'
+                    }`}>
                     <p><strong>Pasos para Iniciar Sesión:</strong></p>
                     <p>1. Ingrese a <a href="https://mail.google.com" target="_blank" rel="noreferrer" className="text-sky-600 underline">mail.google.com</a> con su cuenta.</p>
                     <p>2. Escriba la contraseña temporal y configure su nueva clave personal.</p>
@@ -1646,11 +1569,10 @@ export default function IndexPage() {
                 <div className="flex flex-wrap items-center gap-3 pt-2">
                   <button
                     onClick={handleCopiarCredenciales}
-                    className={`text-xs px-4 py-2.5 rounded-xl font-semibold border flex items-center gap-2 transition ${
-                      theme === 'light'
+                    className={`text-xs px-4 py-2.5 rounded-xl font-semibold border flex items-center gap-2 transition ${theme === 'light'
                         ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
                         : 'bg-[#1a2738] border-[#364d68] text-slate-200 hover:bg-[#223247]'
-                    }`}
+                      }`}
                   >
                     {copiado ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiado ? '¡Copiado!' : 'Copiar Credenciales'}</span>
@@ -1673,21 +1595,19 @@ export default function IndexPage() {
 
       </main>
 
-      <footer id="contacto" className={`border-t text-xs pt-12 pb-8 mt-16 transition-colors relative ${
-        theme === 'light'
+      <footer id="contacto" className={`border-t text-xs pt-12 pb-8 mt-16 transition-colors relative ${theme === 'light'
           ? 'bg-white border-slate-200 text-slate-600'
           : 'bg-[#070d15] border-[#24354a] text-slate-400'
-      }`}>
+        }`}>
         <div className="tricolor-stripe absolute top-0 left-0 right-0" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            
+
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl border p-1 flex items-center justify-center shrink-0 ${
-                  theme === 'light' ? 'bg-slate-50 border-slate-300' : 'bg-[#121d2b] border-[#b8860b]/40'
-                }`}>
+                <div className={`w-10 h-10 rounded-xl border p-1 flex items-center justify-center shrink-0 ${theme === 'light' ? 'bg-slate-50 border-slate-300' : 'bg-[#121d2b] border-[#b8860b]/40'
+                  }`}>
                   <img src="/images/logos/logo-eie.png" alt="Escudo EIE" className="w-full h-full object-contain" />
                 </div>
                 <div>
@@ -1706,9 +1626,8 @@ export default function IndexPage() {
             </div>
 
             <div className="space-y-3">
-              <p className={`font-bold uppercase text-[11px] tracking-wider border-b pb-2 ${
-                theme === 'light' ? 'text-slate-900 border-slate-200' : 'text-white border-[#24354a]'
-              }`}>
+              <p className={`font-bold uppercase text-[11px] tracking-wider border-b pb-2 ${theme === 'light' ? 'text-slate-900 border-slate-200' : 'text-white border-[#24354a]'
+                }`}>
                 Canales de Atención
               </p>
               <div className="space-y-2 text-xs">
@@ -1737,9 +1656,8 @@ export default function IndexPage() {
             </div>
 
             <div className="space-y-3">
-              <p className={`font-bold uppercase text-[11px] tracking-wider border-b pb-2 ${
-                theme === 'light' ? 'text-slate-900 border-slate-200' : 'text-white border-[#24354a]'
-              }`}>
+              <p className={`font-bold uppercase text-[11px] tracking-wider border-b pb-2 ${theme === 'light' ? 'text-slate-900 border-slate-200' : 'text-white border-[#24354a]'
+                }`}>
                 Navegación y Trámites
               </p>
               <ul className="space-y-2 text-xs">
@@ -1755,9 +1673,8 @@ export default function IndexPage() {
             </div>
 
             <div className="space-y-3">
-              <p className={`font-bold uppercase text-[11px] tracking-wider border-b pb-2 ${
-                theme === 'light' ? 'text-slate-900 border-slate-200' : 'text-white border-[#24354a]'
-              }`}>
+              <p className={`font-bold uppercase text-[11px] tracking-wider border-b pb-2 ${theme === 'light' ? 'text-slate-900 border-slate-200' : 'text-white border-[#24354a]'
+                }`}>
                 Filiales y Marco Jurídico
               </p>
               <div className="space-y-2 text-xs">
