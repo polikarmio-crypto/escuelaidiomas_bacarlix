@@ -49,24 +49,30 @@ export default function InscripcionesPage() {
   const cargarDatos = async () => {
     setLoading(true);
     try {
+      let urlIns = '/api/v1/inscripciones?per_page=100';
+      if (esEstudiante) {
+        if (usuario.id_estudiante) urlIns += `&id_estudiante=${usuario.id_estudiante}`;
+        else if (usuario.email) urlIns += `&email=${encodeURIComponent(usuario.email)}`;
+      }
+
       const [resIns, resEst, resPar] = await Promise.all([
-        fetch('/api/v1/inscripciones'),
-        fetch('/api/v1/estudiantes?per_page=100'),
-        fetch('/api/v1/paralelos'),
+        fetch(urlIns),
+        esEstudiante ? Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as any) : fetch('/api/v1/estudiantes?per_page=100'),
+        esEstudiante ? Promise.resolve({ ok: true, json: async () => [] } as any) : fetch('/api/v1/paralelos'),
       ]);
 
       if (resIns.ok) {
         const d = await resIns.json();
         setInscripciones(d.data || []);
       }
-      if (resEst.ok) {
+      if (resEst.ok && !esEstudiante) {
         const d = await resEst.json();
         setEstudiantes(d.data || []);
         if (d.data?.length > 0 && !formIns.id_estudiante) {
           setFormIns((f) => ({ ...f, id_estudiante: d.data[0].id_estudiante.toString() }));
         }
       }
-      if (resPar.ok) {
+      if (resPar.ok && !esEstudiante) {
         const d = await resPar.json();
         setParalelos(d || []);
         if (d.length > 0 && !formIns.id_paralelo) {
@@ -82,7 +88,7 @@ export default function InscripcionesPage() {
 
   useEffect(() => {
     cargarDatos();
-  }, []);
+  }, [esEstudiante, usuario.id_estudiante, usuario.email]);
 
   const handleFormalizarInscripcion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,8 +120,17 @@ export default function InscripcionesPage() {
   const inscripcionesFiltradas = useMemo(() => {
     return inscripciones.filter((ins) => {
       if (esEstudiante) {
-        const nombreEst = `${ins.estudiante?.nombre_estudiante} ${ins.estudiante?.apellido_estudiante}`.toLowerCase();
-        return nombreEst.includes(usuario.nombre.toLowerCase().split(' ')[1] || '');
+        if (usuario.id_estudiante && ins.id_estudiante) {
+          return Number(ins.id_estudiante) === Number(usuario.id_estudiante);
+        }
+        if (usuario.email && ins.estudiante?.email_estudiante) {
+          return ins.estudiante.email_estudiante.toLowerCase().trim() === usuario.email.toLowerCase().trim();
+        }
+        if (usuario.ci && ins.estudiante?.ci_estudiante) {
+          return ins.estudiante.ci_estudiante.trim().toLowerCase() === usuario.ci.trim().toLowerCase();
+        }
+        const nomEst = `${ins.estudiante?.nombre_estudiante || ''} ${ins.estudiante?.apellido_estudiante || ''}`.trim().toLowerCase();
+        return nomEst === usuario.nombre.trim().toLowerCase();
       }
       if (!busqueda.trim()) return true;
       const q = busqueda.toLowerCase().trim();
@@ -124,7 +139,7 @@ export default function InscripcionesPage() {
       const par = ins.paralelo?.codigo_paralelo?.toLowerCase() || '';
       return nom.includes(q) || ci.includes(q) || par.includes(q);
     });
-  }, [inscripciones, esEstudiante, usuario.nombre, busqueda]);
+  }, [inscripciones, esEstudiante, usuario, busqueda]);
 
   const totalPages = Math.max(1, Math.ceil(inscripcionesFiltradas.length / PER_PAGE));
   const inscripcionesPaginadas = useMemo(() => {

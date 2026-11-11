@@ -69,15 +69,6 @@ const EMAIL_PREFIX_TO_ROLE: Record<string, RolUsuario> = {
 
 function detectarRolPorEmail(email: string): RolUsuario {
   const emailLower = email.toLowerCase().trim();
-  try {
-    if (typeof window !== 'undefined') {
-      const regList = JSON.parse(localStorage.getItem('eie_registered_users') || '[]');
-      const found = regList.find((u: any) => u.email && u.email.toLowerCase() === emailLower);
-      if (found && found.rol && ROLES_CONFIG[found.rol as RolUsuario]) {
-        return found.rol as RolUsuario;
-      }
-    }
-  } catch (e) {}
 
   for (const [prefix, rol] of Object.entries(EMAIL_PREFIX_TO_ROLE)) {
     if (
@@ -122,9 +113,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const { usuario, autenticado, rolActivo, rolConfig, esAdmin, canAccessRoute, cambiarRol, iniciarSesion, cerrarSesion } = useAuthRole();
   const { data: session, status } = useSession();
   const [demoAuth, setDemoAuth] = useState(false);
-  const isAuthenticated = status === 'authenticated' || demoAuth;
+  const isAuthenticated = status === 'authenticated' || autenticado || demoAuth;
   const isAuthenticating = status === 'loading';
   const [authStep, setAuthStep] = useState<string>('');
   const [authTab, setAuthTab] = useState<'login' | 'registro'>('login');
@@ -146,7 +138,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [regErrors, setRegErrors] = useState<Record<string, string>>({});
   const [regSuccess, setRegSuccess] = useState<string | null>(null);
 
-  const { rolActivo, rolConfig, esAdmin, cambiarRol } = useAuthRole();
 
   const [modalCambioRol, setModalCambioRol] = useState(false);
   const [rolObjetivo, setRolObjetivo] = useState<RolUsuario | null>(null);
@@ -242,26 +233,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setAuthStep('Redirigiendo a autenticación institucional con Google...');
-    signIn('google');
+    signIn('google', { callbackUrl: '/dashboard' }, { prompt: 'select_account' });
   };
-
-  useEffect(() => {
-    try {
-      const savedAuth = localStorage.getItem('eie_auth');
-      const savedRole = localStorage.getItem('eie_role');
-      const savedEmail = localStorage.getItem('eie_email');
-      if (savedAuth === 'true') {
-        setDemoAuth(true);
-        if (savedRole && ROLES_CONFIG[savedRole as RolUsuario]) {
-          cambiarRol(savedRole as RolUsuario);
-        }
-        if (savedEmail) {
-          setLoginEmail(savedEmail);
-        }
-      }
-    } catch (e) {
-    }
-  }, []);
 
   const triggerCurtain = (label: string, icon: LucideIcon, onMidpoint: () => void) => {
     setTransLabel(label);
@@ -305,14 +278,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
     setLoginPassword('');
     triggerCurtain(`Acceso Concedido: ${config.titulo}`, Shield, () => {
-      cambiarRol(rolDetectado);
+      iniciarSesion({
+        email: emailTrim,
+        nombre: config.nombrePorDefecto,
+        ci: config.ciPorDefecto,
+        rol: rolDetectado,
+        id_estudiante: null,
+        id_docente: null,
+      });
       setDemoAuth(true);
-
-      try {
-        localStorage.setItem('eie_auth', 'true');
-        localStorage.setItem('eie_role', rolDetectado);
-        localStorage.setItem('eie_email', emailTrim);
-      } catch (err) {}
     });
   };
 
@@ -367,19 +341,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
 
     setRegErrors({});
-    try {
-      const regList = JSON.parse(localStorage.getItem('eie_registered_users') || '[]');
-      regList.push({
-        nombres: nombresTrim,
-        apellidos: apellidosTrim,
-        ci: `${ciTrim} ${regForm.expedido}`,
-        telefono: telTrim,
-        email: emailTrim,
-        rol: regForm.rol,
-        fecha: new Date().toISOString(),
-      });
-      localStorage.setItem('eie_registered_users', JSON.stringify(regList));
-    } catch (err) {}
 
     setRegSuccess('¡Cuenta registrada exitosamente! Ahora puede iniciar sesión con sus credenciales.');
     setLoginEmail(emailTrim);
@@ -392,10 +353,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user?.email) {
-      const rolDetectado = detectarRolPorEmail(session.user.email);
-      if (rolDetectado) {
-        cambiarRol(rolDetectado);
-      }
+      const email = session.user.email;
+      const rolDetectado = detectarRolPorEmail(email);
+      iniciarSesion({
+        email,
+        nombre: session.user.name || email.split('@')[0],
+        ci: '',
+        rol: rolDetectado || 'ESTUDIANTE',
+      });
     }
   }, [status, session]);
 
@@ -405,12 +370,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       setLoginEmail('');
       setLoginPassword('');
       setLoginEmailError(null);
-      try {
-        localStorage.clear();
-        sessionStorage.clear();
-      } catch (e) {}
+      cerrarSesion();
       signOut({ redirect: false });
-      router.push('/');
+      router.push('/login');
     });
   };
 
@@ -440,7 +402,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  if (pathname === '/') {
+  useEffect(() => {
+    if (pathname !== '/' && pathname !== '/login' && !isAuthenticated && status !== 'loading') {
+      router.replace('/login');
+    }
+  }, [pathname, isAuthenticated, status, router]);
+
+  if (pathname === '/' || pathname === '/login') {
     return (
       <>
         {transPhase !== 'idle' && (
@@ -483,441 +451,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div>
       {!isAuthenticated ? (
-        <div className="login-screen-wrapper">
-          <div className="login-card animate-solemn-fade" style={{ maxWidth: '580px', width: '100%' }}>
-            <div className="tricolor-stripe" />
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', borderBottom: '1px solid var(--border-subtle)' }}>
-              <button
-                type="button"
-                onClick={() => router.back()}
-                className="btn btn-secondary"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
-                title="Volver a la vista anterior"
-              >
-                <ArrowLeft size={14} />
-                <span>Volver atrás</span>
-              </button>
-              <Link
-                href="/"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--military-gold-primary)', fontWeight: 600, textDecoration: 'none' }}
-                title="Regresar a la portada principal"
-              >
-                <Home size={14} />
-                <span>Volver a la página de inicio</span>
-              </Link>
-            </div>
-
-            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-              <img
-                src="/images/logos/logo-eie.png"
-                alt="Logo EIE"
-                style={{
-                  width: 56,
-                  height: 56,
-                  margin: '0 auto 0.5rem',
-                  objectFit: 'contain',
-                }}
-              />
-              <h2 className="font-solemn" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.15rem' }}>
-                ESCUELA DE IDIOMAS DEL EJÉRCITO
-              </h2>
-              <p style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--military-gold-primary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                Comando de Educación y Doctrina Militar &bull; CEDMIL
-              </p>
-              <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                Sistema Académico de Control y Aprendizaje (SACA)
-              </p>
-            </div>
-
-
-
-            {isAuthenticating ? (
-              <div className="military-loader animate-solemn-fade">
-                <div className="military-crest-spinner">
-                  <div className="spinner-outer-ring" />
-                  <div className="spinner-inner-ring" />
-                  <div className="spinner-center-symbol">
-                    <img src="/images/logos/logo-eie.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
-                  </div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <p style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-main)', marginBottom: '0.35rem' }}>
-                    Autenticando en Servidor Militar...
-                  </p>
-                  <p style={{ fontSize: '0.78rem', color: 'var(--military-gold-primary)' }}>
-                    {authStep}
-                  </p>
-                </div>
-              </div>
-            ) : authTab === 'login' ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} className="animate-solemn-fade">
-                <form onSubmit={handleDemoLogin} autoComplete="off" data-form-type="other" noValidate style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ position: 'absolute', opacity: 0, height: 0, width: 0, zIndex: -1, pointerEvents: 'none' }} aria-hidden="true">
-                    <input type="text" name="fake_username_remember" tabIndex={-1} autoComplete="off" />
-                    <input type="password" name="fake_password_remember" tabIndex={-1} autoComplete="new-password" />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.3rem' }}>
-                      Correo Institucional o Registrado *
-                    </label>
-                    <input
-                      type="email"
-                      name="modal_access_identity"
-                      id="modal_access_identity"
-                      value={loginEmail}
-                      onChange={(e) => { setLoginEmail(e.target.value); setLoginEmailError(null); }}
-                      placeholder="usuario@idiomas.ejercito.mil.bo o su correo registrado"
-                      className="input"
-                      required
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      data-lpignore="true"
-                      data-form-type="other"
-                      autoFocus
-                      style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.3rem' }}>
-                      Contraseña Institucional *
-                    </label>
-                    <input
-                      type="password"
-                      name="military_session_auth_modal"
-                      id="military_session_auth_modal"
-                      value={loginPassword}
-                      onChange={(e) => { setLoginPassword(e.target.value); setLoginEmailError(null); }}
-                      placeholder="Contraseña de acceso"
-                      className="input"
-                      required
-                      autoComplete="new-password"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck="false"
-                      data-lpignore="true"
-                      data-1p-ignore="true"
-                      data-bwignore="true"
-                      data-form-type="other"
-                      style={{ width: '100%', padding: '0.65rem', fontSize: '0.85rem' }}
-                    />
-                  </div>
-
-                  {loginEmailError && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#f87171', fontSize: '0.75rem', padding: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '6px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-                      <AlertCircle size={15} style={{ flexShrink: 0 }} />
-                      <span>{loginEmailError}</span>
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="btn btn-bolivia-green"
-                    style={{ width: '100%', padding: '0.75rem', fontWeight: 700, fontSize: '0.85rem', marginTop: '0.3rem' }}
-                  >
-                    <UserCheck size={16} /> Iniciar Sesión Institucional SACA
-                  </button>
-                </form>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0.1rem 0' }}>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    O Autenticación con Google Workspace
-                  </span>
-                  <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-                </div>
-
-                <form onSubmit={handleLoginSubmit}>
-                  <button
-                    type="submit"
-                    className="btn"
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem',
-                      background: '#ffffff',
-                      color: '#3c4043',
-                      border: '1px solid #dadce0',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.75rem',
-                      fontWeight: 600,
-                      borderRadius: '6px'
-                    }}
-                  >
-                    <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
-                      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-                      <path fill="none" d="M0 0h48v48H0z"/>
-                    </svg>
-                    <span>Ingresar con Google (Cuenta Institucional)</span>
-                  </button>
-                </form>
-
-                <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>¿No tiene cuenta de acceso? </span>
-                  <button
-                    type="button"
-                    onClick={() => { setAuthTab('registro'); setRegErrors({}); }}
-                    style={{ background: 'none', border: 'none', color: 'var(--military-gold-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
-                  >
-                    Crear cuenta aquí
-                  </button>
-                </div>
-
-                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.6rem', textAlign: 'center' }}>
-                  <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                    &ldquo;Subordinación y Constancia &bull; ¡Viva Bolivia hacia el mar!&rdquo;
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="animate-solemn-fade">
-                <form onSubmit={handleRegistroSubmit} autoComplete="off" style={{ background: 'var(--bg-surface)', padding: '1.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  
-                  {regSuccess && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#10b981', fontSize: '0.75rem', padding: '0.6rem', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                      <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
-                      <span>{regSuccess}</span>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                        Nombres *
-                      </label>
-                      <input
-                        type="text"
-                        value={regForm.nombres}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-                          setRegForm({ ...regForm, nombres: val });
-                          if (regErrors.nombres) setRegErrors({ ...regErrors, nombres: '' });
-                        }}
-                        placeholder="Sus nombres completos"
-                        className="input"
-                        required
-                        style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem' }}
-                      />
-                      {regErrors.nombres && (
-                        <span style={{ color: '#f87171', fontSize: '0.68rem', display: 'block', marginTop: '0.2rem' }}>
-                          {regErrors.nombres}
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                        Apellidos *
-                      </label>
-                      <input
-                        type="text"
-                        value={regForm.apellidos}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, '');
-                          setRegForm({ ...regForm, apellidos: val });
-                          if (regErrors.apellidos) setRegErrors({ ...regErrors, apellidos: '' });
-                        }}
-                        placeholder="Sus apellidos"
-                        className="input"
-                        required
-                        style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem' }}
-                      />
-                      {regErrors.apellidos && (
-                        <span style={{ color: '#f87171', fontSize: '0.68rem', display: 'block', marginTop: '0.2rem' }}>
-                          {regErrors.apellidos}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                        Cédula de Identidad (C.I.) *
-                      </label>
-                      <input
-                        type="text"
-                        value={regForm.ci}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '');
-                          setRegForm({ ...regForm, ci: val });
-                          if (regErrors.ci) setRegErrors({ ...regErrors, ci: '' });
-                        }}
-                        placeholder="Solo números (ej: 6849201)"
-                        className="input"
-                        required
-                        style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem', fontFamily: 'monospace' }}
-                      />
-                      {regErrors.ci && (
-                        <span style={{ color: '#f87171', fontSize: '0.68rem', display: 'block', marginTop: '0.2rem' }}>
-                          {regErrors.ci}
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                        Expedido
-                      </label>
-                      <select
-                        value={regForm.expedido}
-                        onChange={(e) => setRegForm({ ...regForm, expedido: e.target.value })}
-                        className="input"
-                        style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem' }}
-                      >
-                        {['LP', 'CB', 'SC', 'OR', 'PT', 'TJ', 'CH', 'BE', 'PA'].map((dep) => (
-                          <option key={dep} value={dep}>{dep}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                        Teléfono WhatsApp *
-                      </label>
-                      <input
-                        type="tel"
-                        value={regForm.telefono}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, '').slice(0, 8);
-                          setRegForm({ ...regForm, telefono: val });
-                          if (regErrors.telefono) setRegErrors({ ...regErrors, telefono: '' });
-                        }}
-                        placeholder="8 dígitos (ej: 71928401)"
-                        className="input"
-                        required
-                        style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem', fontFamily: 'monospace' }}
-                      />
-                      {regErrors.telefono && (
-                        <span style={{ color: '#f87171', fontSize: '0.68rem', display: 'block', marginTop: '0.2rem' }}>
-                          {regErrors.telefono}
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                        Perfil / Condición *
-                      </label>
-                      <select
-                        value={regForm.rol}
-                        onChange={(e) => setRegForm({ ...regForm, rol: e.target.value as RolUsuario })}
-                        className="input"
-                        style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem' }}
-                      >
-                        <option value="ESTUDIANTE">Estudiante Civil</option>
-                        <option value="ESTUDIANTE">Personal Militar (Estudiante)</option>
-                        <option value="DOCENTE">Docente / Catedrático</option>
-                        <option value="JEFE_ACADEMICO">Jefatura Académica</option>
-                        <option value="CAJERO">Caja / Recaudaciones</option>
-                        <option value="ALMACENERO">Almacén y Libros</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                      Correo Electrónico *
-                    </label>
-                    <input
-                      type="email"
-                      value={regForm.email}
-                      onChange={(e) => {
-                        setRegForm({ ...regForm, email: e.target.value });
-                        if (regErrors.email) setRegErrors({ ...regErrors, email: '' });
-                      }}
-                      placeholder="ejemplo@gmail.com o correo institucional"
-                      className="input"
-                      required
-                      style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem' }}
-                    />
-                    {regErrors.email && (
-                      <span style={{ color: '#f87171', fontSize: '0.68rem', display: 'block', marginTop: '0.2rem' }}>
-                        {regErrors.email}
-                      </span>
-                    )}
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                        Contraseña *
-                      </label>
-                      <input
-                        type="password"
-                        value={regForm.password}
-                        onChange={(e) => {
-                          setRegForm({ ...regForm, password: e.target.value });
-                          if (regErrors.password) setRegErrors({ ...regErrors, password: '' });
-                        }}
-                        placeholder="Mínimo 6 caracteres"
-                        className="input"
-                        required
-                        style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem' }}
-                      />
-                      {regErrors.password && (
-                        <span style={{ color: '#f87171', fontSize: '0.68rem', display: 'block', marginTop: '0.2rem' }}>
-                          {regErrors.password}
-                        </span>
-                      )}
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-main)', display: 'block', marginBottom: '0.25rem' }}>
-                        Confirmar Contraseña *
-                      </label>
-                      <input
-                        type="password"
-                        value={regForm.confirmPassword}
-                        onChange={(e) => {
-                          setRegForm({ ...regForm, confirmPassword: e.target.value });
-                          if (regErrors.confirmPassword) setRegErrors({ ...regErrors, confirmPassword: '' });
-                        }}
-                        placeholder="Repita la contraseña"
-                        className="input"
-                        required
-                        style={{ width: '100%', padding: '0.55rem', fontSize: '0.8rem' }}
-                      />
-                      {regErrors.confirmPassword && (
-                        <span style={{ color: '#f87171', fontSize: '0.68rem', display: 'block', marginTop: '0.2rem' }}>
-                          {regErrors.confirmPassword}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn btn-bolivia-red"
-                    style={{ width: '100%', padding: '0.7rem', fontWeight: 700, fontSize: '0.82rem', marginTop: '0.4rem' }}
-                  >
-                    <UserPlus size={16} /> Registrar Cuenta Institucional
-                  </button>
-                </form>
-
-                <div style={{ textAlign: 'center', marginTop: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>¿Ya cuenta con credenciales? </span>
-                  <button
-                    type="button"
-                    onClick={() => { setAuthTab('login'); setLoginEmailError(null); }}
-                    style={{ background: 'none', border: 'none', color: 'var(--military-gold-primary)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}
-                  >
-                    Volver al Inicio de Sesión
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
+        <div className="login-screen-wrapper" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <p style={{ color: '#9ca3af', fontSize: '0.85rem' }}>Redirigiendo a autenticación institucional SACA...</p>
         </div>
       ) : (
         <div className="layout">

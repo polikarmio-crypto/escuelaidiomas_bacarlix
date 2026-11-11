@@ -16,12 +16,37 @@ class InscripcionController extends Controller
 {
     public function index(Request $request)
     {
-        $inscripciones = Inscripcion::with([
+        $query = Inscripcion::with([
             'estudiante.militar',
             'paralelo.nivel.programa.idioma',
             'paralelo.aula',
             'librosAvance.libro',
-        ])->latest('fecha_inscripcion')->paginate(20);
+        ]);
+
+        if ($request->filled('id_estudiante')) {
+            $query->where('id_estudiante', $request->id_estudiante);
+        }
+
+        if ($request->filled('email')) {
+            $email = trim($request->email);
+            $query->whereHas('estudiante', function ($q) use ($email) {
+                $q->where('email_estudiante', 'ilike', "%{$email}%");
+            });
+        }
+
+        if ($request->filled('ci')) {
+            $ci = trim($request->ci);
+            $query->whereHas('estudiante', function ($q) use ($ci) {
+                $q->where('ci_estudiante', 'ilike', "%{$ci}%");
+            });
+        }
+
+        if ($request->filled('id_paralelo')) {
+            $query->where('id_paralelo', $request->id_paralelo);
+        }
+
+        $perPage = (int) $request->get('per_page', 20);
+        $inscripciones = $query->latest('fecha_inscripcion')->paginate($perPage);
 
         return response()->json($inscripciones);
     }

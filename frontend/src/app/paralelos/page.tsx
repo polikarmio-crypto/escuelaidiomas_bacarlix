@@ -73,7 +73,7 @@ export default function ParalelosPage() {
     setLoading(true);
     try {
       const [resPar, resDoc, resEst, resCat, resProg] = await Promise.all([
-        fetch('/api/v1/paralelos'),
+        fetch(esDocente && usuario.id_docente ? `/api/v1/paralelos?id_docente=${usuario.id_docente}` : '/api/v1/paralelos'),
         fetch('/api/v1/docentes'),
         fetch('/api/v1/estudiantes'),
         fetch('/api/v1/catalogos'),
@@ -239,7 +239,9 @@ export default function ParalelosPage() {
       const nivelStr = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.nombre_nivel || '');
 
       if (esDocente) {
-        return docenteStr.toLowerCase().includes(usuario.nombre.toLowerCase().split(' ')[1] || '');
+        // Los paralelos ya vienen filtrados del backend por id_docente
+        // Si no hay id_docente, mostrar todos para ese docente (no filtrar en memoria por nombre)
+        return true;
       }
       if (!busqueda.trim()) return true;
       const q = busqueda.toLowerCase().trim();

@@ -42,12 +42,18 @@ class EstudianteController extends Controller
             });
         }
 
+        if ($request->filled('email')) {
+            $email = trim($request->email);
+            $query->where('email_estudiante', 'ilike', "%{$email}%");
+        }
+
         if ($request->filled('q')) {
             $q = trim($request->q);
             $query->where(function ($sub) use ($q) {
                 $sub->where('nombre_estudiante', 'ilike', "%{$q}%")
                     ->orWhere('apellido_estudiante', 'ilike', "%{$q}%")
-                    ->orWhere('ci_estudiante', 'ilike', "%{$q}%");
+                    ->orWhere('ci_estudiante', 'ilike', "%{$q}%")
+                    ->orWhere('email_estudiante', 'ilike', "%{$q}%");
             });
         }
 

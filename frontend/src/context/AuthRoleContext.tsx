@@ -18,6 +18,8 @@ export interface UsuarioActual {
   rol: RolUsuario;
   tituloRol: string;
   subtitulo: string;
+  id_estudiante?: number | null;
+  id_docente?: number | null;
 }
 
 export interface InfoRolConfig {
@@ -110,6 +112,7 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
 
 interface AuthRoleContextType {
   usuario: UsuarioActual;
+  autenticado: boolean;
   rolActivo: RolUsuario;
   rolConfig: InfoRolConfig;
   esAdmin: boolean;
@@ -120,58 +123,98 @@ interface AuthRoleContextType {
   esEstudiante: boolean;
   canAccessRoute: (pathname: string) => boolean;
   cambiarRol: (nuevoRol: RolUsuario) => void;
+  iniciarSesion: (datos: Partial<UsuarioActual> & { rol: RolUsuario }) => void;
   cerrarSesion: () => void;
 }
 
 const AuthRoleContext = createContext<AuthRoleContextType | undefined>(undefined);
 
 export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
-  const [rolActivo, setRolActivo] = useState<RolUsuario>('JEFE_ACADEMICO');
+  const [autenticado, setAutenticado] = useState(false);
+  const [rolActivo, setRolActivo] = useState<RolUsuario>('ESTUDIANTE');
+  const [usuarioPersonalizado, setUsuarioPersonalizado] = useState<Partial<UsuarioActual> | null>(null);
 
   useEffect(() => {
     try {
-      const savedRole = localStorage.getItem('eie_rol_activo') as RolUsuario;
-      if (savedRole && ROLES_CONFIG[savedRole]) {
-        setRolActivo(savedRole);
+      const auth = sessionStorage.getItem('eie_auth');
+      const userJson = sessionStorage.getItem('eie_user');
+      if (auth === 'true' && userJson) {
+        const u = JSON.parse(userJson);
+        setAutenticado(true);
+        if (u.rol && ROLES_CONFIG[u.rol as RolUsuario]) {
+          setRolActivo(u.rol as RolUsuario);
+        }
+        setUsuarioPersonalizado(u);
+      } else {
+        setAutenticado(false);
+        setUsuarioPersonalizado(null);
       }
     } catch (e) {
+      setAutenticado(false);
     }
   }, []);
+
+  const iniciarSesion = (datos: Partial<UsuarioActual> & { rol: RolUsuario }) => {
+    setAutenticado(true);
+    setRolActivo(datos.rol);
+    setUsuarioPersonalizado(datos);
+    try {
+      sessionStorage.setItem('eie_auth', 'true');
+      sessionStorage.setItem('eie_user', JSON.stringify(datos));
+      localStorage.removeItem('eie_auth');
+      localStorage.removeItem('eie_role');
+      localStorage.removeItem('eie_email');
+      localStorage.removeItem('eie_rol_activo');
+      localStorage.removeItem('eie_registered_users');
+    } catch (e) {}
+  };
 
   const cambiarRol = (nuevoRol: RolUsuario) => {
     if (ROLES_CONFIG[nuevoRol]) {
       setRolActivo(nuevoRol);
+      setUsuarioPersonalizado((prev) => (prev ? { ...prev, rol: nuevoRol } : null));
       try {
-        localStorage.setItem('eie_rol_activo', nuevoRol);
+        if (sessionStorage.getItem('eie_auth') === 'true') {
+          const userJson = sessionStorage.getItem('eie_user');
+          const current = userJson ? JSON.parse(userJson) : {};
+          current.rol = nuevoRol;
+          sessionStorage.setItem('eie_user', JSON.stringify(current));
+        }
       } catch (e) {}
     }
   };
 
   const cerrarSesion = () => {
+    setAutenticado(false);
+    setRolActivo('ESTUDIANTE');
+    setUsuarioPersonalizado(null);
     try {
+      sessionStorage.clear();
       localStorage.removeItem('eie_auth');
       localStorage.removeItem('eie_role');
       localStorage.removeItem('eie_email');
       localStorage.removeItem('eie_rol_activo');
-      sessionStorage.clear();
+      localStorage.removeItem('eie_registered_users');
     } catch (e) {}
-    cambiarRol('ESTUDIANTE');
   };
 
   const rolConfig = ROLES_CONFIG[rolActivo];
 
   const usuario: UsuarioActual = {
-    id: 1,
-    nombre: rolConfig.nombrePorDefecto,
-    email: rolConfig.emailPorDefecto,
-    ci: rolConfig.ciPorDefecto,
+    id: usuarioPersonalizado?.id || 1,
+    nombre: usuarioPersonalizado?.nombre || rolConfig.nombrePorDefecto,
+    email: usuarioPersonalizado?.email || rolConfig.emailPorDefecto,
+    ci: usuarioPersonalizado?.ci || rolConfig.ciPorDefecto,
     rol: rolActivo,
     tituloRol: rolConfig.titulo,
     subtitulo: rolConfig.badge,
+    id_estudiante: usuarioPersonalizado?.id_estudiante ?? null,
+    id_docente: usuarioPersonalizado?.id_docente ?? null,
   };
 
   const canAccessRoute = (pathname: string): boolean => {
     if (pathname === '/' || pathname === '/login') return true;
+    if (!autenticado) return false;
     return rolConfig.rutasPermitidas.some(
       (r) => r === pathname || (r !== '/' && pathname.startsWith(r))
     );
@@ -181,6 +224,7 @@ export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
     <AuthRoleContext.Provider
       value={{
         usuario,
+        autenticado,
         rolActivo,
         rolConfig,
         esAdmin: rolActivo === 'ADMIN',
@@ -191,6 +235,7 @@ export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
         esEstudiante: rolActivo === 'ESTUDIANTE',
         canAccessRoute,
         cambiarRol,
+        iniciarSesion,
         cerrarSesion,
       }}
     >

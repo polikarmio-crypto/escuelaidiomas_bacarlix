@@ -149,7 +149,11 @@ export default function CalificacionesPage() {
 
   const alumnosFiltrados = useMemo(() => {
     if (esEstudiante) {
-      return alumnos.filter((a) => a.estudiante.nombre_completo.toLowerCase().includes(usuario.nombre.toLowerCase()) || a.estudiante.ci.includes(usuario.ci.split(' ')[0]));
+      return alumnos.filter((a) => {
+        if (usuario.id_estudiante) return a.estudiante.id_estudiante === usuario.id_estudiante;
+        if (usuario.ci) return a.estudiante.ci === usuario.ci || a.estudiante.ci === usuario.ci.split(' ')[0];
+        return false;
+      });
     }
     if (!busqueda.trim()) return alumnos;
     const q = busqueda.toLowerCase().trim();

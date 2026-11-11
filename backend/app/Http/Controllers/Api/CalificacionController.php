@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class CalificacionController extends Controller
 {
-    public function notasParalelo($idParalelo)
+    public function notasParalelo(Request $request, $idParalelo)
     {
         $paralelo = Paralelo::with([
             'nivel.libros',
@@ -24,7 +24,21 @@ class CalificacionController extends Controller
             'inscripciones.librosAvance.evaluacion.docenteCalificador',
         ])->findOrFail($idParalelo);
 
-        $matriz = $paralelo->inscripciones->map(function ($ins) {
+        $inscripcionesColeccion = $paralelo->inscripciones;
+
+        if ($request->filled('id_estudiante')) {
+            $idEst = (int) $request->id_estudiante;
+            $inscripcionesColeccion = $inscripcionesColeccion->filter(function ($ins) use ($idEst) {
+                return (int) $ins->id_estudiante === $idEst;
+            });
+        } elseif ($request->filled('email')) {
+            $email = strtolower(trim($request->email));
+            $inscripcionesColeccion = $inscripcionesColeccion->filter(function ($ins) use ($email) {
+                return strtolower($ins->estudiante?->email_estudiante ?? '') === $email;
+            });
+        }
+
+        $matriz = $inscripcionesColeccion->map(function ($ins) {
             return [
                 'id_inscripcion' => $ins->id_inscripcion,
                 'estudiante' => [

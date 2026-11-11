@@ -30,6 +30,13 @@ class ParaleloController extends Controller
             $query->where('id_gestion', $idGestion);
         }
 
+        if ($request->filled('id_docente')) {
+            $idDoc = (int) $request->id_docente;
+            $query->whereHas('docenteActual', function ($q) use ($idDoc) {
+                $q->where('id_docente', $idDoc);
+            });
+        }
+
         $paralelos = $query->get()->map(function ($p) {
             $docenteAsignado = $p->docenteActual;
             return [

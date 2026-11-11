@@ -24,22 +24,18 @@ public class PrediccionRendimientoServiceTest {
         assertFalse(resultado.datosInsuficientes);
         assertEquals(6, resultado.librosEvaluados);
 
-        // a ≈ -3.3143
         assertEquals(-3.3143, resultado.pendienteA, 0.001);
-        // b ≈ 81.9333
+
         assertEquals(81.9333, resultado.interceptoB, 0.001);
-        // R² ≈ 0.936
+
         assertEquals(0.936, resultado.r2, 0.01);
 
-        // Proyección al libro 12: ŷ₁₂ = -3.3143 * 12 + 81.9333 ≈ 42.16
         assertEquals(12, resultado.libroExamenNivel);
         assertEquals(42.16, resultado.notaProyectada, 0.1);
 
-        // Clasificación de riesgo: ALTO
         assertEquals("ALTO", resultado.nivelRiesgo);
         assertTrue(resultado.mensajeAlerta.contains("RIESGO ALTO"));
 
-        // Tabla de ajuste contiene 6 filas
         assertEquals(6, resultado.tablaAjuste.size());
     }
 
@@ -50,9 +46,8 @@ public class PrediccionRendimientoServiceTest {
         req.idEstudiante = 1L;
         req.nombreEstudiante = "Cadete Prueba";
         req.calificaciones = List.of(
-            new PrediccionRendimientoService.CalificacionLibro(1, 80),
-            new PrediccionRendimientoService.CalificacionLibro(2, 85)
-        );
+                new PrediccionRendimientoService.CalificacionLibro(1, 80),
+                new PrediccionRendimientoService.CalificacionLibro(2, 85));
 
         var resultado = service.predecir(req);
 
@@ -69,18 +64,17 @@ public class PrediccionRendimientoServiceTest {
         req.idEstudiante = 2L;
         req.nombreEstudiante = "Cadete Excelente";
         req.calificaciones = List.of(
-            new PrediccionRendimientoService.CalificacionLibro(1, 75),
-            new PrediccionRendimientoService.CalificacionLibro(2, 80),
-            new PrediccionRendimientoService.CalificacionLibro(3, 85),
-            new PrediccionRendimientoService.CalificacionLibro(4, 90)
-        );
+                new PrediccionRendimientoService.CalificacionLibro(1, 75),
+                new PrediccionRendimientoService.CalificacionLibro(2, 80),
+                new PrediccionRendimientoService.CalificacionLibro(3, 85),
+                new PrediccionRendimientoService.CalificacionLibro(4, 90));
 
         var resultado = service.predecir(req);
 
         assertNotNull(resultado);
         assertFalse(resultado.datosInsuficientes);
         assertTrue(resultado.pendienteA > 0);
-        assertEquals(6, resultado.libroExamenNivel); // Próximo examen: libro 6
+        assertEquals(6, resultado.libroExamenNivel);
         assertEquals("BAJO", resultado.nivelRiesgo);
     }
 }

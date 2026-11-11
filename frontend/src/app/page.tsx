@@ -452,7 +452,7 @@ export default function IndexPage() {
               </button>
 
               <Link
-                href="/dashboard"
+                href="/login"
                 className="whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white btn-bolivia-green shadow-sm hover:shadow transition shrink-0"
                 title="Acceder a la plataforma SACA"
               >
@@ -518,7 +518,7 @@ export default function IndexPage() {
               
               <div className="pt-2 sm:hidden border-t border-slate-200 dark:border-[#24354a]">
                 <Link
-                  href="/dashboard"
+                  href="/login"
                   onClick={() => setMobileMenuOpen(false)}
                   className="block text-center py-2 px-3 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-[#121d2b] border border-slate-300 dark:border-[#364d68]"
                 >
@@ -1750,7 +1750,7 @@ export default function IndexPage() {
                 <li><a href="#filiales" className="hover:text-amber-600 dark:hover:text-amber-400 transition">Filiales en Guarniciones</a></li>
                 <li><a href="#inscripciones" className="hover:text-amber-600 dark:hover:text-amber-400 transition">Pre-Inscripción Digital</a></li>
                 <li><a href="#correo-institucional" className="hover:text-amber-600 dark:hover:text-amber-400 transition">Solicitar Correo Oficial</a></li>
-                <li><Link href="/dashboard" className="text-[#b8860b] font-semibold hover:underline">Acceder al Sistema SACA</Link></li>
+                <li><Link href="/login" className="text-[#b8860b] font-semibold hover:underline">Acceder al Sistema SACA</Link></li>
               </ul>
             </div>
 
