@@ -1,41 +1,34 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Landmark,
-  Shield,
   Ticket,
-  Clock,
   CheckCircle2,
   AlertTriangle,
   CreditCard,
   Users,
   RefreshCw,
   X,
-  Play,
-  Printer,
-  TrendingUp,
-  DollarSign,
-  ArrowRight,
   ShieldAlert,
   UserCheck
 } from 'lucide-react';
 import { useAuthRole } from '@/context/AuthRoleContext';
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api/v1';
+
 export default function CajasPage() {
-  const { rolActivo, esCajero, esEstudiante, esAdmin, rolConfig, usuario } = useAuthRole();
+  const { esCajero, esEstudiante, esAdmin, usuario } = useAuthRole();
   const puedeOperarCaja = esCajero || esAdmin;
 
   const [loading, setLoading] = useState(false);
   const [cajas, setCajas] = useState<any[]>([]);
-  const [colaFifo, setColaFifo] = useState<any[]>([]);
+  const [colaEspera, setColaEspera] = useState<any[]>([]);
   const [metricas, setMetricas] = useState<any | null>(null);
-  const [historialPagos, setHistorialPagos] = useState<any[]>([]);
   const [alerta, setAlerta] = useState<{ tipo: 'ok' | 'error'; mensaje: string } | null>(null);
 
   const [cajaActivaId, setCajaActivaId] = useState<number>(1);
   const [turnoEnAtencion, setTurnoEnAtencion] = useState<any | null>(null);
-
   const [miFicha, setMiFicha] = useState<any | null>(null);
 
   const [modalPago, setModalPago] = useState(false);
@@ -55,32 +48,31 @@ export default function CajasPage() {
   const cargarDatosCaja = async () => {
     setLoading(true);
     try {
-      const [resCajas, resCola, resMetricas, resPagos] = await Promise.all([
-        fetch('http://localhost:8000/api/v1/cajas'),
-        fetch('http://localhost:8000/api/v1/cajas/cola-fifo'),
-        fetch('http://localhost:8000/api/v1/cajas/metricas'),
-        fetch('http://localhost:8000/api/v1/cajas/pagos'),
+      const [resCajas, resCola, resMetricas] = await Promise.all([
+        fetch(`${API_BASE}/cajas`).catch(() => null),
+        fetch(`${API_BASE}/cajas/cola-espera`).catch(() => null),
+        fetch(`${API_BASE}/cajas/metricas`).catch(() => null),
       ]);
 
-      if (resCajas.ok) {
+      if (resCajas && resCajas.ok) {
         const dataC = await resCajas.json();
-        setCajas(dataC || []);
-        if (dataC.length > 0 && !cajaActivaId) setCajaActivaId(dataC[0].id_caja);
+        const lista = Array.isArray(dataC) ? dataC : (dataC.data || []);
+        setCajas(lista);
+        if (lista.length > 0 && !cajaActivaId) {
+          setCajaActivaId(lista[0].id_caja);
+        }
       }
-      if (resCola.ok) {
+
+      if (resCola && resCola.ok) {
         const dataQ = await resCola.json();
-        setColaFifo(dataQ.cola_fifo || []);
+        setColaEspera(dataQ.cola_espera || dataQ.cola_atencion || []);
       }
-      if (resMetricas.ok) {
+
+      if (resMetricas && resMetricas.ok) {
         const dataM = await resMetricas.json();
         setMetricas(dataM);
       }
-      if (resPagos.ok) {
-        const dataP = await resPagos.json();
-        setHistorialPagos(dataP || []);
-      }
     } catch (e) {
-      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -94,15 +86,25 @@ export default function CajasPage() {
 
   const handleSolicitarFicha = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/v1/cajas/ficha', {
+      const idEst = usuario?.id || 1;
+      const res = await fetch(`${API_BASE}/cajas/ficha`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_estudiante: usuario.id || 1 }),
+        body: JSON.stringify({ id_estudiante: idEst }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al emitir ficha.');
-      setMiFicha(data.ficha);
-      mostrarMensaje('ok', `Ficha N° ${data.ficha.numero_ficha} emitida. Por favor espere su turno en pantalla.`);
+      if (!res.ok) {
+        throw new Error(data.error || 'No fue posible emitir el turno en este momento.');
+      }
+
+      const fichaObj = data.data || {
+        numero_ficha: data.numero_ficha,
+        estado_ficha: 'En espera',
+        hora_llegada_ficha: new Date().toISOString(),
+      };
+
+      setMiFicha(fichaObj);
+      mostrarMensaje('ok', `Turno N° ${data.numero_ficha || fichaObj.numero_ficha} asignado. Por favor aguarde el llamado en pantalla.`);
       cargarDatosCaja();
     } catch (err: any) {
       mostrarMensaje('error', err.message);
@@ -111,15 +113,29 @@ export default function CajasPage() {
 
   const handleLlamarSiguiente = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/v1/cajas/ficha/llamar', {
+      const res = await fetch(`${API_BASE}/cajas/ficha/llamar-siguiente`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_caja: cajaActivaId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'No hay turnos pendientes en cola FIFO.');
-      setTurnoEnAtencion(data.ficha);
-      mostrarMensaje('ok', `Llamando al turno N° ${data.ficha.numero_ficha}: ${data.ficha.estudiante}`);
+      if (!res.ok) {
+        throw new Error(data.error || 'No fue posible avanzar el turno.');
+      }
+
+      const siguiente = data.data || null;
+      if (!siguiente) {
+        mostrarMensaje('ok', data.message || 'No existen turnos en espera.');
+        setTurnoEnAtencion(null);
+        return;
+      }
+
+      setTurnoEnAtencion(siguiente);
+      const nombreEstudiante = siguiente.estudiante?.nombre_estudiante
+        ? `${siguiente.estudiante.nombre_estudiante} ${siguiente.estudiante.apellido_estudiante}`
+        : (typeof siguiente.estudiante === 'string' ? siguiente.estudiante : 'Estudiante');
+
+      mostrarMensaje('ok', `Turno N° ${siguiente.numero_ficha} convocado a ventanilla (${nombreEstudiante}).`);
       cargarDatosCaja();
     } catch (err: any) {
       mostrarMensaje('error', err.message);
@@ -131,7 +147,7 @@ export default function CajasPage() {
     if (!turnoEnAtencion) return;
 
     try {
-      const res = await fetch('http://localhost:8000/api/v1/cajas/pago', {
+      const res = await fetch(`${API_BASE}/cajas/pago`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -140,17 +156,18 @@ export default function CajasPage() {
           id_ficha: turnoEnAtencion.id_ficha,
           id_tipo_pago: formPago.id_tipo_pago,
           monto_pago: formPago.monto,
-          id_gestion: 1,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al procesar el pago.');
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al procesar el pago.');
+      }
 
       setComprobanteEmitido(data.data);
       mostrarMensaje('ok', 'Pago procesado exitosamente. Comprobante emitido.');
       setModalPago(false);
 
-      await fetch('http://localhost:8000/api/v1/cajas/ficha/finalizar', {
+      await fetch(`${API_BASE}/cajas/ficha/finalizar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id_ficha: turnoEnAtencion.id_ficha }),
@@ -170,8 +187,7 @@ export default function CajasPage() {
           <ShieldAlert className="w-16 h-16 text-red-500 mx-auto" />
           <h2 className="text-2xl font-bold text-white">Acceso Restringido</h2>
           <p className="text-neutral-300 max-w-xl mx-auto">
-            La atención en ventanilla y el cobro de aranceles corresponde exclusivamente a los <strong className="text-amber-400">Cajeros</strong>.
-            Los estudiantes pueden acceder únicamente a la solicitud de ficha de atención digital.
+            La atención en ventanilla y el cobro de aranceles corresponde exclusivamente a los <strong className="text-amber-400">Cajeros</strong> autorizados.
           </p>
         </div>
       </div>
@@ -223,9 +239,9 @@ export default function CajasPage() {
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 text-center space-y-4 shadow-xl">
             <Ticket className="w-16 h-16 text-cyan-400 mx-auto" />
-            <h2 className="text-xl font-bold text-white">Emisión de Ticket / Turno para Caja</h2>
+            <h2 className="text-xl font-bold text-white">Emisión de Ticket de Atención</h2>
             <p className="text-xs text-neutral-400 max-w-md mx-auto">
-              Presione el botón para encolarse de forma ordenada bajo disciplina FIFO. Será llamado por número en los altavoces y pantallas de ventanilla.
+              Presione el botón para solicitar su turno de atención presencial en ventanilla. Será convocado mediante pantalla y avisador sonoro.
             </p>
 
             {miFicha ? (
@@ -235,11 +251,13 @@ export default function CajasPage() {
                   #{miFicha.numero_ficha}
                 </div>
                 <p className="text-xs text-neutral-300">
-                  Estado: <strong className="text-amber-400">{miFicha.estado_ficha}</strong>
+                  Estado: <strong className="text-amber-400">{miFicha.estado_ficha || 'En espera'}</strong>
                 </p>
-                <p className="text-[11px] text-neutral-400">
-                  Hora de solicitud: {new Date(miFicha.hora_llegada_ficha).toLocaleTimeString()}
-                </p>
+                {miFicha.hora_llegada_ficha && (
+                  <p className="text-[11px] text-neutral-400">
+                    Hora de solicitud: {new Date(miFicha.hora_llegada_ficha).toLocaleTimeString()}
+                  </p>
+                )}
               </div>
             ) : (
               <button
@@ -253,11 +271,11 @@ export default function CajasPage() {
 
           <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-4 text-xs">
             <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span>Personas esperando en cola FIFO:</span>
-              <strong className="text-white font-mono text-sm">{colaFifo.length}</strong>
+              <span>Personas esperando atención:</span>
+              <strong className="text-white font-mono text-sm">{colaEspera.length}</strong>
             </div>
             <p className="text-[11px] text-neutral-500">
-              Tiempo medio estimado de espera: ~{metricas?.tiempo_promedio_espera_minutos || 6} minutos por persona.
+              Tiempo estimado promedio de atención: ~{metricas?.promedio_espera_minutos_Wq || 5} minutos por persona.
             </p>
           </div>
         </div>
@@ -265,24 +283,24 @@ export default function CajasPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
             <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
-              <span className="text-neutral-400 text-[11px] block truncate">En Cola FIFO (Lq)</span>
-              <p className="text-xl font-bold font-mono text-amber-400 mt-0.5">{colaFifo.length}</p>
-              <span className="text-[10px] text-neutral-500">Estudiantes en espera</span>
+              <span className="text-neutral-400 text-[11px] block truncate">En Sala de Espera</span>
+              <p className="text-xl font-bold font-mono text-amber-400 mt-0.5">{colaEspera.length}</p>
+              <span className="text-[10px] text-neutral-500">Estudiantes esperando</span>
             </div>
             <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
-              <span className="text-neutral-400 text-[11px] block truncate">Tiempo Espera (Wq)</span>
-              <p className="text-xl font-bold font-mono text-sky-400 mt-0.5">{metricas?.tiempo_promedio_espera_minutos || 0} min</p>
-              <span className="text-[10px] text-neutral-500">Promedio de espera</span>
+              <span className="text-neutral-400 text-[11px] block truncate">Tiempo Medio Espera</span>
+              <p className="text-xl font-bold font-mono text-sky-400 mt-0.5">{metricas?.promedio_espera_minutos_Wq || 0} min</p>
+              <span className="text-[10px] text-neutral-500">Promedio actual</span>
             </div>
             <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
               <span className="text-neutral-400 text-[11px] block truncate">Atendidos Hoy</span>
-              <p className="text-xl font-bold font-mono text-emerald-400 mt-0.5">{metricas?.fichas_atendidas_hoy || 0}</p>
+              <p className="text-xl font-bold font-mono text-emerald-400 mt-0.5">{metricas?.atendidas || 0}</p>
               <span className="text-[10px] text-neutral-500">Turnos completados</span>
             </div>
             <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
               <span className="text-neutral-400 text-[11px] block truncate">Ventanillas Activas</span>
               <p className="text-xl font-bold font-mono text-purple-400 mt-0.5">{cajas.length}</p>
-              <span className="text-[10px] text-neutral-500">Cajas operativas</span>
+              <span className="text-[10px] text-neutral-500">Puestos habilitados</span>
             </div>
           </div>
 
@@ -309,13 +327,19 @@ export default function CajasPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase text-amber-400 tracking-wider">Atendiendo Actualmente</span>
                     <span className="font-mono text-xs text-white bg-neutral-900 px-2 py-0.5 rounded">
-                      Ficha #{turnoEnAtencion.numero_ficha}
+                      Turno #{turnoEnAtencion.numero_ficha}
                     </span>
                   </div>
-                  <h4 className="text-base font-bold text-white">{turnoEnAtencion.estudiante}</h4>
-                  <p className="text-xs text-neutral-400">
-                    Hora inicio: {new Date(turnoEnAtencion.hora_inicio_atencion_ficha).toLocaleTimeString()}
-                  </p>
+                  <h4 className="text-base font-bold text-white">
+                    {turnoEnAtencion.estudiante?.nombre_estudiante
+                      ? `${turnoEnAtencion.estudiante.nombre_estudiante} ${turnoEnAtencion.estudiante.apellido_estudiante}`
+                      : (typeof turnoEnAtencion.estudiante === 'string' ? turnoEnAtencion.estudiante : 'Estudiante')}
+                  </h4>
+                  {turnoEnAtencion.hora_inicio_atencion_ficha && (
+                    <p className="text-xs text-neutral-400">
+                      Hora inicio: {new Date(turnoEnAtencion.hora_inicio_atencion_ficha).toLocaleTimeString()}
+                    </p>
+                  )}
                   <button
                     onClick={() => setModalPago(true)}
                     className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition flex items-center justify-center gap-2 shadow"
@@ -326,13 +350,13 @@ export default function CajasPage() {
               ) : (
                 <div className="text-center py-6 space-y-3 bg-neutral-950/40 rounded-xl border border-neutral-800">
                   <UserCheck className="w-10 h-10 text-neutral-600 mx-auto" />
-                  <p className="text-xs text-neutral-400">Ventanilla disponible para llamada</p>
+                  <p className="text-xs text-neutral-400">Ventanilla lista para convocar turno</p>
                   <button
                     onClick={handleLlamarSiguiente}
-                    disabled={colaFifo.length === 0}
+                    disabled={colaEspera.length === 0}
                     className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-neutral-950 font-bold rounded-lg text-xs transition shadow-md shadow-amber-500/20"
                   >
-                    Llamar Siguiente Turno (FIFO)
+                    Llamar Siguiente Turno
                   </button>
                 </div>
               )}
@@ -342,9 +366,9 @@ export default function CajasPage() {
               <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <Users className="w-4 h-4 text-sky-400" />
-                  Cola FIFO en Espera ({colaFifo.length})
+                  Turnos en Sala de Espera ({colaEspera.length})
                 </h3>
-                <span className="text-[11px] text-neutral-500 font-mono">Orden estricto por hora de llegada</span>
+                <span className="text-[11px] text-neutral-500 font-mono">Orden por hora de llegada</span>
               </div>
 
               <div className="overflow-x-auto">
@@ -352,17 +376,17 @@ export default function CajasPage() {
                   <thead className="bg-neutral-950 text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
                     <tr>
                       <th className="p-2.5">Pos.</th>
-                      <th className="p-2.5">N° Ficha</th>
+                      <th className="p-2.5">N° Turno</th>
                       <th className="p-2.5">Estudiante</th>
                       <th className="p-2.5">Tipo</th>
                       <th className="p-2.5">Llegada</th>
-                      <th className="p-2.5">Espera</th>
+                      <th className="p-2.5">Tiempo Espera</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-800 text-neutral-300">
-                    {colaFifo.map((f) => (
+                    {colaEspera.map((f) => (
                       <tr key={f.id_ficha} className="hover:bg-neutral-800/30">
-                        <td className="p-2.5 font-bold text-sky-400 font-mono">#{f.posicion_fifo}</td>
+                        <td className="p-2.5 font-bold text-sky-400 font-mono">#{f.posicion || f.posicion_cola}</td>
                         <td className="p-2.5 font-bold text-white font-mono">{f.numero_ficha}</td>
                         <td className="p-2.5 font-semibold text-white">{f.estudiante}</td>
                         <td className="p-2.5">
@@ -371,13 +395,13 @@ export default function CajasPage() {
                           </span>
                         </td>
                         <td className="p-2.5 font-mono text-neutral-400">{f.hora_llegada}</td>
-                        <td className="p-2.5 font-mono text-amber-400">{f.minutos_esperando} min</td>
+                        <td className="p-2.5 font-mono text-amber-400">{f.minutos_esperando || 0} min</td>
                       </tr>
                     ))}
-                    {colaFifo.length === 0 && (
+                    {colaEspera.length === 0 && (
                       <tr>
                         <td colSpan={6} className="p-6 text-center text-neutral-500">
-                          No hay turnos en espera en la cola FIFO.
+                          No hay turnos pendientes en sala de espera.
                         </td>
                       </tr>
                     )}
@@ -393,7 +417,7 @@ export default function CajasPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-base font-bold text-white">Procesar Pago en Ventanilla</h3>
+              <h3 className="text-base font-bold text-white">Procesar Recaudación en Ventanilla</h3>
               <button onClick={() => setModalPago(false)} className="text-neutral-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
@@ -405,18 +429,20 @@ export default function CajasPage() {
                 <input
                   type="text"
                   disabled
-                  value={turnoEnAtencion.estudiante}
+                  value={turnoEnAtencion.estudiante?.nombre_estudiante
+                    ? `${turnoEnAtencion.estudiante.nombre_estudiante} ${turnoEnAtencion.estudiante.apellido_estudiante}`
+                    : (typeof turnoEnAtencion.estudiante === 'string' ? turnoEnAtencion.estudiante : 'Estudiante')}
                   className="w-full bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-white font-bold"
                 />
               </div>
 
               <div>
-                <label className="text-neutral-300 block mb-1">Concepto de Pago</label>
+                <label className="text-neutral-300 block mb-1">Concepto</label>
                 <select
                   value={formPago.id_tipo_pago}
                   onChange={(e) => {
                     const id = parseInt(e.target.value);
-                    const concepto = id === 1 ? 'Matrícula' : id === 2 ? 'Mensualidad' : 'Compra de Libro';
+                    const concepto = id === 1 ? 'Matrícula Regular' : id === 2 ? 'Mensualidad' : 'Compra de Texto Guía';
                     const monto = id === 1 ? 150 : id === 2 ? 220 : 180;
                     setFormPago({ id_tipo_pago: id, concepto, monto });
                   }}

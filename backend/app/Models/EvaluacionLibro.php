@@ -37,10 +37,6 @@ class EvaluacionLibro extends Model
         return $this->belongsTo(Docente::class, 'id_docente_calificador', 'id_docente');
     }
 
-    /**
-     * Calcula la nota final según los pesos del Ejército:
-     * 80% Examen Escrito + 10% Defensa Oral + 10% Participación
-     */
     public function calcularNotaPonderada(): float
     {
         $final = ($this->nota_examen_libro * 0.80) +
