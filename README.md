@@ -53,18 +53,43 @@ Para evitar problemas frecuentes entre los distintos sistemas operativos del equ
      taskkill /PID <NUMERO_PID> /F
      ```
 
-4. **Error de ejecución de scripts en PowerShell:**
-   - Si PowerShell no permite ejecutar `setup.bat` o scripts locales:
+4. **PostgreSQL se apaga al iniciar o error de puerto ocupado (5432 vs 5433):**
+   - Ocurre si ya tienes un servicio de PostgreSQL local instalado en Windows corriendo en el puerto 5432.
+   - En el proyecto, el puerto expuesto al host se configuró en `5433:5432` en `docker-compose.yml` para evitar este conflicto.
+   - Para conectarte desde herramientas externas (DBeaver, pgAdmin) debes apuntar al puerto `5433` (con usuario `postgres` y clave `postgres123`), mientras que internamente en Docker los servicios se comunican por el puerto estándar `5432`.
+
+5. **El frontend de Next.js se apaga de golpe o no inicia en Docker:**
+   - En Windows, a veces el volumen montado de `node_modules` causa conflicto de caché al compilar.
+   - Para reconstruir la imagen del frontend ejecuta:
      ```powershell
-     Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+     docker compose up -d --build frontend
+     ```
+   - O alternativamente, puedes correr el frontend directamente en tu máquina abriendo otra terminal (es más rápido y tiene hot-reload instantáneo):
+     ```powershell
+     cd frontend
+     npm install
+     npm run dev
+     ```
+
+6. **Error de conexión al migrar (`could not translate host name "postgres"` o `Connection refused`):**
+   - Ocurre si ejecutas las migraciones inmediatamente después de `docker compose up -d` cuando la base de datos aún no ha terminado de inicializar su cluster.
+   - Espera unos 5 a 10 segundos a que el contenedor de `postgres` esté listo y vuelve a ejecutar:
+     ```powershell
+     docker compose exec backend php artisan migrate --force
+     ```
+
+7. **Error de clave de cifrado en Laravel (`No application encryption key has been specified`):**
+   - Si la aplicación muestra error de que falta el `APP_KEY`, genera la clave dentro del contenedor con:
+     ```powershell
+     docker compose exec backend php artisan key:generate
      ```
 
 ---
 
 ### B. Para Desarrolladores en Linux (Ubuntu, Debian, Fedora, Arch Linux / CachyOS)
 
-1. **Docker requiere `sudo` para cada comando:**
-   - Agregar el usuario actual al grupo docker:
+1. **Docker requiere `sudo` para cada comando (error que le salió a Candia):**
+   - Si al ejecutar comandos de Docker sale `permission denied while trying to connect to the Docker daemon socket`:
      ```bash
      sudo usermod -aG docker $USER
      newgrp docker
@@ -79,16 +104,15 @@ Para evitar problemas frecuentes entre los distintos sistemas operativos del equ
    - Si se usa Docker Desktop en Linux, verificar que el servicio de Docker esté activo.
 
 3. **Permisos de escritura en Laravel (`storage/` y `bootstrap/cache`):**
-   - En Linux, los archivos creados por el contenedor pertenecen a `root` o a `www-data`. Si Laravel dice `Permission denied`:
+   - En Linux, los archivos creados por el contenedor pertenecen a `root` o a `www-data`. Si Laravel dice `The stream or file ".../storage/logs/laravel.log" could not be opened in append mode: Permission denied`:
      ```bash
      sudo chmod -R 777 backend/storage backend/bootstrap/cache
      ```
 
-4. **Scripts `.sh` sin permisos de ejecución:**
-   - Si `setup.sh` no corre con `./setup.sh`:
+4. **Permisos de ejecución en el wrapper de Maven (`mvnw`):**
+   - Si al ejecutar las pruebas o levantar Quarkus en Linux sale `./mvnw: Permission denied`:
      ```bash
-     chmod +x setup.sh
-     ./setup.sh
+     chmod +x quarkus/mvnw
      ```
 
 5. **Liberar puertos ocupados en Linux:**
@@ -108,6 +132,12 @@ Para evitar problemas frecuentes entre los distintos sistemas operativos del equ
      sudo chmod 600 /swapfile
      sudo mkswap /swapfile
      sudo swapon /swapfile
+     ```
+
+7. **Error al cambiar de rama en Git (`maven-wrapper.jar` no se puede sobrescribir):**
+   - Si al hacer `git checkout` sale error de que `quarkus/.mvn/wrapper/maven-wrapper.jar` no se puede desvincular o sobrescribir:
+     ```bash
+     git checkout -f <nombre-de-rama>
      ```
 
 ---
