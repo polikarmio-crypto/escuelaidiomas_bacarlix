@@ -1,192 +1,230 @@
-# Sistema de Gestión Académica y Control Administrativo (SACA) — EIE
+# Sistema de Gestión Académica — EIE
 
-Sistema integral de la **Escuela de Idiomas del Ejército (EIE)**. La plataforma está orquestada mediante Docker Compose y se compone de una arquitectura distribuida basada en microservicios: **PostgreSQL 16**, **Laravel 11 (API RESTful)**, **Next.js 14 (Frontend Institucional)** y **Quarkus 3.15 (Microservicio Reactivo de Analítica y Modelos Numéricos)**.
+Sistema de la Escuela de Idiomas del Ejército (EIE). El proyecto se ejecuta mediante Docker Compose e incluye PostgreSQL, Laravel, Next.js y Quarkus.
 
 ---
 
-## 👥 Equipo de Desarrollo y Asignación de Roles
+## Equipo de Desarrollo y Asignación de Roles
 
 A continuación se detalla el equipo de desarrollo, sus cuentas de GitHub, roles y responsabilidades en el proyecto:
 
 | Integrante | Usuario de GitHub | Rol en el Proyecto | Rama Asignada | Responsabilidades y Módulos Principales |
 | :--- | :--- | :--- | :---: | :--- |
-| **Pablo Luis Medina Oroz** | [@polikarmio-crypto](https://github.com/polikarmio-crypto) | **Arquitectura Frontend, Seguridad de Acceso y Subsistema de Auditoría** | [Pablo](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Pablo) | Arquitectura frontend en Next.js 14, UI/UX institucional con radar táctico, escudo oficial EIE y soporte temático Claro/Oscuro. AppShell centralizado, navegación protegida por roles, seguridad estricta de vistas (aislamiento individual para que estudiantes y docentes solo vean su propia información), blindaje de Google Auth (desactivación del recuerdo automático de credenciales con `select_account`) y diseño e implementación del **Subsistema de Logs por Módulo** (`storage/logs/{auth, almacen, academico, cajas, api}`) y la tabla de auditoría `log_auditoria`. |
-| **Arturo Wilder Figueredo Sanjinés** | [@figueredosanjinesarturowilder-0708](https://github.com/figueredosanjinesarturowilder-0708) | **Arquitectura Backend, Base de Datos y Gestión Académica** | [Arturo](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Arturo) | Backend API RESTful en Laravel 11, modelos Eloquent relacionales, migraciones en 5ta Forma Normal (5FN) y seeders completos en PostgreSQL. Triggers PL/pgSQL, particiones y soft deletes. Módulo académico integral (Idiomas, Programas, Niveles, Paralelos y Aulas), **sistema de rotación masiva automática de docentes** basada en especialidad lingüística y balanceo de carga lectiva, y filtrado dinámico estricto por idioma en la asignación de docentes y estudiantes a paralelos. |
-| **Ricardo Alexander Siles Rivero** | [@RicardoS2225](https://github.com/RicardoS2225) | **Módulo de Cajas, Recaudaciones, Almacén de Libros y Pruebas Unitarias** | [Ricardo](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Ricardo) | Módulo de Cajas y Recaudaciones con transacciones ACID y cola FIFO contra condiciones de carrera (*race conditions*), cobro de aranceles y fichas de atención. Módulo de Almacén de Libros con cálculo de punto de reorden (ROP), inventarios y reposición de stock. Módulo de Calificaciones y actas de notas. Implementación de **pruebas unitarias con Mockito** en Quarkus (`AnalyticsResourceMockitoTest`) con cobertura de endpoints analíticos y configuración de logging en archivo (`quarkus/logs/quarkus.log`). |
-| **Andre Sebastian Candia Ortiz** | [@AndreCandia0712](https://github.com/AndreCandia0712) | **Control de Asistencia, Modelos Numéricos y Microservicio Quarkus** | [Candia](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Candia) | Módulo de Control Diario de Asistencia y generador de reportes oficiales en PDF con formato institucional de control militar. Modelos matemáticos de predicción H3: **Regresión de Mínimos Cuadrados** (predicción de notas y retención estudiantil), **Programación Lineal Simplex** (optimización de ocupación de aulas) y **Teoría de Colas Erlang-C** (dimensionamiento de ventanillas de cajas). Microservicio reactivo Quarkus (REST Jackson, Vert.x, SmallRye Context Propagation) y orquestación integral en Docker Compose. |
+| **Pablo Luis Medina Oroz** | [@polikarmio-crypto](https://github.com/polikarmio-crypto) | **Arquitectura Frontend, Seguridad de Acceso y Subsistema de Auditoría** | [Pablo](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Pablo) | Arquitectura frontend Next.js 14, UI/UX institucional con radar y escudo EIE, AppShell, navegación protegida con retorno y login unificado con Google Auth (sin recordar última cuenta por seguridad), vistas de estudiantes y docentes aisladas para que solo vean sus propios datos, y subsistema de logs por carpetas (`storage/logs/{auth, almacen, academico, cajas, api}`) y tabla `log_auditoria`. |
+| **Arturo Wilder Figueredo Sanjinés** | [@figueredosanjinesarturowilder-0708](https://github.com/figueredosanjinesarturowilder-0708) | **Arquitectura Backend, Base de Datos y Gestión Académica** | [Arturo](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Arturo) | Backend API RESTful en Laravel, modelos Eloquent, migraciones 5FN y seeders relacionales PostgreSQL, módulo académico, rotación automática de docentes por idioma y carga lectiva, y filtros por idioma en asignación de docentes y estudiantes a paralelos. |
+| **Ricardo Alexander Siles Rivero** | [@RicardoS2225](https://github.com/RicardoS2225) | **Módulo de Cajas, Recaudaciones, Almacén y Pruebas Unitarias** | [Ricardo](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Ricardo) | Módulo de Cajas y Recaudaciones con transacciones atómicas contra condiciones de carrera en colas de atención y turnos, almacén de libros y cálculo ROP, calificaciones, pruebas unitarias con Mockito en Quarkus (`AnalyticsResourceMockitoTest`) y logs en archivo. |
+| **Andre Sebastian Candia Ortiz** | [@AndreCandia0712](https://github.com/AndreCandia0712) | **Control de Asistencia, Modelos Numéricos y Microservicio Quarkus** | [Candia](https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix/tree/Candia) | Módulo de Control Diario de Asistencia y generador/visor de reportes oficiales en PDF con formato militar, modelos de proyección H3 (Mínimos Cuadrados, Simplex, Erlang-C), microservicio reactivo Quarkus y orquestación con Docker Compose. |
 
 ---
 
-## 🏛️ Arquitectura del Sistema
+## Guía de Consejos y Solución de Errores (Windows y Linux / CachyOS)
 
-```text
-┌────────────────────────────────────────────────────────────────────────┐
-│                   APLICACIÓN WEB (Next.js 14)                          │
-│               http://localhost:3000 • Puerto 3000                      │
-│   Landing Page Oficial • SACA Dashboard • Control por Roles y Permisos  │
-└───────────────────┬────────────────────────────────┬───────────────────┘
-                    │ REST API                       │ REST API
-                    ▼                                ▼
-┌──────────────────────────────────────┐  ┌──────────────────────────────┐
-│       BACKEND API (Laravel 11)       │  │  MICROSERVICIO (Quarkus 3)   │
-│         http://localhost:8000        │  │    http://localhost:8080     │
-│   Auth, Académico, Cajas, Almacén,   │  │   Analítica H3, Simplex,     │
-│   Calificaciones, Asistencia, Logs   │  │   Erlang-C, Mínimos Cuadrados │
-└───────────────────┬──────────────────┘  └──────────────┬───────────────┘
-                    │                                    │
-                    │               PostgreSQL 16        │
-                    └────────────────► ◄─────────────────┘
-                                Puerto 5433 (host)
-                                Puerto 5432 (red Docker)
-```
+Para evitar problemas frecuentes entre los distintos sistemas operativos del equipo, seguir estas recomendaciones:
+
+### A. Para Desarrolladores en Windows (PowerShell / CMD / Docker Desktop)
+
+1. **Docker Desktop no inicia o da error de WSL 2:**
+   - Asegurarse de tener la virtualización activada en la BIOS/UEFI (Intel VT-x o AMD-V).
+   - Abrir PowerShell como Administrador y actualizar el subsistema:
+     ```powershell
+     wsl --update
+     wsl --set-default-version 2
+     ```
+   - Reiniciar el equipo tras la instalación.
+
+2. **Error de Fin de Línea (CRLF vs LF en scripts `.sh`):**
+   - En Windows, Git suele convertir automáticamente los saltos de línea a `CRLF`, lo que genera el error `/bin/sh^M: bad interpreter` al ejecutar scripts dentro de los contenedores Linux.
+   - Para evitarlo, configurar Git con:
+     ```powershell
+     git config --global core.autocrlf input
+     ```
+   - Si un script `.sh` da error de formato, en VS Code cambiar el fin de línea de `CRLF` a `LF` en la barra inferior derecha.
+
+3. **Conflicto de Puertos en Windows (8000, 3000, 5432 ó 5433):**
+   - Si un contenedor no levanta porque el puerto está ocupado (por ejemplo, Postgres local o IIS):
+     ```powershell
+     # Ver que proceso usa el puerto 8000 o 3000
+     Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue
+     Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
+
+     # En CMD clásico:
+     netstat -ano | findstr :8000
+     # Matar el proceso por su PID
+     taskkill /PID <NUMERO_PID> /F
+     ```
+
+4. **Error de ejecución de scripts en PowerShell:**
+   - Si PowerShell no permite ejecutar `setup.bat` o scripts locales:
+     ```powershell
+     Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+     ```
 
 ---
 
-## 🚀 Guía Rápida para Levantar el Sistema con Docker Compose (Recomendado)
+### B. Para Desarrolladores en Linux (Ubuntu, Debian, Fedora, Arch Linux / CachyOS)
 
-### Prerrequisitos
-- **Git** instalado.
-- **Docker Desktop** (en Windows) con motor WSL 2 activo, o **Docker Engine + Docker Compose** (en Linux).
+1. **Docker requiere `sudo` para cada comando:**
+   - Agregar el usuario actual al grupo docker:
+     ```bash
+     sudo usermod -aG docker $USER
+     newgrp docker
+     ```
+   - Verificar con `docker ps` sin usar `sudo`.
 
-> **Nota:** No es obligatorio tener instalados localmente PHP, Node.js, Java ni Composer; cada componente se compila y ejecuta dentro de su propio contenedor aislado.
+2. **El servicio Docker no está corriendo (muy común en CachyOS / Arch / Fedora):**
+   - Iniciar y habilitar el daemon de Docker con systemd:
+     ```bash
+     sudo systemctl enable --now docker
+     ```
+   - Si se usa Docker Desktop en Linux, verificar que el servicio de Docker esté activo.
+
+3. **Permisos de escritura en Laravel (`storage/` y `bootstrap/cache`):**
+   - En Linux, los archivos creados por el contenedor pertenecen a `root` o a `www-data`. Si Laravel dice `Permission denied`:
+     ```bash
+     sudo chmod -R 777 backend/storage backend/bootstrap/cache
+     ```
+
+4. **Scripts `.sh` sin permisos de ejecución:**
+   - Si `setup.sh` no corre con `./setup.sh`:
+     ```bash
+     chmod +x setup.sh
+     ./setup.sh
+     ```
+
+5. **Liberar puertos ocupados en Linux:**
+   - Identificar y terminar procesos usando los puertos del sistema:
+     ```bash
+     sudo ss -tulpn | grep -E ':(3000|8000|5432|5433|8080)'
+     # Para matar el proceso directamente:
+     sudo fuser -k 8000/tcp
+     sudo fuser -k 3000/tcp
+     ```
+
+6. **Memoria insuficiente o compilación congelada de Next.js / Quarkus:**
+   - En distros ligeras o laptops sin SWAP suficiente, la compilación de Next.js puede cerrarse con `Killed (signal 9)`.
+   - Crear un archivo SWAP temporal de 4 GB:
+     ```bash
+     sudo fallocate -l 4G /swapfile
+     sudo chmod 600 /swapfile
+     sudo mkswap /swapfile
+     sudo swapon /swapfile
+     ```
 
 ---
 
-### Paso 1: Clonar el Repositorio
+## Requisitos de Instalación
+
+- Docker Desktop (Windows) o Docker Engine con Docker Compose (Linux).
+- Git para clonar el repositorio.
+
+No es necesario instalar PHP, Composer, Node.js, npm, Java ni Maven en el equipo: cada servicio utiliza su propio contenedor.
+
+## 1. Descargar el proyecto
 
 ```bash
 git clone https://github.com/polikarmio-crypto/escuelaidiomas_bacarlix.git
 cd escuelaidiomas_bacarlix
 ```
 
----
+## 2. Configurar el entorno
 
-### Paso 2: Configurar las Variables de Entorno
-
-Crear el archivo `.env` en la raíz copiando la plantilla base:
+Si el repositorio incluye un archivo `.env.example`, crea el archivo `.env` en la raíz del proyecto.
 
 **Windows (PowerShell):**
+
 ```powershell
 Copy-Item .env.example .env
 ```
 
-**Linux / macOS (Bash):**
+**Linux/macOS (Bash):**
+
 ```bash
 cp .env.example .env
 ```
 
-*(Opcional: Si se desea personalizar contraseñas de PostgreSQL o llaves de NextAuth, editarlas dentro del archivo `.env`).*
+El archivo `docker-compose.yml` ya define valores predeterminados para `DB_USERNAME`, `DB_PASSWORD` y `NEXTAUTH_SECRET`. Para personalizarlos, configura estas variables en el `.env` de la raíz antes de iniciar los contenedores. No publiques contraseñas reales en Git.
 
----
+## 3. Iniciar el sistema
 
-### Paso 3: Iniciar los Contenedores
+Abre Docker Desktop (si utilizas Windows) o asegúrate de que el daemon de Docker esté iniciado (si utilizas Linux). Desde la carpeta raíz del proyecto, ejecuta:
 
-Desde la raíz del proyecto, ejecutar:
+**Windows (PowerShell/CMD):**
+```powershell
+docker compose up -d --build
+```
 
+**Linux (Bash):**
 ```bash
 docker compose up -d --build
 ```
 
-Este comando levantará los cuatro servicios:
-1. `postgres` (Base de datos relacional PostgreSQL 16)
-2. `backend` (API Laravel 11 con PHP 8.2)
-3. `quarkus` (Microservicio analítico reactivo en JVM)
-4. `frontend` (Aplicación Next.js 14 en modo desarrollo)
+Este comando construye las imágenes necesarias e inicia los cuatro servicios: `postgres`, `backend`, `frontend` y `quarkus`. La primera ejecución puede tardar varios minutos.
 
-Verificar que los contenedores estén en estado `Up`:
+Comprueba su estado con:
+
 ```bash
 docker compose ps
 ```
 
----
+## 4. Preparar la base de datos
 
-### Paso 4: Ejecutar Migraciones y Datos Iniciales (Seeders)
-
-Una vez que los contenedores estén levantados, ejecutar las migraciones de base de datos y la carga inicial de catálogos, docentes, estudiantes y usuarios:
+Cuando PostgreSQL y Laravel estén iniciados, ejecuta las migraciones:
 
 ```bash
-# Ejecutar migraciones 5FN y triggers
 docker compose exec backend php artisan migrate --force
+```
 
-# Poblar con datos institucionales (Seeders)
+Si el proyecto incluye seeders y necesitas cargar datos iniciales:
+
+```bash
 docker compose exec backend php artisan db:seed --force
 ```
 
-Generar el enlace simbólico de almacenamiento público de Laravel si es necesario:
+> **Atención:** no utilices `migrate:fresh` sobre una base con información que quieras conservar, porque elimina las tablas antes de recrearlas.
+
+## 5. Abrir la aplicación
+
+| Servicio | Dirección desde el equipo |
+| --- | --- |
+| Aplicación web (Next.js) | http://localhost:3000 |
+| API Laravel | http://localhost:8000 |
+| Microservicio Quarkus | http://localhost:8080 |
+| PostgreSQL | `localhost:5433` (conexión desde DBeaver/pgAdmin) |
+
+Dentro de la red Docker, Laravel y Quarkus se conectan a PostgreSQL usando el host `postgres` y el puerto `5432`.
+
+## 6. Comandos útiles
+
 ```bash
-docker compose exec backend php artisan storage:link
+# Ver estado de los contenedores
+docker compose ps
+
+# Consultar registros en tiempo real
+docker compose logs -f
+
+# Ver solo los registros de un servicio específico
+docker compose logs -f backend
+docker compose logs -f frontend
+
+# Reiniciar servicios
+docker compose restart
+
+# Reconstruir e iniciar después de cambios en Dockerfiles
+docker compose up -d --build
+
+# Detener contenedores (conserva los datos de postgres)
+docker compose down
 ```
 
----
+Para limpiar cachés de Laravel:
 
-### Paso 5: Acceder a los Servicios
-
-| Servicio | URL / Endpoint | Descripción |
-| :--- | :--- | :--- |
-| **Frontend Web** | [http://localhost:3000](http://localhost:3000) | Landing page, Portal de Acceso y Sistema SACA |
-| **Backend API REST** | [http://localhost:8000](http://localhost:8000) | Endpoints de Laravel (`/api/v1/...`) |
-| **Microservicio Quarkus** | [http://localhost:8080](http://localhost:8080) | Endpoints de analítica (`/api/analytics/...`) |
-| **Base de Datos PostgreSQL** | `localhost:5433` | Acceso externo para DBeaver, pgAdmin o DataGrip |
-
-> **Credenciales de Base de Datos para DBeaver / pgAdmin:**
-> - **Host:** `localhost`
-> - **Puerto:** `5433`
-> - **Base de datos:** `escuela_idiomas`
-> - **Usuario:** `postgres`
-> - **Contraseña:** `postgres123`
-
----
-
-## 💻 Guía Alternativa: Levantamiento Local (Sin Docker)
-
-Si se desea ejecutar los componentes directamente en la máquina host de desarrollo:
-
-### Prerrequisitos Locales:
-- **PHP 8.2+** con extensiones: `pdo_pgsql`, `pgsql`, `mbstring`, `openssl`, `curl`.
-- **Composer** 2.x.
-- **Node.js 18+** ó **20+** y `npm`.
-- **Java JDK 21+** ó **25** y soporte de Maven (`mvnw` incluido).
-- **PostgreSQL 16** instalado y corriendo localmente en el puerto `5432`.
-
-### 1. Backend Laravel:
 ```bash
-cd backend
-composer install
-Copy-Item .env.example .env    # En Linux: cp .env.example .env
-php artisan key:generate
-php artisan migrate --seed
-php artisan serve --port=8000
+docker compose exec backend php artisan optimize:clear
 ```
 
-### 2. Frontend Next.js:
-```bash
-cd frontend
-npm install
-npm run dev -- -p 3000
-```
+## 7. Pruebas unitarias (Quarkus y Mockito)
 
-### 3. Microservicio Quarkus:
-```bash
-cd quarkus
-# En Windows:
-.\mvnw.cmd quarkus:dev
-# En Linux:
-./mvnw quarkus:dev
-```
-
----
-
-## 🧪 Pruebas Unitarias con Mockito (Quarkus)
-
-El microservicio Quarkus incluye una suite de pruebas unitarias implementada con **Mockito** (`quarkus-junit5-mockito`):
-
-- **Archivo de pruebas:** `quarkus/src/test/java/bo/mil/ejercito/idiomas/resource/AnalyticsResourceMockitoTest.java`
-- **Componentes probados con Mocks (`@InjectMock`):**
-  - `PrediccionRendimientoService`: Simulación de regresiones lineales y clasificación de riesgo sin invocar base de datos ni servicios externos.
-  - `MetodosNumericosService`: Simulación de cálculo Simplex y teoría de colas Erlang-C.
-  - Endpoints REST `/api/analytics/*` verificando códigos de estado HTTP 200, contratos JSON y manejo de errores.
-
-### Comando para ejecutar las pruebas unitarias:
+Para ejecutar las pruebas unitarias del microservicio Quarkus:
 
 **Windows (PowerShell):**
 ```powershell
@@ -200,139 +238,49 @@ cd quarkus
 ./mvnw test
 ```
 
-**Vía Docker:**
+O directamente mediante Docker:
 ```bash
 docker compose exec quarkus ./mvnw test
 ```
 
-*Resultado esperado:*
-```text
-[INFO] Results:
-[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
-[INFO] BUILD SUCCESS
-```
+Estas pruebas utilizan Mockito (`AnalyticsResourceMockitoTest.java`) para aislar los servicios y validar los endpoints analíticos de predicción y métodos numéricos sin depender de base de datos ni servicios externos.
 
----
+## 8. Logs y auditoría del sistema
 
-## 📋 Subsistema de Logs y Monitoreo del Sistema
+Los logs se almacenan de manera independiente según el módulo:
 
-El sistema implementa dos capas de logging para garantizar trazabilidad y auditoría:
+- **Backend (Laravel):** dentro de la carpeta `backend/storage/logs/`:
+  - `auth/`: inicios de sesión y autenticación.
+  - `academico/`: asignaciones de aulas, paralelos y rotación docente.
+  - `cajas/`: cobro de aranceles y transacciones.
+  - `almacen/`: movimientos de inventario y pedidos de libros.
+  - `api/`: llamadas y respuestas a los endpoints.
+- **Quarkus:** en el archivo `quarkus/logs/quarkus.log`.
+- **Auditoría en base de datos:** en la tabla `log_auditoria` de PostgreSQL.
 
-### 1. Directorios de Almacenamiento de Logs
-- **Laravel (Logs segregados por módulo):**
-  - `backend/storage/logs/auth/`: Intentos de login, accesos por Google Auth y cierres de sesión.
-  - `backend/storage/logs/academico/`: Rotaciones docentes automáticas, asignación de aulas y paralelos.
-  - `backend/storage/logs/cajas/`: Emisión de fichas de atención, cobro de aranceles y transacciones FIFO.
-  - `backend/storage/logs/almacen/`: Entradas/salidas de inventario de textos y cálculo ROP.
-  - `backend/storage/logs/api/`: Peticiones REST, payloads y códigos de respuesta.
-- **Quarkus:**
-  - `quarkus/logs/quarkus.log`: Registro de ejecuciones de modelos matemáticos y peticiones REST analíticas.
-- **Auditoría en Base de Datos:**
-  - Tabla `log_auditoria`: Registra usuario, rol, IP de origen, entidad afectada, payload previo y posterior con marca de tiempo precisa.
+Para ver los logs en tiempo real:
 
-### 2. Comandos para Monitorear Logs en Tiempo Real
-
-**En Windows (PowerShell):**
+**Windows (PowerShell):**
 ```powershell
-# Monitorear logs de autenticación
 Get-Content backend\storage\logs\auth\auth.log -Wait -Tail 30
-
-# Monitorear logs de rotación académica
-Get-Content backend\storage\logs\academico\academico.log -Wait -Tail 30
-
-# Monitorear logs de Quarkus
 Get-Content quarkus\logs\quarkus.log -Wait -Tail 30
 ```
 
-**En Linux / macOS (Bash):**
+**Linux / macOS (Bash):**
 ```bash
 tail -f backend/storage/logs/auth/auth.log
 tail -f quarkus/logs/quarkus.log
 ```
 
-**Desde Contenedores Docker:**
-```bash
-docker compose logs -f backend
-docker compose logs -f quarkus
-docker compose logs -f frontend
-```
+## 9. Cuentas de prueba para los distintos roles
 
----
+El sistema cuenta con las siguientes cuentas de prueba creadas en los seeders (se puede ingresar con cualquier contraseña de 4 o más caracteres, por ejemplo `1234`):
 
-## 🔐 Cuentas Institucionales y Roles de Acceso (Demo)
-
-El sistema cuenta con cuentas iniciales preconfiguradas para pruebas inmediatas según el perfil de usuario. Puede ingresarse cualquier contraseña de 4 o más caracteres (ej: `1234` o `admin123`):
-
-| Correo Institucional | Nombre Completo | Rol Asignado | Alcance de Visualización y Permisos |
-| :--- | :--- | :--- | :--- |
-| `admin@ejercito.mil.bo` | Cnl. DAEN. Roberto Méndez Silva | **ADMIN** | Acceso total al sistema, auditoría, dashboard y gestión global. |
-| `jefe.academico@ejercito.mil.bo` | Tcnl. DEM. Hugo Banzer Rivera | **JEFE_ACADEMICO** | Apertura de paralelos, rotación docente automática y gestión de aulas. |
-| `doc.rios@ejercito.mil.bo` | Prof. Fernando Ríos Torrico | **DOCENTE** | **Vista aislada:** Únicamente visualiza sus paralelos asignados y alumnos a su cargo. |
-| `cajero@ejercito.mil.bo` | Sof. My. David Choquehuanca | **CAJERO** | Ventanilla de atención FIFO, cobro de matrículas y arqueo de caja. |
-| `almacen@ejercito.mil.bo` | Sgto. 2do. Marcelo Justiniano | **ALMACENERO** | Inventario de textos de idiomas, pedidos de reposición y entregas. |
-| `est.mamani@ejercito.mil.bo` | Cad. Carlos Fernando Mamani | **ESTUDIANTE** | **Vista aislada:** Únicamente visualiza su propio paralelo, notas y asistencia personal. |
-
-> **Políticas de Seguridad Implementadas:**
-> 1. **Aislamiento Estricto por ID:** Los usuarios con rol `ESTUDIANTE` y `DOCENTE` tienen vistas parametrizadas para no acceder bajo ninguna circunstancia a registros o asignaciones de otros usuarios de su mismo rol.
-> 2. **Cero Persistencia de Cuentas en Google Auth:** La autenticación federada implementa `prompt: "select_account"`, impidiendo que el navegador recuerde la última cuenta iniciada para evitar accesos cruzados no autorizados en terminales compartidas.
-
----
-
-## 🛠️ Guía de Solución de Errores Frecuentes
-
-### 1. Para Desarrolladores en Windows
-- **Conflicto de Puertos (3000, 8000, 5433):**
-  Si un puerto está ocupado por otro servicio local:
-  ```powershell
-  Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue
-  # Matar el proceso por su PID
-  Stop-Process -Id <PID> -Force
-  ```
-- **Fallo de Saltos de Línea (CRLF vs LF):**
-  Si Docker reporta `^M: bad interpreter`, configurar Git para evitar conversiones automáticas:
-  ```powershell
-  git config --global core.autocrlf input
-  ```
-- **Actualizar WSL 2:**
-  ```powershell
-  wsl --update
-  wsl --set-default-version 2
-  ```
-
-### 2. Para Desarrolladores en Linux (Ubuntu / Debian / Arch / CachyOS)
-- **Permisos de Docker sin `sudo`:**
-  ```bash
-  sudo usermod -aG docker $USER
-  newgrp docker
-  ```
-- **Permisos de escritura en carpetas de Laravel:**
-  ```bash
-  sudo chmod -R 777 backend/storage backend/bootstrap/cache
-  ```
-- **Habilitar el servicio Docker:**
-  ```bash
-  sudo systemctl enable --now docker
-  ```
-
----
-
-## 🧰 Comandos Útiles de Mantenimiento
-
-```bash
-# Ver estado y consumo de los contenedores
-docker compose ps
-
-# Reiniciar todos los servicios
-docker compose restart
-
-# Reconstruir imágenes tras cambios de dependencias
-docker compose up -d --build
-
-# Limpiar caché de Laravel dentro del contenedor
-docker compose exec backend php artisan optimize:clear
-docker compose exec backend php artisan config:clear
-docker compose exec backend php artisan route:clear
-
-# Detener los contenedores conservando los datos de PostgreSQL
-docker compose down
-```
+| Correo | Rol | Descripción y Alcance |
+| :--- | :--- | :--- |
+| `admin@ejercito.mil.bo` | ADMIN | Administrador general con acceso a todos los módulos y auditoría |
+| `jefe.academico@ejercito.mil.bo` | JEFE_ACADEMICO | Jefe académico, apertura de paralelos y rotaciones docentes |
+| `doc.rios@ejercito.mil.bo` | DOCENTE | Docente (solo ve sus propios paralelos y estudiantes asignados) |
+| `cajero@ejercito.mil.bo` | CAJERO | Atención de ventanilla en cola FIFO y cobro de aranceles |
+| `almacen@ejercito.mil.bo` | ALMACENERO | Control de inventario y entrega de libros de texto |
+| `est.mamani@ejercito.mil.bo` | ESTUDIANTE | Estudiante (solo ve sus notas y su propio paralelo asignado) |
