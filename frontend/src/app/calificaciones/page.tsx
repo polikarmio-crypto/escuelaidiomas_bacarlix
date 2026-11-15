@@ -88,7 +88,7 @@ export default function CalificacionesPage() {
 
   const cargarParalelos = async () => {
     try {
-      const res = await fetch('http://localhost:8000/api/v1/paralelos');
+      const res = await fetch('/api/v1/paralelos');
       if (res.ok) {
         const data = await res.json();
         setParalelos(data || []);
@@ -105,7 +105,7 @@ export default function CalificacionesPage() {
     if (!id) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/calificaciones/paralelo/${id}`);
+      const res = await fetch(`/api/v1/calificaciones/paralelo/${id}`);
       if (res.ok) {
         const data = await res.json();
         setAlumnos(data.alumnos || []);
@@ -149,7 +149,11 @@ export default function CalificacionesPage() {
 
   const alumnosFiltrados = useMemo(() => {
     if (esEstudiante) {
-      return alumnos.filter((a) => a.estudiante.nombre_completo.toLowerCase().includes(usuario.nombre.toLowerCase()) || a.estudiante.ci.includes(usuario.ci.split(' ')[0]));
+      return alumnos.filter((a) => {
+        if (usuario.id_estudiante) return a.estudiante.id_estudiante === usuario.id_estudiante;
+        if (usuario.ci) return a.estudiante.ci === usuario.ci || a.estudiante.ci === usuario.ci.split(' ')[0];
+        return false;
+      });
     }
     if (!busqueda.trim()) return alumnos;
     const q = busqueda.toLowerCase().trim();
@@ -209,7 +213,7 @@ export default function CalificacionesPage() {
         payload.nota_participacion_libro = formNotas.participacion;
       }
 
-      const res = await fetch('http://localhost:8000/api/v1/calificaciones/libro', {
+      const res = await fetch('/api/v1/calificaciones/libro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -261,10 +265,10 @@ export default function CalificacionesPage() {
         <button
           onClick={() => cargarNotasParalelo(idParaleloSeleccionado)}
           disabled={loading}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Sincronizar Notas
+          <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
+          <span>Sincronizar Notas</span>
         </button>
       </div>
 
@@ -315,13 +319,13 @@ export default function CalificacionesPage() {
           </div>
 
           <div className="relative w-full sm:w-64">
-            <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-2.5" />
+            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               placeholder="Buscar en acta..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white"
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white"
             />
           </div>
         </div>

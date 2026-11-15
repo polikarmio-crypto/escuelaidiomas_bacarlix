@@ -6,13 +6,10 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Módulo 4: Gestión de Estudiantes (5NF Normalization con Subtipo Especializado)
-     * Estudiante y Estudiante_Militar
-     */
+
     public function up(): void
     {
-        // 1.13 ESTUDIANTE (Super-tipo general)
+
         Schema::create('estudiante', function (Blueprint $table) {
             $table->id('id_estudiante');
             $table->string('ci_estudiante', 15)->unique()->comment('Cédula de identidad con complemento');
@@ -29,7 +26,6 @@ return new class extends Migration
             $table->index(['apellido_estudiante', 'nombre_estudiante'], 'idx_estudiante_apellidos_nombres');
         });
 
-        // 1.14 ESTUDIANTE_MILITAR (Sub-tipo especializado 5NF)
         Schema::create('estudiante_militar', function (Blueprint $table) {
             $table->foreignId('id_estudiante')->primary()->constrained('estudiante', 'id_estudiante')->onDelete('cascade')->onUpdate('cascade');
             $table->string('grado_militar', 40)->comment('Capitán, Subteniente, Sargento, etc.');

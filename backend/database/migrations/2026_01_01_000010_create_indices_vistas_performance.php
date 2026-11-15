@@ -7,55 +7,44 @@ use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
-    /**
-     * Módulo 11: Índices de Performance, Vistas Materializadas y Optimizaciones
-     * Complementos para normalización 5FN, performance de cola FIFO y reportes
-     */
+
     public function up(): void
     {
-        // ─── ÍNDICES ADICIONALES DE PERFORMANCE ───
 
-        // Índice parcial para fichas activas (solo las que están en espera o atención)
         DB::statement("
-            CREATE INDEX IF NOT EXISTS idx_ficha_activa_parcial 
+            CREATE INDEX IF NOT EXISTS idx_ficha_activa_parcial
             ON ficha_atencion (hora_llegada_ficha ASC)
             WHERE estado_ficha IN ('En espera', 'En atencion')
         ");
 
-        // Índice parcial para inscripciones activas
         DB::statement("
             CREATE INDEX IF NOT EXISTS idx_inscripcion_activa_parcial
             ON inscripcion (id_paralelo, id_estudiante)
             WHERE estado_inscripcion = 'Activa'
         ");
 
-        // Índice parcial para asignaciones docentes vigentes
         DB::statement("
             CREATE INDEX IF NOT EXISTS idx_asignacion_vigente_parcial
             ON asignacion_docente_paralelo (id_paralelo, id_docente, fecha_inicio_asignacion)
             WHERE fecha_fin_asignacion IS NULL
         ");
 
-        // Índice parcial para pedidos pendientes de almacén
         DB::statement("
             CREATE INDEX IF NOT EXISTS idx_pedido_pendiente_parcial
             ON pedido_reposicion (id_almacen_libro, fecha_pedido)
             WHERE estado_pedido = 'Pendiente'
         ");
 
-        // Índice parcial para paralelos no cerrados
         DB::statement("
             CREATE INDEX IF NOT EXISTS idx_paralelo_no_cerrado_parcial
             ON paralelo (id_gestion, id_nivel)
             WHERE estado_paralelo != 'Cerrado'
         ");
 
-        // Aceleración con Trigram GIN para búsqueda ilike instantánea
         DB::statement("CREATE EXTENSION IF NOT EXISTS pg_trgm");
         DB::statement("CREATE INDEX IF NOT EXISTS idx_estudiante_nombres_trgm ON estudiante USING gin (nombre_estudiante gin_trgm_ops)");
         DB::statement("CREATE INDEX IF NOT EXISTS idx_estudiante_apellidos_trgm ON estudiante USING gin (apellido_estudiante gin_trgm_ops)");
 
-        // ─── VISTA: Resumen de cola FIFO del día (para Quarkus) ───
         DB::statement("
             CREATE OR REPLACE VIEW v_metricas_cola_diaria AS
             SELECT
@@ -73,7 +62,6 @@ return new class extends Migration
             ORDER BY fecha DESC
         ");
 
-        // ─── VISTA: Resumen de stock y alertas ROP ───
         DB::statement("
             CREATE OR REPLACE VIEW v_stock_alertas AS
             SELECT
@@ -99,7 +87,6 @@ return new class extends Migration
             JOIN idioma i ON p.id_idioma = i.id_idioma
         ");
 
-        // ─── VISTA: Docentes con días en aula y alerta de rotación ───
         DB::statement("
             CREATE OR REPLACE VIEW v_docentes_rotacion AS
             SELECT

@@ -7,10 +7,6 @@ use Illuminate\Http\Request;
 
 class MetodosNumericosController extends Controller
 {
-    /**
-     * MÉTODOS NUMÉRICOS: Ajuste Lineal por Mínimos Cuadrados
-     * Minimiza la Suma de Cuadrados de las Diferencias: SSE = SUM((y_i - y_hat_i)^2)
-     */
     public function minimosCuadrados(Request $request)
     {
         $validated = $request->validate([
@@ -46,7 +42,7 @@ class MetodosNumericosController extends Controller
 
         $denominadorM = ($n * $sumX2) - ($sumX * $sumX);
         if (abs($denominadorM) < 1e-9) {
-            return response()->json(['error' => 'Los valores de X deben presentar variabilidad para calcular la regresión.'], 422);
+            return response()->json(['error' => 'Los valores de entrada deben presentar variabilidad para estimar la tendencia.'], 422);
         }
 
         $m = (($n * $sumXY) - ($sumX * $sumY)) / $denominadorM;
@@ -63,7 +59,7 @@ class MetodosNumericosController extends Controller
 
             $yEstimado = round($m * $x + $b, 3);
             $residuo = round($y - $yEstimado, 3);
-            $residuoCuadrado = round(pow($residuo, 2), 4); // Diferencia de cuadrados del error
+            $residuoCuadrado = round(pow($residuo, 2), 4);
 
             $xCuadrado = round(pow($x, 2), 2);
             $yCuadrado = round(pow($y, 2), 2);
@@ -90,7 +86,6 @@ class MetodosNumericosController extends Controller
         $rPearson = ($m >= 0 ? 1 : -1) * sqrt($r2);
         $errorEstandar = $n > 2 ? sqrt($sse / ($n - 2)) : 0.0;
 
-        // Proyecciones futuras si se solicitan
         $proyecciones = [];
         $futuros = $validated['periodos_futuros'] ?? [$n + 1, $n + 2, $n + 3];
         foreach ($futuros as $xf) {
@@ -103,7 +98,7 @@ class MetodosNumericosController extends Controller
         }
 
         return response()->json([
-            'metodo' => 'Ajuste Lineal por Mínimos Cuadrados (Suma de Diferencias al Cuadrado)',
+            'metodo' => 'Proyección de Demanda y Análisis de Tendencias',
             'n' => $n,
             'sumX' => round($sumX, 2),
             'sumY' => round($sumY, 2),
@@ -114,8 +109,8 @@ class MetodosNumericosController extends Controller
             'mediaY' => round($mediaY, 2),
             'pendienteM' => round($m, 4),
             'interceptoB' => round($b, 4),
-            'ecuacionRecta' => sprintf("y = %.4fx %s %.4f", round($m, 4), ($b >= 0 ? '+' : '-'), abs(round($b, 4))),
-            'sse' => round($sse, 4), // Suma de Cuadrados del Error / Diferencias de Cuadrados
+            'ecuacionRecta' => sprintf("Tendencia: %.4fx %s %.4f", round($m, 4), ($b >= 0 ? '+' : '-'), abs(round($b, 4))),
+            'sse' => round($sse, 4),
             'sst' => round($sst, 4),
             'ssr' => round($ssr, 4),
             'r2' => round($r2, 4),
@@ -126,9 +121,6 @@ class MetodosNumericosController extends Controller
         ]);
     }
 
-    /**
-     * MÉTODOS NUMÉRICOS: Interpolación por Diferencias Divididas de Newton
-     */
     public function interpolacionNewton(Request $request)
     {
         $validated = $request->validate([
@@ -145,10 +137,9 @@ class MetodosNumericosController extends Controller
         $n = count($x);
 
         if ($n !== count($y)) {
-            return response()->json(['error' => 'Los arreglos X e Y deben tener la misma longitud.'], 422);
+            return response()->json(['error' => 'Los arreglos de entrada deben tener la misma longitud.'], 422);
         }
 
-        // Matriz de diferencias divididas
         $f = array_fill(0, $n, array_fill(0, $n, 0.0));
         for ($i = 0; $i < $n; $i++) {
             $f[$i][0] = (float) $y[$i];
@@ -158,13 +149,12 @@ class MetodosNumericosController extends Controller
             for ($i = 0; $i < $n - $j; $i++) {
                 $den = $x[$i + $j] - $x[$i];
                 if (abs($den) < 1e-9) {
-                    return response()->json(['error' => 'Puntos X duplicados en interpolación de Newton.'], 422);
+                    return response()->json(['error' => 'Puntos duplicados en el rango evaluado.'], 422);
                 }
                 $f[$i][$j] = ($f[$i + 1][$j - 1] - $f[$i][$j - 1]) / $den;
             }
         }
 
-        // Evaluación del polinomio
         $resultado = $f[0][0];
         $producto = 1.0;
         $poli = sprintf("%.3f", $f[0][0]);
@@ -183,20 +173,17 @@ class MetodosNumericosController extends Controller
         }
 
         return response()->json([
-            'metodo' => 'Interpolación por Diferencias Divididas de Newton',
+            'metodo' => 'Punto de Equilibrio y Capacidad Operativa',
             'grado' => $n - 1,
             'xEvaluado' => $xEval,
             'valorInterpolado' => round($resultado, 4),
             'coeficientes' => $coefs,
-            'polinomioNewton' => "P(x) = {$poli}",
+            'polinomioNewton' => "Curva = {$poli}",
             'tablaDiferenciasDivididas' => $f,
         ]);
     }
 
-    /**
-     * INVESTIGACIÓN OPERATIVA: Programación Lineal (Método Simplex)
-     */
-    public function simplex(Request $request)
+    public function optimizacionLineal(Request $request)
     {
         $validated = $request->validate([
             'c' => 'required|array|min:1',
@@ -218,27 +205,24 @@ class MetodosNumericosController extends Controller
 
         $tabla = array_fill(0, $filas, array_fill(0, $cols, 0.0));
 
-        // Cargar restricciones
         for ($i = 0; $i < $numRestricciones; $i++) {
             for ($j = 0; $j < $numVars; $j++) {
                 $tabla[$i][$j] = (float) $A[$i][$j];
             }
-            $tabla[$i][$numVars + $i] = 1.0; // Holgura
-            $tabla[$i][$cols - 1] = (float) $b[$i]; // RHS
+            $tabla[$i][$numVars + $i] = 1.0;
+            $tabla[$i][$cols - 1] = (float) $b[$i];
         }
 
-        // Fila Z
         for ($j = 0; $j < $numVars; $j++) {
             $tabla[$filas - 1][$j] = -((float) $c[$j]);
         }
 
-        $pasos = ["Tabla inicial generada con {$numRestricciones} variables de holgura."];
+        $pasos = ["Matriz inicial con {$numRestricciones} restricciones operativas."];
         $iter = 0;
 
         while ($iter < 30) {
             $iter++;
 
-            // Columna pivote
             $colPivote = -1;
             $menor = 0.0;
             for ($j = 0; $j < $cols - 1; $j++) {
@@ -249,11 +233,10 @@ class MetodosNumericosController extends Controller
             }
 
             if ($colPivote === -1) {
-                $pasos[] = "Optimalidad alcanzada en la iteración {$iter}.";
+                $pasos[] = "Convergencia óptima alcanzada en la fase {$iter}.";
                 break;
             }
 
-            // Fila pivote
             $filaPivote = -1;
             $minCociente = INF;
             for ($i = 0; $i < $numRestricciones; $i++) {
@@ -267,19 +250,17 @@ class MetodosNumericosController extends Controller
             }
 
             if ($filaPivote === -1) {
-                $pasos[] = "Solución no acotada (ilimitada).";
+                $pasos[] = "Solución sin límite superior.";
                 break;
             }
 
-            $pasos[] = "Iteración {$iter}: Columna pivote X" . ($colPivote + 1) . ", Fila S" . ($filaPivote + 1);
+            $pasos[] = "Fase {$iter}: Ajuste de recurso " . ($colPivote + 1) . " con restricción " . ($filaPivote + 1);
 
-            // Normalizar
             $elemPivote = $tabla[$filaPivote][$colPivote];
             for ($j = 0; $j < $cols; $j++) {
                 $tabla[$filaPivote][$j] /= $elemPivote;
             }
 
-            // Gauss-Jordan
             for ($i = 0; $i < $filas; $i++) {
                 if ($i !== $filaPivote) {
                     $factor = $tabla[$i][$colPivote];
@@ -307,7 +288,7 @@ class MetodosNumericosController extends Controller
         }
 
         return response()->json([
-            'metodo' => 'Programación Lineal - Método Simplex Estándar',
+            'metodo' => 'Optimización de Asignación Presupuestaria y Recursos',
             'optimoEncontrado' => true,
             'valorZOptimo' => round($tabla[$filas - 1][$cols - 1], 2),
             'variablesDecision' => $decision,
@@ -316,11 +297,6 @@ class MetodosNumericosController extends Controller
         ]);
     }
 
-    /**
-     * H3 PROYECTO SEMESTRAL MN: Servicio Predictivo de Rendimiento Académico
-     * Implementa el modelo de mínimos cuadrados con proyección a exámenes de nivel y
-     * clasificación de riesgo de deserción R(x_p) según Ecuación 4.11 y Figuras 5.1-5.3.
-     */
     public function prediccionRendimiento(Request $request)
     {
         $validated = $request->validate([
@@ -336,14 +312,11 @@ class MetodosNumericosController extends Controller
         return response()->json($this->calcularPrediccionH3($validated));
     }
 
-    /**
-     * H3 Caso de Validación Oficial (Tabla 5.3): Libros 1-6 con notas {78, 74, 75, 68, 66, 61}
-     */
     public function validacionH3()
     {
         $caso = [
             'id_estudiante' => 0,
-            'nombre_estudiante' => 'Caso Hipotético H3 (Tabla 5.3)',
+            'nombre_estudiante' => 'Caso de Monitoreo Académico',
             'programa' => 'Inglés',
             'libro_examen_nivel_objetivo' => 12,
             'calificaciones' => [
@@ -359,9 +332,6 @@ class MetodosNumericosController extends Controller
         return response()->json($this->calcularPrediccionH3($caso));
     }
 
-    /**
-     * H3 Recálculo por Lotes al cierre de rotación docente (Figura 5.4)
-     */
     public function recalcularLote(Request $request)
     {
         $validated = $request->validate([
@@ -410,9 +380,6 @@ class MetodosNumericosController extends Controller
         ]);
     }
 
-    /**
-     * Motor numérico H3 compartido
-     */
     private function calcularPrediccionH3(array $data): array
     {
         $nMin = 3;
@@ -432,17 +399,15 @@ class MetodosNumericosController extends Controller
             'librosEvaluados' => $n,
         ];
 
-        // Paso 1: n >= N_MIN
         if ($n < $nMin) {
             $res['datosInsuficientes'] = true;
             $res['nivelRiesgo'] = 'DATOS_INSUFICIENTES';
-            $res['mensajeAlerta'] = "Se requieren al menos {$nMin} libros evaluados para generar la predicción. Actualmente cuenta con {$n} libro(s).";
+            $res['mensajeAlerta'] = "Se requieren al menos {$nMin} libros evaluados para generar el análisis. Actualmente cuenta con {$n} libro(s).";
             return $res;
         }
 
         $res['datosInsuficientes'] = false;
 
-        // Paso 2: Sumatorias y determinantes
         $sumX = 0; $sumY = 0; $sumXX = 0; $sumXY = 0;
         foreach ($califs as $c) {
             $x = (float) $c['libro'];
@@ -457,16 +422,14 @@ class MetodosNumericosController extends Controller
         if (abs($delta) < 1e-9) {
             $res['datosInsuficientes'] = true;
             $res['nivelRiesgo'] = 'ERROR_CALCULO';
-            $res['mensajeAlerta'] = 'Abscisas sin variación: todos los libros tienen el mismo número.';
+            $res['mensajeAlerta'] = 'Valores sin variación en la serie académica.';
             return $res;
         }
 
-        // Coeficientes recta: y = a*x + b
         $a = (($n * $sumXY) - ($sumX * $sumY)) / $delta;
         $b = ($sumY - ($a * $sumX)) / $n;
         $mediaY = $sumY / $n;
 
-        // Paso 3: Proyección al siguiente examen de nivel
         $ultimoLibro = end($califs)['libro'];
         $xp = $data['libro_examen_nivel_objetivo'] ?? null;
         if (!$xp) {
@@ -482,7 +445,6 @@ class MetodosNumericosController extends Controller
         $ypRaw = ($a * $xp) + $b;
         $yp = max(0.0, min(100.0, $ypRaw));
 
-        // Paso 4: Tabla de ajuste y métricas de error
         $ssRes = 0.0;
         $ssTot = 0.0;
         $tablaAjuste = [];
@@ -508,7 +470,6 @@ class MetodosNumericosController extends Controller
 
         $r2 = $ssTot > 0 ? max(0.0, min(1.0, 1.0 - ($ssRes / $ssTot))) : 1.0;
 
-        // Paso 5: Clasificación del riesgo R(x_p)
         $nivelRiesgo = 'BAJO';
         $mensajeAlerta = '';
 
@@ -516,35 +477,35 @@ class MetodosNumericosController extends Controller
             $nivelRiesgo = 'ALTO';
             $razones = [];
             if ($yp < $umbralAlto) {
-                $razones[] = sprintf('nota proyectada (%.2f) inferior a %d puntos', $yp, (int)$umbralAlto);
+                $razones[] = sprintf('calificación estimada (%.2f) inferior a %d puntos', $yp, (int)$umbralAlto);
             }
             if ($a < $pendienteAlto) {
-                $razones[] = sprintf('pendiente (%.4f) indica pérdida mayor a %.1f puntos por libro', $a, abs($pendienteAlto));
+                $razones[] = sprintf('disminución superior a %.1f puntos por libro', abs($pendienteAlto));
             }
-            $mensajeAlerta = '⚠️ RIESGO ALTO DE DESERCIÓN — ' . implode(' y ', $razones) .
-                ". Se requiere intervención pedagógica inmediata del Jefe Académico antes del examen de nivel del libro {$xp}.";
+            $mensajeAlerta = 'ALERTA ACADÉMICA — ' . implode(' y ', $razones) .
+                ". Se requiere seguimiento del Departamento Académico antes del examen de nivel del libro {$xp}.";
         } elseif ($yp < $umbralMedio || $a < 0) {
             $nivelRiesgo = 'MEDIO';
             $razones = [];
             if ($yp < $umbralMedio) {
-                $razones[] = sprintf('nota proyectada (%.2f) inferior a %d puntos', $yp, (int)$umbralMedio);
+                $razones[] = sprintf('calificación estimada (%.2f) inferior a %d puntos', $yp, (int)$umbralMedio);
             }
             if ($a < 0) {
-                $razones[] = sprintf('tendencia descendente (pendiente %.4f)', $a);
+                $razones[] = sprintf('trayectoria con variación negativa (%.4f)', $a);
             }
-            $mensajeAlerta = '⚡ RIESGO MEDIO — ' . implode(' y ', $razones) .
-                '. Se sugiere seguimiento académico reforzado y tutoría complementaria.';
+            $mensajeAlerta = 'ATENCIÓN PREVENTIVA — ' . implode(' y ', $razones) .
+                '. Se sugiere reforzamiento pedagógico complementario.';
         } else {
             $nivelRiesgo = 'BAJO';
             $mensajeAlerta = sprintf(
-                '✅ RIESGO BAJO — Trayectoria estable o ascendente (pendiente %.4f). Nota proyectada de %.2f puntos para el examen del libro %d.',
-                $a, $yp, $xp
+                'DESEMPEÑO REGULAR — Trayectoria estable. Calificación estimada de %.2f puntos para el examen del libro %d.',
+                $yp, $xp
             );
         }
 
         $res['pendienteA'] = round($a, 4);
         $res['interceptoB'] = round($b, 4);
-        $res['ecuacionRecta'] = sprintf("y = %.4fx %s %.4f", $a, ($b >= 0 ? '+' : '-'), abs($b));
+        $res['ecuacionRecta'] = sprintf("Estimación: %.4fx %s %.4f", $a, ($b >= 0 ? '+' : '-'), abs($b));
         $res['sumX'] = round($sumX, 2);
         $res['sumY'] = round($sumY, 2);
         $res['sumX2'] = round($sumXX, 2);
@@ -561,4 +522,3 @@ class MetodosNumericosController extends Controller
         return $res;
     }
 }
-

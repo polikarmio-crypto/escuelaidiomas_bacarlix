@@ -18,6 +18,8 @@ export interface UsuarioActual {
   rol: RolUsuario;
   tituloRol: string;
   subtitulo: string;
+  id_estudiante?: number | null;
+  id_docente?: number | null;
 }
 
 export interface InfoRolConfig {
@@ -44,7 +46,7 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     pinSeguridad: '9999',
     descripcion: 'Administra los catálogos base del sistema: gestiones, idiomas, aulas y aforos, horarios, modalidades, tipos de programa y tipos de pago.',
     color: '#eab308',
-    rutasPermitidas: ['/', '/dashboard', '/catalogos', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/cajas', '/almacen', '/metodos-numericos'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/catalogos', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/asistencia', '/cajas', '/almacen', '/metodos-numericos'],
   },
   JEFE_ACADEMICO: {
     id: 'JEFE_ACADEMICO',
@@ -56,7 +58,7 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     pinSeguridad: '5050',
     descripcion: 'Planifica programas, niveles y libros; registra docentes e idiomas; inscribe alumnos validando cupos; apertura paralelos y supervisa actas y exámenes de nivel.',
     color: '#3b82f6',
-    rutasPermitidas: ['/', '/dashboard', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/metodos-numericos'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/asistencia', '/metodos-numericos'],
   },
   DOCENTE: {
     id: 'DOCENTE',
@@ -66,9 +68,9 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     emailPorDefecto: 'doc.rios@ejercito.mil.bo',
     ciPorDefecto: '4820194 CB',
     pinSeguridad: '1010',
-    descripcion: 'Consulta sus paralelos y su cronograma de rotación de 15 días; registra calificaciones por libro con la fórmula oficial (Examen 80%, Oral 10%, Participación 10%).',
+    descripcion: 'Consulta sus paralelos y su cronograma de rotación; registra partes de asistencia y calificaciones bajo normativa institucional.',
     color: '#10b981',
-    rutasPermitidas: ['/', '/dashboard', '/paralelos', '/calificaciones'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/paralelos', '/calificaciones', '/asistencia'],
   },
   CAJERO: {
     id: 'CAJERO',
@@ -78,9 +80,9 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     emailPorDefecto: 'cajero@ejercito.mil.bo',
     ciPorDefecto: '5920148 LP',
     pinSeguridad: '3030',
-    descripcion: 'Controla la cola de atención FIFO, atiende turnos en ventanilla, cobra conceptos (matrícula, mensualidad, compra de libro) y emite comprobantes oficiales.',
+    descripcion: 'Controla el flujo de atención en ventanilla, atiende turnos convocados, procesa cobros y emite comprobantes oficiales.',
     color: '#f59e0b',
-    rutasPermitidas: ['/', '/dashboard', '/cajas'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/cajas'],
   },
   ALMACENERO: {
     id: 'ALMACENERO',
@@ -90,9 +92,9 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     emailPorDefecto: 'almacen@ejercito.mil.bo',
     ciPorDefecto: '6019284 SC',
     pinSeguridad: '4040',
-    descripcion: 'Supervisa el stock físico de libros, registra salidas/entradas de kardex, gestiona el punto de reorden (ROP) y pedidos de reposición a proveedores.',
+    descripcion: 'Supervisa las existencias físicas de textos, registra movimientos de entrada y salida de depósito y gestiona órdenes de reposición.',
     color: '#ec4899',
-    rutasPermitidas: ['/', '/dashboard', '/almacen'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/almacen'],
   },
   ESTUDIANTE: {
     id: 'ESTUDIANTE',
@@ -102,14 +104,15 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     emailPorDefecto: 'est.mamani@ejercito.mil.bo',
     ciPorDefecto: '6849201 LP',
     pinSeguridad: '',
-    descripcion: 'Consulta su historial de avance libro a libro y calificaciones, sus cursos inscritos, y solicita fichas de turno digital para trámites en caja.',
+    descripcion: 'Consulta su historial de avance curricular y calificaciones, sus cursos inscritos, y solicita turnos digitales para trámites en ventanilla.',
     color: '#06b6d4',
-    rutasPermitidas: ['/', '/dashboard', '/calificaciones', '/cajas', '/inscripciones'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/calificaciones', '/cajas', '/inscripciones'],
   },
 };
 
 interface AuthRoleContextType {
   usuario: UsuarioActual;
+  autenticado: boolean;
   rolActivo: RolUsuario;
   rolConfig: InfoRolConfig;
   esAdmin: boolean;
@@ -120,51 +123,98 @@ interface AuthRoleContextType {
   esEstudiante: boolean;
   canAccessRoute: (pathname: string) => boolean;
   cambiarRol: (nuevoRol: RolUsuario) => void;
+  iniciarSesion: (datos: Partial<UsuarioActual> & { rol: RolUsuario }) => void;
   cerrarSesion: () => void;
 }
 
 const AuthRoleContext = createContext<AuthRoleContextType | undefined>(undefined);
 
 export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
-  const [rolActivo, setRolActivo] = useState<RolUsuario>('JEFE_ACADEMICO');
+  const [autenticado, setAutenticado] = useState(false);
+  const [rolActivo, setRolActivo] = useState<RolUsuario>('ESTUDIANTE');
+  const [usuarioPersonalizado, setUsuarioPersonalizado] = useState<Partial<UsuarioActual> | null>(null);
 
   useEffect(() => {
     try {
-      const savedRole = localStorage.getItem('eie_rol_activo') as RolUsuario;
-      if (savedRole && ROLES_CONFIG[savedRole]) {
-        setRolActivo(savedRole);
+      const auth = sessionStorage.getItem('eie_auth');
+      const userJson = sessionStorage.getItem('eie_user');
+      if (auth === 'true' && userJson) {
+        const u = JSON.parse(userJson);
+        setAutenticado(true);
+        if (u.rol && ROLES_CONFIG[u.rol as RolUsuario]) {
+          setRolActivo(u.rol as RolUsuario);
+        }
+        setUsuarioPersonalizado(u);
+      } else {
+        setAutenticado(false);
+        setUsuarioPersonalizado(null);
       }
     } catch (e) {
+      setAutenticado(false);
     }
   }, []);
+
+  const iniciarSesion = (datos: Partial<UsuarioActual> & { rol: RolUsuario }) => {
+    setAutenticado(true);
+    setRolActivo(datos.rol);
+    setUsuarioPersonalizado(datos);
+    try {
+      sessionStorage.setItem('eie_auth', 'true');
+      sessionStorage.setItem('eie_user', JSON.stringify(datos));
+      localStorage.removeItem('eie_auth');
+      localStorage.removeItem('eie_role');
+      localStorage.removeItem('eie_email');
+      localStorage.removeItem('eie_rol_activo');
+      localStorage.removeItem('eie_registered_users');
+    } catch (e) {}
+  };
 
   const cambiarRol = (nuevoRol: RolUsuario) => {
     if (ROLES_CONFIG[nuevoRol]) {
       setRolActivo(nuevoRol);
+      setUsuarioPersonalizado((prev) => (prev ? { ...prev, rol: nuevoRol } : null));
       try {
-        localStorage.setItem('eie_rol_activo', nuevoRol);
+        if (sessionStorage.getItem('eie_auth') === 'true') {
+          const userJson = sessionStorage.getItem('eie_user');
+          const current = userJson ? JSON.parse(userJson) : {};
+          current.rol = nuevoRol;
+          sessionStorage.setItem('eie_user', JSON.stringify(current));
+        }
       } catch (e) {}
     }
   };
 
   const cerrarSesion = () => {
-    cambiarRol('ESTUDIANTE');
+    setAutenticado(false);
+    setRolActivo('ESTUDIANTE');
+    setUsuarioPersonalizado(null);
+    try {
+      sessionStorage.clear();
+      localStorage.removeItem('eie_auth');
+      localStorage.removeItem('eie_role');
+      localStorage.removeItem('eie_email');
+      localStorage.removeItem('eie_rol_activo');
+      localStorage.removeItem('eie_registered_users');
+    } catch (e) {}
   };
 
   const rolConfig = ROLES_CONFIG[rolActivo];
 
   const usuario: UsuarioActual = {
-    id: 1,
-    nombre: rolConfig.nombrePorDefecto,
-    email: rolConfig.emailPorDefecto,
-    ci: rolConfig.ciPorDefecto,
+    id: usuarioPersonalizado?.id || 1,
+    nombre: usuarioPersonalizado?.nombre || rolConfig.nombrePorDefecto,
+    email: usuarioPersonalizado?.email || rolConfig.emailPorDefecto,
+    ci: usuarioPersonalizado?.ci || rolConfig.ciPorDefecto,
     rol: rolActivo,
     tituloRol: rolConfig.titulo,
     subtitulo: rolConfig.badge,
+    id_estudiante: usuarioPersonalizado?.id_estudiante ?? null,
+    id_docente: usuarioPersonalizado?.id_docente ?? null,
   };
 
   const canAccessRoute = (pathname: string): boolean => {
-    if (pathname === '/') return true;
+    if (pathname === '/' || pathname === '/login') return true;
+    if (!autenticado) return false;
     return rolConfig.rutasPermitidas.some(
       (r) => r === pathname || (r !== '/' && pathname.startsWith(r))
     );
@@ -174,6 +224,7 @@ export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
     <AuthRoleContext.Provider
       value={{
         usuario,
+        autenticado,
         rolActivo,
         rolConfig,
         esAdmin: rolActivo === 'ADMIN',
@@ -184,6 +235,7 @@ export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
         esEstudiante: rolActivo === 'ESTUDIANTE',
         canAccessRoute,
         cambiarRol,
+        iniciarSesion,
         cerrarSesion,
       }}
     >

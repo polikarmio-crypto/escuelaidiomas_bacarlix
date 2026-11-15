@@ -100,11 +100,14 @@ Route::prefix('v1')->group(function () {
     Route::delete('/docentes/{id}', [DocenteController::class, 'destroy']);
     Route::get('/docentes/alertas/rotacion', [DocenteController::class, 'alertarRotaciones']);
     Route::post('/docentes/rotar', [DocenteController::class, 'rotarDocente']);
+    Route::post('/docentes/rotar-pendientes', [DocenteController::class, 'rotarTodasPendientes']);
     Route::post('/docentes/asignacion-automatica', [DocenteController::class, 'asignacionAutomatica']);
 
     Route::get('/paralelos', [ParaleloController::class, 'index']);
     Route::post('/paralelos', [ParaleloController::class, 'store']);
     Route::get('/paralelos/{id}', [ParaleloController::class, 'show']);
+    Route::post('/paralelos/{id}/asignar-docente', [ParaleloController::class, 'asignarDocente']);
+    Route::post('/paralelos/{id}/asignar-aula', [ParaleloController::class, 'asignarAula']);
 
     Route::get('/inscripciones', [InscripcionController::class, 'index']);
     Route::post('/inscripciones', [InscripcionController::class, 'inscribir']);
