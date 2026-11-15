@@ -32,13 +32,13 @@ Para evitar problemas frecuentes entre los distintos sistemas operativos del equ
      ```
    - Reiniciar el equipo tras la instalación.
 
-2. **Error de Fin de Línea (CRLF vs LF en scripts `.sh`):**
-   - En Windows, Git suele convertir automáticamente los saltos de línea a `CRLF`, lo que genera el error `/bin/sh^M: bad interpreter` al ejecutar scripts dentro de los contenedores Linux.
+2. **Error de Fin de Línea (CRLF vs LF):**
+   - En Windows, Git suele convertir automáticamente los saltos de línea a `CRLF`, lo que genera el error `/bin/sh^M: bad interpreter` al ejecutar comandos dentro de los contenedores Linux.
    - Para evitarlo, configurar Git con:
      ```powershell
      git config --global core.autocrlf input
      ```
-   - Si un script `.sh` da error de formato, en VS Code cambiar el fin de línea de `CRLF` a `LF` en la barra inferior derecha.
+   - Si un archivo de configuración o script da error de formato dentro del contenedor, en VS Code cambiar el fin de línea de `CRLF` a `LF` en la barra inferior derecha.
 
 3. **Conflicto de Puertos en Windows (8000, 3000, 5432 ó 5433):**
    - Si un contenedor no levanta porque el puerto está ocupado (por ejemplo, Postgres local o IIS):
