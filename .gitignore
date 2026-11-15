@@ -38,6 +38,8 @@ backend-laravel/bootstrap/cache/*
 **/target/
 **/.quarkus/
 **/*.class
+quarkus/logs/*
+!quarkus/logs/.gitkeep
 
 .env
 .env.local
