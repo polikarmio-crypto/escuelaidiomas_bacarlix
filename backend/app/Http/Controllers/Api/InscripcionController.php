@@ -59,7 +59,7 @@ class InscripcionController extends Controller
         ]);
 
         return DB::transaction(function () use ($validated) {
-            $paralelo = Paralelo::with('nivel.libros')->findOrFail($validated['id_paralelo']);
+            $paralelo = Paralelo::with(['nivel.programa', 'nivel.libros'])->findOrFail($validated['id_paralelo']);
 
             if (!$paralelo->tiene_cupo_disponible) {
                 AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'INSCRIPCION_RECHAZADA_AFORO_COMPLETO', [
@@ -81,6 +81,22 @@ class InscripcionController extends Controller
                 return response()->json([
                     'error' => 'El estudiante ya se encuentra formalmente matriculado en este paralelo.'
                 ], 422);
+            }
+
+            $idIdioma = $paralelo->nivel?->programa?->id_idioma;
+            if ($idIdioma) {
+                $yaEnIdioma = Inscripcion::where('id_estudiante', $validated['id_estudiante'])
+                    ->where('estado_inscripcion', 'Activa')
+                    ->whereHas('paralelo.nivel.programa', function ($q) use ($idIdioma) {
+                        $q->where('id_idioma', $idIdioma);
+                    })
+                    ->exists();
+
+                if ($yaEnIdioma) {
+                    return response()->json([
+                        'error' => 'El estudiante ya cuenta con una matrícula activa en un paralelo de este idioma.'
+                    ], 422);
+                }
             }
 
             $inscripcion = Inscripcion::create([

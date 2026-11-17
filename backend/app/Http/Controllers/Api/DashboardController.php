@@ -64,15 +64,15 @@ class DashboardController extends Controller
 
         // Métricas personalizadas para Estudiante
         $estudiantePersonal = null;
-        if ($request->filled('id_estudiante') || ($request->filled('email') && (str_contains(strtolower($request->email), 'est.') || str_contains(strtolower($request->email), 'mamani')))) {
+        if ($request->filled('id_estudiante') || $request->get('rol') === 'ESTUDIANTE') {
             $estudianteQuery = Estudiante::query();
             if ($request->filled('id_estudiante')) {
                 $estudianteQuery->where('id_estudiante', (int) $request->id_estudiante);
             } else {
-                $emailBuscado = trim($request->email);
-                $estudianteQuery->where('email_estudiante', $emailBuscado)
-                    ->orWhere('email_estudiante', 'c.mamani11@ejercito.mil.bo')
-                    ->orWhere('id_estudiante', 11);
+                $emailBuscado = trim($request->email ?? '');
+                if ($emailBuscado) {
+                    $estudianteQuery->where('email_estudiante', $emailBuscado);
+                }
             }
             $est = $estudianteQuery->first();
             if (!$est && $request->filled('ci')) {

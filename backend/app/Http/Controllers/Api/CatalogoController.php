@@ -298,11 +298,15 @@ class CatalogoController extends Controller
 
     public function storeModalidad(Request $request)
     {
-        $validated = $request->validate(['nombre_modalidad' => 'required|string|max:20']);
-        if (Modalidad::where('nombre_modalidad', 'ilike', trim($validated['nombre_modalidad']))->exists()) {
+        $validated = $request->validate(['nombre_modalidad' => 'required|string|min:3|max:20|regex:/^[\p{L}\s]+$/u']);
+        $nombre = trim($validated['nombre_modalidad']);
+        if (mb_strlen($nombre) < 3) {
+            return response()->json(['error' => 'La modalidad debe tener al menos 3 caracteres.'], 422);
+        }
+        if (Modalidad::where('nombre_modalidad', 'ilike', $nombre)->exists()) {
             return response()->json(['error' => 'La modalidad ya existe.'], 422);
         }
-        $item = Modalidad::create(['nombre_modalidad' => trim($validated['nombre_modalidad'])]);
+        $item = Modalidad::create(['nombre_modalidad' => $nombre]);
         return response()->json(['message' => 'Modalidad registrada.', 'data' => $item], 201);
     }
 
@@ -346,15 +350,20 @@ class CatalogoController extends Controller
     public function storeCaja(Request $request)
     {
         $validated = $request->validate([
-            'nombre_caja'    => 'required|string|max:30',
-            'ubicacion_caja' => 'required|string|max:80',
+            'nombre_caja'    => 'required|string|min:3|max:30',
+            'ubicacion_caja' => 'required|string|min:3|max:80',
         ]);
-        if (Caja::where('nombre_caja', 'ilike', trim($validated['nombre_caja']))->exists()) {
+        $nombre = trim($validated['nombre_caja']);
+        $ubicacion = trim($validated['ubicacion_caja']);
+        if (mb_strlen($nombre) < 3 || mb_strlen($ubicacion) < 3) {
+            return response()->json(['error' => 'El nombre y ubicación deben tener al menos 3 caracteres.'], 422);
+        }
+        if (Caja::where('nombre_caja', 'ilike', $nombre)->exists()) {
             return response()->json(['error' => 'La caja/ventanilla ya está registrada.'], 422);
         }
         $caja = Caja::create([
-            'nombre_caja'    => trim($validated['nombre_caja']),
-            'ubicacion_caja' => trim($validated['ubicacion_caja'])
+            'nombre_caja'    => $nombre,
+            'ubicacion_caja' => $ubicacion
         ]);
         return response()->json(['message' => 'Caja/Ventanilla registrada.', 'data' => $caja], 201);
     }

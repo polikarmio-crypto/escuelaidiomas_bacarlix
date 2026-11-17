@@ -26,7 +26,7 @@ import { useAuthRole } from '@/context/AuthRoleContext';
 const PER_PAGE = 9;
 
 export default function ParalelosPage() {
-  const { esJefeAcademico, esDocente, esAdmin, usuario } = useAuthRole();
+  const { rolActivo, esJefeAcademico, esDocente, esAdmin, usuario } = useAuthRole();
   const puedeCrear = esJefeAcademico || esAdmin;
   const puedeAsignar = esJefeAcademico || esAdmin;
 
@@ -89,14 +89,7 @@ export default function ParalelosPage() {
         let lista = await resPar.json() || [];
         if (esDocente) {
           const docId = usuario.id_docente || 1;
-          const docNom = (usuario.nombre || 'Fernando').toLowerCase();
-          lista = lista.filter((p: any) =>
-            p.id_docente_actual === docId ||
-            (typeof p.docente_actual === 'string' && (
-              p.docente_actual.toLowerCase().includes('fernando') ||
-              p.docente_actual.toLowerCase().includes(docNom)
-            ))
-          );
+          lista = lista.filter((p: any) => Number(p.id_docente_actual) === Number(docId));
         }
         setParalelos(lista);
       }
@@ -138,7 +131,7 @@ export default function ParalelosPage() {
 
   useEffect(() => {
     cargarDatos();
-  }, []);
+  }, [esDocente, usuario.id_docente, usuario.email, rolActivo]);
 
   const handleAperturarParalelo = async (e: React.FormEvent) => {
     e.preventDefault();

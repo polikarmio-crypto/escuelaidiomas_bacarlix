@@ -28,8 +28,9 @@ export default function InscripcionesPage() {
 
   const [loading, setLoading] = useState(false);
   const [inscripciones, setInscripciones] = useState<any[]>([]);
-  const [estudiantes, setEstudiantes] = useState<any[]>([]);
   const [paralelos, setParalelos] = useState<any[]>([]);
+  const [estudiantesElegibles, setEstudiantesElegibles] = useState<any[]>([]);
+  const [loadingEstudiantes, setLoadingEstudiantes] = useState(false);
 
   const [busqueda, setBusqueda] = useState('');
   const [page, setPage] = useState(1);
@@ -46,6 +47,43 @@ export default function InscripcionesPage() {
     setTimeout(() => setAlerta(null), 5000);
   };
 
+  const cargarEstudiantesElegibles = async (idParalelo: string) => {
+    if (!idParalelo) {
+      setEstudiantesElegibles([]);
+      return;
+    }
+    setLoadingEstudiantes(true);
+    try {
+      const res = await fetch(`/api/v1/estudiantes?id_paralelo_destino=${idParalelo}&per_page=100`);
+      if (res.ok) {
+        const d = await res.json();
+        const lista = d.data || [];
+        setEstudiantesElegibles(lista);
+        if (lista.length > 0) {
+          setFormIns((f) => ({ ...f, id_estudiante: (lista[0].id_estudiante || lista[0].id).toString() }));
+        } else {
+          setFormIns((f) => ({ ...f, id_estudiante: '' }));
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingEstudiantes(false);
+    }
+  };
+
+  const abrirModalInscribir = () => {
+    setModalInscribir(true);
+    const primerParalelo = paralelos[0]?.id_paralelo?.toString() || '';
+    setFormIns({
+      id_paralelo: primerParalelo,
+      id_estudiante: '',
+    });
+    if (primerParalelo) {
+      cargarEstudiantesElegibles(primerParalelo);
+    }
+  };
+
   const cargarDatos = async () => {
     setLoading(true);
     try {
@@ -55,9 +93,8 @@ export default function InscripcionesPage() {
         else if (usuario.email) urlIns += `&email=${encodeURIComponent(usuario.email)}`;
       }
 
-      const [resIns, resEst, resPar] = await Promise.all([
+      const [resIns, resPar] = await Promise.all([
         fetch(urlIns),
-        esEstudiante ? Promise.resolve({ ok: true, json: async () => ({ data: [] }) } as any) : fetch('/api/v1/estudiantes?per_page=100'),
         esEstudiante ? Promise.resolve({ ok: true, json: async () => [] } as any) : fetch('/api/v1/paralelos'),
       ]);
 
@@ -65,19 +102,9 @@ export default function InscripcionesPage() {
         const d = await resIns.json();
         setInscripciones(d.data || []);
       }
-      if (resEst.ok && !esEstudiante) {
-        const d = await resEst.json();
-        setEstudiantes(d.data || []);
-        if (d.data?.length > 0 && !formIns.id_estudiante) {
-          setFormIns((f) => ({ ...f, id_estudiante: d.data[0].id_estudiante.toString() }));
-        }
-      }
       if (resPar.ok && !esEstudiante) {
         const d = await resPar.json();
         setParalelos(d || []);
-        if (d.length > 0 && !formIns.id_paralelo) {
-          setFormIns((f) => ({ ...f, id_paralelo: d[0].id_paralelo.toString() }));
-        }
       }
     } catch (e) {
       console.error(e);
@@ -191,7 +218,7 @@ export default function InscripcionesPage() {
           </button>
           {puedeInscribir && (
             <button
-              onClick={() => setModalInscribir(true)}
+              onClick={abrirModalInscribir}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition shadow-md shadow-indigo-600/20"
             >
               <Plus className="w-4 h-4" />
@@ -348,40 +375,70 @@ export default function InscripcionesPage() {
 
             <form onSubmit={handleFormalizarInscripcion} className="space-y-4 text-xs">
               <div>
-                <label className="text-neutral-300 block mb-1">Seleccionar Estudiante</label>
+                <label className="text-neutral-300 block mb-1 font-semibold">1. Paralelo / Aula Destino (Idioma y Nivel)</label>
                 <select
-                  value={formIns.id_estudiante}
-                  onChange={(e) => setFormIns({ ...formIns, id_estudiante: e.target.value })}
-                  className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
+                  value={formIns.id_paralelo}
+                  onChange={(e) => {
+                    const newId = e.target.value;
+                    setFormIns((f) => ({ ...f, id_paralelo: newId }));
+                    cargarEstudiantesElegibles(newId);
+                  }}
+                  className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white font-mono"
                   required
                 >
-                  {estudiantes.map((e) => (
-                    <option key={e.id_estudiante || e.id} value={e.id_estudiante || e.id}>
-                      {e.nombres || e.nombre_estudiante} {e.apellidos || e.apellido_estudiante} (CI: {e.ci || e.ci_estudiante}) — {e.tipo || e.tipo_estudiante}
-                    </option>
-                  ))}
+                  <option value="" disabled>-- Seleccione un paralelo --</option>
+                  {paralelos.map((p) => {
+                    const nombreIdioma = p.idioma || p.nivel?.programa?.idioma?.nombre_idioma || 'Idioma';
+                    const nombreNivel = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.nombre_nivel || '');
+                    const cupos = p.cupos_disponibles ?? Math.max(0, (p.capacidad_maxima ?? 30) - (p.inscritos ?? 0));
+                    return (
+                      <option key={p.id_paralelo} value={p.id_paralelo}>
+                        {p.codigo_paralelo} — {nombreIdioma} ({nombreNivel}) [Cupo disp: {cupos}]
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
               <div>
-                <label className="text-neutral-300 block mb-1">Paralelo / Curso Activo (Con Cupo)</label>
-                <select
-                  value={formIns.id_paralelo}
-                  onChange={(e) => setFormIns({ ...formIns, id_paralelo: e.target.value })}
-                  className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white font-mono"
-                  required
-                >
-                  {paralelos.map((p) => (
-                    <option key={p.id_paralelo} value={p.id_paralelo}>
-                      {p.codigo_paralelo} — {p.nivel?.programa?.idioma?.nombre_idioma} ({p.nivel?.nombre_nivel}) [Cupo: {p.cupos_disponibles ?? p.capacidad_maxima_paralelo}]
-                    </option>
-                  ))}
-                </select>
+                <label className="text-neutral-300 block mb-1 font-semibold">
+                  2. Estudiante Elegible (Pendiente en este idioma)
+                </label>
+                {loadingEstudiantes ? (
+                  <div className="p-2.5 text-xs text-sky-400 bg-sky-950/30 border border-sky-800/50 rounded flex items-center gap-2">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Filtrando estudiantes aptos para este idioma...
+                  </div>
+                ) : estudiantesElegibles.length === 0 ? (
+                  <div className="p-3 bg-amber-950/40 border border-amber-600/40 rounded text-amber-300 text-xs space-y-1">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                      Sin estudiantes pendientes para este idioma
+                    </p>
+                    <p className="text-[11px] text-amber-200/80">
+                      No existen estudiantes registrados que falten por asignar a este idioma. Todos los alumnos ya tienen un aula activa en este idioma o debe registrar nuevos estudiantes.
+                    </p>
+                  </div>
+                ) : (
+                  <select
+                    value={formIns.id_estudiante}
+                    onChange={(e) => setFormIns((f) => ({ ...f, id_estudiante: e.target.value }))}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
+                    required
+                  >
+                    <option value="" disabled>-- Seleccionar de {estudiantesElegibles.length} estudiantes disponibles --</option>
+                    {estudiantesElegibles.map((e) => (
+                      <option key={e.id_estudiante || e.id} value={e.id_estudiante || e.id}>
+                        {e.nombres || e.nombre_estudiante} {e.apellidos || e.apellido_estudiante} (CI: {e.ci || e.ci_estudiante}) — {e.tipo || e.tipo_estudiante}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-lg text-neutral-400 text-[11px] space-y-1">
-                <p className="font-semibold text-white">Nota:</p>
-                <p>Al matricular, el sistema genera automáticamente el avance curricular libro a libro con estado inicial &lsquo;En curso&rsquo;.</p>
+                <p className="font-semibold text-white">Nota de Control Curricular:</p>
+                <p>Al matricular, el sistema valida que el alumno no tenga paralelo activo en el idioma y genera automáticamente el avance curricular libro a libro en estado inicial &lsquo;En curso&rsquo;.</p>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-800">
@@ -394,7 +451,8 @@ export default function InscripcionesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold transition shadow"
+                  disabled={!formIns.id_estudiante || !formIns.id_paralelo || loadingEstudiantes || estudiantesElegibles.length === 0}
+                  className="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold transition shadow disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Formalizar Matrícula
                 </button>

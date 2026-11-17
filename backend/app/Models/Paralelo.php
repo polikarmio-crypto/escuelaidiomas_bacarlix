@@ -78,6 +78,10 @@ class Paralelo extends Model
 
     public function getTieneCupoDisponibleAttribute(): bool
     {
-        return $this->inscritos_count < $this->capacidad_maxima_paralelo;
+        $capacidad = (int) ($this->capacidad_maxima_paralelo ?? 30);
+        if ($capacidad <= 0) {
+            $capacidad = 30;
+        }
+        return $this->inscritos_count < $capacidad;
     }
 }

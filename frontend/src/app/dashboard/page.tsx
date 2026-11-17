@@ -150,7 +150,7 @@ function getDashboardConfig(rol: RolUsuario, kpis: any) {
 
     case 'ESTUDIANTE':
     default:
-      const misCursosVal = kpis?.estudiante_personal?.mis_cursos_count ?? 1;
+      const misCursosVal = kpis?.estudiante_personal?.mis_cursos_count ?? 0;
       const promedioVal = kpis?.estudiante_personal?.promedio_general ?? '84.5';
       const asistenciaVal = kpis?.estudiante_personal?.asistencia_porcentaje ?? 95;
       return {
@@ -486,8 +486,9 @@ export default function DashboardSacaPage() {
               </div>
             </div>
           </div>
-        ) : (
+        ) : rolActivo === 'CAJERO' ? (
           <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
+            {/* Ventanillas de Caja panel - solo CAJERO */}
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5 text-amber-500" />
@@ -496,33 +497,31 @@ export default function DashboardSacaPage() {
               <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">3 Cajas</span>
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
-                <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Ventanilla 1 - Personal Militar</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Hall Central Bloque A</p>
+              {[
+                { nombre: 'Ventanilla 1 - Personal Militar', ubicacion: 'Hall Central Bloque A' },
+                { nombre: 'Ventanilla 2 - Estudiantes Civiles', ubicacion: 'Hall Central Bloque B' },
+                { nombre: 'Ventanilla 3 - Textos y Libros', ubicacion: 'Planta Baja Almacén' },
+              ].map((v, i) => (
+                <div key={i} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
+                  <div>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{v.nombre}</p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">{v.ubicacion}</p>
+                  </div>
+                  <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">Operativa</span>
                 </div>
-                <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
-                  Operativa
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
-                <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Ventanilla 2 - Estudiantes Civiles</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Hall Central Bloque B</p>
-                </div>
-                <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
-                  Operativa
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
-                <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Ventanilla 3 - Textos y Libros</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Planta Baja Almacén</p>
-                </div>
-                <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
-                  Operativa
-                </span>
-              </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                Panel de Supervisión General
+              </h3>
+            </div>
+            <div className="space-y-2 text-xs text-slate-500 dark:text-slate-400">
+              <p>Métricas y estado general del sistema SACA CEDMIL operando bajo régimen normal.</p>
             </div>
           </div>
         )}

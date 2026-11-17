@@ -57,6 +57,22 @@ class EstudianteController extends Controller
             });
         }
 
+        // Filtro para inscripción: solo estudiantes elegibles para un paralelo destino
+        if ($request->filled('id_paralelo_destino')) {
+            $paraleloDestino = \App\Models\Paralelo::with('nivel.programa')->find((int) $request->id_paralelo_destino);
+            if ($paraleloDestino && $paraleloDestino->nivel?->programa) {
+                $idIdioma = $paraleloDestino->nivel->programa->id_idioma;
+                $idParaleloDestino = $paraleloDestino->id_paralelo;
+                // Solo estudiantes SIN inscripción activa en cualquier paralelo de este idioma
+                $query->whereDoesntHave('inscripciones', function ($q) use ($idIdioma, $idParaleloDestino) {
+                    $q->where('estado_inscripcion', 'Activa')
+                      ->whereHas('paralelo.nivel.programa', function ($pq) use ($idIdioma) {
+                          $pq->where('id_idioma', $idIdioma);
+                      });
+                });
+            }
+        }
+
         $perPage = (int) $request->get('per_page', 20);
         $paginator = $query->orderBy('apellido_estudiante')->paginate($perPage);
 

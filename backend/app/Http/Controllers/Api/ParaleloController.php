@@ -63,6 +63,7 @@ class ParaleloController extends Controller
                 'capacidad_maxima_paralelo' => $p->capacidad_maxima_paralelo,
                 'capacidad_minima_apertura' => $p->capacidad_minima_apertura,
                 'cupo_disponible' => $p->tiene_cupo_disponible,
+                'cupos_disponibles' => max(0, (int)($p->capacidad_maxima_paralelo ?? 30) - (int)($p->inscritos_count ?? 0)),
                 'estado' => $p->estado_paralelo,
                 'estado_paralelo' => $p->estado_paralelo,
             ];

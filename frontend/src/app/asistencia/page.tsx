@@ -33,7 +33,7 @@ interface EstudianteAsistencia {
 }
 
 export default function AsistenciaPage() {
-  const { esDocente, esJefeAcademico, esAdmin, rolConfig, usuario } = useAuthRole();
+  const { rolActivo, esDocente, esJefeAcademico, esAdmin, rolConfig, usuario } = useAuthRole();
   const puedeRegistrar = esDocente || esJefeAcademico || esAdmin;
 
   const [paralelos, setParalelos] = useState<any[]>([]);
@@ -68,14 +68,11 @@ export default function AsistenciaPage() {
         const data = await res.json();
         let lista = Array.isArray(data) ? data : (data.data || []);
         if (esDocente) {
-          const docenteNombreRef = (usuario.nombre || 'Fernando Ríos').toLowerCase();
-          lista = lista.filter((p: any) => {
-            const coincideId = p.id_docente_actual === idDoc;
-            const docStr = (typeof p.docente_actual === 'string' ? p.docente_actual : '').toLowerCase();
-            const coincideNom = docStr.includes(docenteNombreRef) ||
-              (docenteNombreRef.includes('fernando') && docStr.includes('fernando'));
-            return coincideId || coincideNom;
-          });
+          if (idDoc) {
+            lista = lista.filter((p: any) => Number(p.id_docente_actual) === Number(idDoc));
+          } else {
+            lista = [];
+          }
         }
         setParalelos(lista);
         if (lista.length > 0) {
@@ -116,7 +113,7 @@ export default function AsistenciaPage() {
 
   useEffect(() => {
     cargarParalelos();
-  }, []);
+  }, [esDocente, usuario.id_docente, usuario.email, rolActivo]);
 
   useEffect(() => {
     if (idParaleloSeleccionado) {

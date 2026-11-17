@@ -89,12 +89,21 @@ export default function EstructuraAcademicaPage() {
 
   const handleCrearPrograma = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nombreTrimmed = formProg.nombre.trim();
+    if (nombreTrimmed.length < 3) {
+      mostrarMensaje('error', 'El nombre del programa debe tener al menos 3 caracteres significativos.');
+      return;
+    }
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9\s\-\.]+$/.test(nombreTrimmed)) {
+      mostrarMensaje('error', 'El nombre del programa solo puede contener letras, números, espacios y guiones.');
+      return;
+    }
     try {
       const res = await fetch('/api/v1/estructura/programas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nombre_programa: formProg.nombre,
+          nombre_programa: nombreTrimmed,
           id_idioma: formProg.id_idioma,
           id_tipo_programa: formProg.id_tipo_programa,
           duracion_anios_programa: formProg.duracion,
@@ -113,6 +122,15 @@ export default function EstructuraAcademicaPage() {
   const handleCrearNivel = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!programaSeleccionado) return;
+    const nombreNivelTrimmed = formNivel.nombre.trim();
+    if (nombreNivelTrimmed.length < 3) {
+      mostrarMensaje('error', 'El nombre del nivel debe tener al menos 3 caracteres.');
+      return;
+    }
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9\s\/\-\.]+$/.test(nombreNivelTrimmed)) {
+      mostrarMensaje('error', 'El nombre del nivel solo puede contener letras, números, barras y guiones.');
+      return;
+    }
     try {
       const res = await fetch('/api/v1/estructura/niveles', {
         method: 'POST',
@@ -120,7 +138,7 @@ export default function EstructuraAcademicaPage() {
         body: JSON.stringify({
           id_programa: programaSeleccionado.id_programa,
           numero_nivel: formNivel.numero,
-          nombre_nivel: formNivel.nombre,
+          nombre_nivel: nombreNivelTrimmed,
           cantidad_libros_nivel: formNivel.cantidad_libros,
         }),
       });
@@ -137,6 +155,15 @@ export default function EstructuraAcademicaPage() {
   const handleCrearLibro = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nivelSeleccionado) return;
+    const nombreLibroTrimmed = formLibro.nombre.trim();
+    if (nombreLibroTrimmed.length < 3) {
+      mostrarMensaje('error', 'El título del libro debe tener al menos 3 caracteres.');
+      return;
+    }
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ0-9\s\/\-\.\(\)]+$/.test(nombreLibroTrimmed)) {
+      mostrarMensaje('error', 'El título del libro contiene caracteres inválidos.');
+      return;
+    }
     try {
       const res = await fetch('/api/v1/estructura/libros', {
         method: 'POST',
@@ -144,7 +171,7 @@ export default function EstructuraAcademicaPage() {
         body: JSON.stringify({
           id_nivel: nivelSeleccionado.id_nivel,
           numero_libro: formLibro.numero,
-          nombre_libro: formLibro.nombre,
+          nombre_libro: nombreLibroTrimmed,
         }),
       });
       const data = await res.json();
@@ -231,6 +258,7 @@ export default function EstructuraAcademicaPage() {
               onChange={(e) => setFormProg({ ...formProg, nombre: e.target.value })}
               className="w-full bg-neutral-900 border border-neutral-700 rounded px-2.5 py-1.5 text-white"
               required
+              minLength={3}
             />
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -330,6 +358,7 @@ export default function EstructuraAcademicaPage() {
                   onChange={(e) => setFormNivel({ ...formNivel, nombre: e.target.value })}
                   className="w-full bg-neutral-900 border border-neutral-700 rounded px-2.5 py-1.5 text-white"
                   required
+                  minLength={3}
                 />
                 <button
                   type="submit"
@@ -399,6 +428,7 @@ export default function EstructuraAcademicaPage() {
                     onChange={(e) => setFormLibro({ ...formLibro, nombre: e.target.value })}
                     className="col-span-2 bg-neutral-900 border border-neutral-700 rounded px-2.5 py-1.5 text-white"
                     required
+                    minLength={3}
                   />
                 </div>
                 <button
