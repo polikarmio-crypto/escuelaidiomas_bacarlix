@@ -19,6 +19,7 @@ import {
   ChevronRight,
   UserCheck,
   UserPlus,
+  Trash2,
 } from 'lucide-react';
 import { useAuthRole } from '@/context/AuthRoleContext';
 
@@ -46,6 +47,8 @@ export default function ParalelosPage() {
   const [modalApertura, setModalApertura] = useState(false);
   const [modalDocente, setModalDocente] = useState<{ paralelo: any } | null>(null);
   const [modalEstudiante, setModalEstudiante] = useState<{ paralelo: any } | null>(null);
+  const [modalBajaParalelo, setModalBajaParalelo] = useState<{ id: number; codigo: string; estado: string } | null>(null);
+  const [modalEliminarParalelo, setModalEliminarParalelo] = useState<{ id: number; codigo: string } | null>(null);
   const [idDocenteSeleccionado, setIdDocenteSeleccionado] = useState('');
   const [idEstudianteSeleccionado, setIdEstudianteSeleccionado] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -82,7 +85,21 @@ export default function ParalelosPage() {
         fetch('/api/v1/estructura/programas'),
       ]);
 
-      if (resPar.ok) setParalelos(await resPar.json() || []);
+      if (resPar.ok) {
+        let lista = await resPar.json() || [];
+        if (esDocente) {
+          const docId = usuario.id_docente || 1;
+          const docNom = (usuario.nombre || 'Fernando').toLowerCase();
+          lista = lista.filter((p: any) =>
+            p.id_docente_actual === docId ||
+            (typeof p.docente_actual === 'string' && (
+              p.docente_actual.toLowerCase().includes('fernando') ||
+              p.docente_actual.toLowerCase().includes(docNom)
+            ))
+          );
+        }
+        setParalelos(lista);
+      }
       if (resDoc.ok) setDocentes(await resDoc.json() || []);
       if (resEst.ok) {
         const estData = await resEst.json();
@@ -125,9 +142,16 @@ export default function ParalelosPage() {
 
   const handleAperturarParalelo = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const cod = formParalelo.codigo_paralelo.trim().toUpperCase();
+    if (cod.length < 5 || !/^[A-Z0-9\-\_]{5,}$/.test(cod)) {
+      mostrarMensaje('error', 'El código de paralelo debe contener al menos 5 caracteres alfanuméricos (ej: ING-101-A).');
+      return;
+    }
+
     try {
       const body: any = {
-        codigo_paralelo: formParalelo.codigo_paralelo,
+        codigo_paralelo: cod,
         id_nivel: formParalelo.id_nivel,
         id_aula: formParalelo.id_aula,
         id_horario: formParalelo.id_horario,
@@ -151,6 +175,38 @@ export default function ParalelosPage() {
 
       mostrarMensaje('ok', data.message || 'Paralelo aperturado exitosamente.');
       setModalApertura(false);
+      cargarDatos();
+    } catch (err: any) {
+      mostrarMensaje('error', err.message);
+    }
+  };
+
+  const handleConfirmarBajaParalelo = async () => {
+    if (!modalBajaParalelo) return;
+    try {
+      const res = await fetch(`/api/v1/paralelos/${modalBajaParalelo.id}/baja-logica`, {
+        method: 'PATCH',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al actualizar estado del paralelo.');
+      mostrarMensaje('ok', data.message || 'Estado del paralelo actualizado.');
+      setModalBajaParalelo(null);
+      cargarDatos();
+    } catch (err: any) {
+      mostrarMensaje('error', err.message);
+    }
+  };
+
+  const handleConfirmarEliminarParalelo = async () => {
+    if (!modalEliminarParalelo) return;
+    try {
+      const res = await fetch(`/api/v1/paralelos/${modalEliminarParalelo.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al eliminar paralelo.');
+      mostrarMensaje('ok', data.message || 'Paralelo eliminado definitivamente.');
+      setModalEliminarParalelo(null);
       cargarDatos();
     } catch (err: any) {
       mostrarMensaje('error', err.message);
@@ -484,23 +540,49 @@ export default function ParalelosPage() {
                   </div>
 
                   {puedeAsignar && (
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <button
-                        onClick={() => { setModalDocente({ paralelo: p }); setIdDocenteSeleccionado(p.id_docente_actual ? String(p.id_docente_actual) : ''); }}
-                        className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-sky-900/40 hover:bg-sky-800/60 border border-sky-700/40 text-sky-300 text-xs font-semibold transition shadow-sm"
-                        title="Asignar Docente"
-                      >
-                        <UserCheck className="w-3.5 h-3.5 shrink-0" />
-                        <span>Docente</span>
-                      </button>
-                      <button
-                        onClick={() => { setModalEstudiante({ paralelo: p }); setIdEstudianteSeleccionado(''); }}
-                        className="flex items-center justify-center gap-1.5 py-2 rounded-lg bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 text-xs font-semibold transition shadow-sm"
-                        title="Inscribir Alumno"
-                      >
-                        <UserPlus className="w-3.5 h-3.5 shrink-0" />
-                        <span>+ Alumno</span>
-                      </button>
+                    <div className="space-y-1.5 pt-1">
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => { setModalDocente({ paralelo: p }); setIdDocenteSeleccionado(p.id_docente_actual ? String(p.id_docente_actual) : ''); }}
+                          className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-sky-900/40 hover:bg-sky-800/60 border border-sky-700/40 text-sky-300 text-xs font-semibold transition shadow-sm"
+                          title="Asignar Docente"
+                        >
+                          <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                          <span>Docente</span>
+                        </button>
+                        <button
+                          onClick={() => { setModalEstudiante({ paralelo: p }); setIdEstudianteSeleccionado(''); }}
+                          className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 text-xs font-semibold transition shadow-sm"
+                          title="Inscribir Alumno"
+                        >
+                          <UserPlus className="w-3.5 h-3.5 shrink-0" />
+                          <span>+ Alumno</span>
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-neutral-800/50">
+                        <button
+                          onClick={() => setModalBajaParalelo({ id: p.id_paralelo, codigo: p.codigo_paralelo, estado: p.estado || 'Abierto' })}
+                          className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1 ${
+                            p.estado === 'Inactivo'
+                              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                              : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                          }`}
+                          title="Cambiar estado del paralelo"
+                        >
+                          <ShieldAlert className="w-3 h-3" />
+                          <span>{p.estado === 'Inactivo' ? 'Reactivar' : 'Baja'}</span>
+                        </button>
+                        {p.estado === 'Inactivo' && (
+                          <button
+                            onClick={() => setModalEliminarParalelo({ id: p.id_paralelo, codigo: p.codigo_paralelo })}
+                            className="px-2 py-1 rounded text-[10px] font-semibold bg-red-950/60 text-red-300 hover:bg-red-900 border border-red-800/40 flex items-center gap-1"
+                            title="Baja Física Definitiva"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span>Eliminar</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -544,10 +626,11 @@ export default function ParalelosPage() {
 
             <form onSubmit={handleAperturarParalelo} className="space-y-3 text-xs">
               <div>
-                <label className="text-neutral-300 block mb-1">Código del Paralelo</label>
+                <label className="text-neutral-300 block mb-1">Código del Paralelo * (mín. 5 caracteres, ej: ING-101-A)</label>
                 <input
                   type="text"
                   placeholder="Ej: ING-101-A, FRA-201-B"
+                  minLength={5}
                   value={formParalelo.codigo_paralelo}
                   onChange={(e) => setFormParalelo({ ...formParalelo, codigo_paralelo: e.target.value.toUpperCase() })}
                   className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white font-mono font-bold"
@@ -789,6 +872,84 @@ export default function ParalelosPage() {
                   {guardando ? 'Inscribiendo...' : 'Confirmar Inscripción'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmación de Baja Lógica del Paralelo */}
+      {modalBajaParalelo && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-amber-500/40 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-solemn-fade">
+            <div className="flex items-center gap-3 text-amber-400">
+              <ShieldAlert className="w-6 h-6 shrink-0" />
+              <h3 className="text-base font-bold text-white">
+                {modalBajaParalelo.estado === 'Inactivo' ? 'Reactivar Paralelo' : 'Baja Lógica de Paralelo'}
+              </h3>
+            </div>
+            <p className="text-xs text-neutral-300">
+              ¿Confirma cambiar el estado del paralelo <strong className="text-sky-400 font-mono">{modalBajaParalelo.codigo}</strong> a {modalBajaParalelo.estado === 'Inactivo' ? 'Abierto' : 'Inactivo'}?
+            </p>
+            <p className="text-[11px] text-neutral-400 bg-neutral-950 p-2.5 rounded-lg border border-neutral-800">
+              {modalBajaParalelo.estado === 'Inactivo'
+                ? 'El paralelo volverá a estar habilitado para docencia e inscripciones.'
+                : 'El paralelo quedará inactivo. No se permitirá nuevas inscripciones ni llamadas a lista.'}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalBajaParalelo(null)}
+                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarBajaParalelo}
+                className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold shadow"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmación de Baja Física Definitiva del Paralelo */}
+      {modalEliminarParalelo && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-red-500/60 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-solemn-fade">
+            <div className="flex items-center gap-3 text-red-400">
+              <Trash2 className="w-6 h-6 shrink-0" />
+              <h3 className="text-base font-bold text-white">Baja Física Definitiva de Paralelo</h3>
+            </div>
+            <p className="text-xs text-neutral-300">
+              ¿Confirma la eliminación física y definitiva del paralelo <strong className="text-sky-400 font-mono">{modalEliminarParalelo.codigo}</strong>?
+            </p>
+            <div className="text-[11px] text-red-200 bg-red-950/40 p-3 rounded-lg border border-red-800/60 space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                ADVERTENCIA IRREVERSIBLE
+              </p>
+              <p>
+                Esta acción eliminará permanentemente el paralelo y sus asignaciones docentes de la base de datos. Solo es permitida si el paralelo está inactivo y no tiene estudiantes matriculados.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalEliminarParalelo(null)}
+                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarEliminarParalelo}
+                className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow"
+              >
+                Sí, Eliminar Definitivamente
+              </button>
             </div>
           </div>
         </div>

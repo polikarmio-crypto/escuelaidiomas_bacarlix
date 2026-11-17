@@ -67,9 +67,23 @@ class CatalogoController extends Controller
         return response()->json(['message' => 'Gestión actualizada correctamente.', 'data' => $gestion]);
     }
 
+    public function bajaLogicaGestion($id)
+    {
+        $gestion = Gestion::findOrFail($id);
+        $nuevo = $gestion->estado_gestion === 'Activa' ? 'Cerrada' : 'Activa';
+        $gestion->update(['estado_gestion' => $nuevo]);
+        return response()->json([
+            'message' => "Gestión marcada como {$nuevo}.",
+            'data'    => $gestion,
+        ]);
+    }
+
     public function destroyGestion($id)
     {
         $gestion = Gestion::findOrFail($id);
+        if ($gestion->estado_gestion === 'Activa') {
+            return response()->json(['error' => 'Debe cerrar la gestión antes de eliminarla definitivamente.'], 422);
+        }
         $gestion->delete();
         return response()->json(['message' => 'Gestión eliminada del catálogo.']);
     }
@@ -82,7 +96,7 @@ class CatalogoController extends Controller
     public function storeIdioma(Request $request)
     {
         $validated = $request->validate([
-            'nombre_idioma' => 'required|string|max:50',
+            'nombre_idioma' => 'required|string|min:3|max:50|regex:/^[\p{L}\s]+$/u',
         ]);
 
         if (Idioma::where('nombre_idioma', 'ilike', trim($validated['nombre_idioma']))->exists()) {
@@ -102,16 +116,29 @@ class CatalogoController extends Controller
     {
         $idioma = Idioma::findOrFail($id);
         $validated = $request->validate([
-            'nombre_idioma' => 'required|string|max:50',
+            'nombre_idioma' => 'required|string|min:3|max:50|regex:/^[\p{L}\s]+$/u',
         ]);
 
         $idioma->update(['nombre_idioma' => trim($validated['nombre_idioma'])]);
         return response()->json(['message' => 'Idioma actualizado.', 'data' => $idioma]);
     }
 
+    public function bajaLogicaIdioma($id)
+    {
+        $idioma = Idioma::findOrFail($id);
+        $actual = $idioma->estado_idioma ?? 'Activo';
+        $nuevo  = $actual === 'Activo' ? 'Inactivo' : 'Activo';
+        $idioma->update(['estado_idioma' => $nuevo]);
+        return response()->json(['message' => "Idioma marcado como {$nuevo}.", 'data' => $idioma]);
+    }
+
     public function destroyIdioma($id)
     {
         $idioma = Idioma::findOrFail($id);
+        $estado = $idioma->estado_idioma ?? 'Activo';
+        if ($estado === 'Activo') {
+            return response()->json(['error' => 'Debe dar de baja el idioma antes de eliminarlo.'], 422);
+        }
         $idioma->delete();
         return response()->json(['message' => 'Idioma eliminado del catálogo.']);
     }
@@ -124,7 +151,7 @@ class CatalogoController extends Controller
     public function storeAula(Request $request)
     {
         $validated = $request->validate([
-            'nombre_aula'    => 'required|string|max:30',
+            'nombre_aula'    => 'required|string|min:3|max:30|regex:/^[\p{L}\d\s\-\.]+$/u',
             'capacidad_aula' => 'required|integer|min:5|max:100',
         ]);
 
@@ -145,7 +172,7 @@ class CatalogoController extends Controller
     {
         $aula = Aula::findOrFail($id);
         $validated = $request->validate([
-            'nombre_aula'    => 'required|string|max:30',
+            'nombre_aula'    => 'required|string|min:3|max:30|regex:/^[\p{L}\d\s\-\.]+$/u',
             'capacidad_aula' => 'required|integer|min:5|max:100',
         ]);
 
@@ -156,9 +183,22 @@ class CatalogoController extends Controller
         return response()->json(['message' => 'Aula actualizada.', 'data' => $aula]);
     }
 
+    public function bajaLogicaAula($id)
+    {
+        $aula = Aula::findOrFail($id);
+        $actual = $aula->estado_aula ?? 'Activo';
+        $nuevo  = $actual === 'Activo' ? 'Inactivo' : 'Activo';
+        $aula->update(['estado_aula' => $nuevo]);
+        return response()->json(['message' => "Aula marcada como {$nuevo}.", 'data' => $aula]);
+    }
+
     public function destroyAula($id)
     {
         $aula = Aula::findOrFail($id);
+        $estado = $aula->estado_aula ?? 'Activo';
+        if ($estado === 'Activo') {
+            return response()->json(['error' => 'Debe dar de baja el aula antes de eliminarla.'], 422);
+        }
         $aula->delete();
         return response()->json(['message' => 'Aula eliminada del catálogo.']);
     }
@@ -199,9 +239,22 @@ class CatalogoController extends Controller
         return response()->json(['message' => 'Horario actualizado.', 'data' => $horario]);
     }
 
+    public function bajaLogicaHorario($id)
+    {
+        $horario = Horario::findOrFail($id);
+        $actual = $horario->estado_horario ?? 'Activo';
+        $nuevo  = $actual === 'Activo' ? 'Inactivo' : 'Activo';
+        $horario->update(['estado_horario' => $nuevo]);
+        return response()->json(['message' => "Horario marcado como {$nuevo}.", 'data' => $horario]);
+    }
+
     public function destroyHorario($id)
     {
         $horario = Horario::findOrFail($id);
+        $estado = $horario->estado_horario ?? 'Activo';
+        if ($estado === 'Activo') {
+            return response()->json(['error' => 'Debe dar de baja el horario antes de eliminarlo.'], 422);
+        }
         $horario->delete();
         return response()->json(['message' => 'Horario eliminado.']);
     }
@@ -213,12 +266,29 @@ class CatalogoController extends Controller
 
     public function storeTipoPrograma(Request $request)
     {
-        $validated = $request->validate(['nombre_tipo_programa' => 'required|string|max:30']);
+        $validated = $request->validate(['nombre_tipo_programa' => 'required|string|min:3|max:30|regex:/^[\p{L}\s]+$/u']);
         if (TipoPrograma::where('nombre_tipo_programa', 'ilike', trim($validated['nombre_tipo_programa']))->exists()) {
             return response()->json(['error' => 'El tipo de programa ya existe.'], 422);
         }
         $item = TipoPrograma::create(['nombre_tipo_programa' => trim($validated['nombre_tipo_programa'])]);
         return response()->json(['message' => 'Tipo de programa registrado.', 'data' => $item], 201);
+    }
+
+    public function updateTipoPrograma(Request $request, $id)
+    {
+        $item = TipoPrograma::findOrFail($id);
+        $validated = $request->validate(['nombre_tipo_programa' => 'required|string|min:3|max:30|regex:/^[\p{L}\s]+$/u']);
+        $item->update(['nombre_tipo_programa' => trim($validated['nombre_tipo_programa'])]);
+        return response()->json(['message' => 'Tipo de programa actualizado.', 'data' => $item]);
+    }
+
+    public function bajaLogicaTipoPrograma($id)
+    {
+        $item = TipoPrograma::findOrFail($id);
+        $actual = $item->estado_tipo_programa ?? 'Activo';
+        $nuevo  = $actual === 'Activo' ? 'Inactivo' : 'Activo';
+        $item->update(['estado_tipo_programa' => $nuevo]);
+        return response()->json(['message' => "Tipo de programa marcado como {$nuevo}.", 'data' => $item]);
     }
 
     public function modalidades()
@@ -243,12 +313,29 @@ class CatalogoController extends Controller
 
     public function storeTipoPago(Request $request)
     {
-        $validated = $request->validate(['nombre_tipo_pago' => 'required|string|max:40']);
+        $validated = $request->validate(['nombre_tipo_pago' => 'required|string|min:3|max:40|regex:/^[\p{L}\d\s\-\/]+$/u']);
         if (TipoPago::where('nombre_tipo_pago', 'ilike', trim($validated['nombre_tipo_pago']))->exists()) {
             return response()->json(['error' => 'El concepto/tipo de pago ya existe.'], 422);
         }
         $item = TipoPago::create(['nombre_tipo_pago' => trim($validated['nombre_tipo_pago'])]);
         return response()->json(['message' => 'Tipo de pago registrado con éxito.', 'data' => $item], 201);
+    }
+
+    public function updateTipoPago(Request $request, $id)
+    {
+        $item = TipoPago::findOrFail($id);
+        $validated = $request->validate(['nombre_tipo_pago' => 'required|string|min:3|max:40|regex:/^[\p{L}\d\s\-\/]+$/u']);
+        $item->update(['nombre_tipo_pago' => trim($validated['nombre_tipo_pago'])]);
+        return response()->json(['message' => 'Tipo de pago actualizado.', 'data' => $item]);
+    }
+
+    public function bajaLogicaTipoPago($id)
+    {
+        $item = TipoPago::findOrFail($id);
+        $actual = $item->estado_tipo_pago ?? 'Activo';
+        $nuevo  = $actual === 'Activo' ? 'Inactivo' : 'Activo';
+        $item->update(['estado_tipo_pago' => $nuevo]);
+        return response()->json(['message' => "Tipo de pago marcado como {$nuevo}.", 'data' => $item]);
     }
 
     public function cajas()

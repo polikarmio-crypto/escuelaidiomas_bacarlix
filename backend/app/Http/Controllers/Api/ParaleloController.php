@@ -79,7 +79,7 @@ class ParaleloController extends Controller
             'id_horario' => 'required|exists:horario,id_horario',
             'id_modalidad' => 'required|exists:modalidad,id_modalidad',
             'id_gestion' => 'required|exists:gestion,id_gestion',
-            'codigo_paralelo' => 'required|string|max:20',
+            'codigo_paralelo' => ['required', 'string', 'min:5', 'max:20', 'regex:/^[A-Za-z0-9\-\_]{5,}$/'],
             'capacidad_maxima_paralelo' => 'nullable|integer|min:5|max:60',
             'id_docente_inicial' => 'nullable|exists:docente,id_docente',
         ]);
@@ -195,5 +195,80 @@ class ParaleloController extends Controller
         ])->findOrFail($id);
 
         return response()->json($paralelo);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $paralelo = Paralelo::findOrFail($id);
+        $validated = $request->validate([
+            'codigo_paralelo'           => ['sometimes', 'string', 'min:5', 'max:20', 'regex:/^[A-Za-z0-9\-\_]{5,}$/'],
+            'id_aula'                   => 'sometimes|exists:aula,id_aula',
+            'id_horario'                => 'sometimes|exists:horario,id_horario',
+            'id_modalidad'              => 'sometimes|exists:modalidad,id_modalidad',
+            'capacidad_maxima_paralelo' => 'sometimes|integer|min:5|max:60',
+            'estado_paralelo'           => 'sometimes|in:Abierto,En curso,Inactivo,Cancelado',
+        ]);
+
+        $paralelo->update($validated);
+
+        AuditLogger::academico(AuditLogger::LEVEL_INFO, 'PARALELO_ACTUALIZADO', [
+            'id_paralelo' => $paralelo->id_paralelo,
+            'codigo'      => $paralelo->codigo_paralelo,
+        ], null, 'paralelo', $paralelo->id_paralelo);
+
+        return response()->json([
+            'message' => 'Paralelo actualizado correctamente.',
+            'data'    => $paralelo->load(['aula', 'horario', 'nivel.programa.idioma']),
+        ]);
+    }
+
+    public function bajaLogica($id)
+    {
+        $paralelo = Paralelo::findOrFail($id);
+        $nuevo = ($paralelo->estado_paralelo === 'Abierto' || $paralelo->estado_paralelo === 'En curso') ? 'Inactivo' : 'Abierto';
+        $paralelo->update(['estado_paralelo' => $nuevo]);
+
+        AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'PARALELO_BAJA_LOGICA', [
+            'id_paralelo' => $paralelo->id_paralelo,
+            'nuevo_estado' => $nuevo,
+        ], null, 'paralelo', $paralelo->id_paralelo);
+
+        return response()->json([
+            'message' => "Paralelo marcado como {$nuevo}.",
+            'estado'  => $nuevo,
+            'data'    => $paralelo,
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $paralelo = Paralelo::findOrFail($id);
+
+        if ($paralelo->estado_paralelo !== 'Inactivo' && $paralelo->estado_paralelo !== 'Cancelado') {
+            return response()->json([
+                'error' => 'No se puede ejecutar una baja física sin antes dar de baja lógica al paralelo.'
+            ], 422);
+        }
+
+        if ($paralelo->inscritos_count > 0) {
+            return response()->json([
+                'error' => 'No se puede eliminar físicamente un paralelo que cuenta con estudiantes matriculados.'
+            ], 422);
+        }
+
+        $codigo = $paralelo->codigo_paralelo;
+
+        DB::transaction(function () use ($paralelo) {
+            $paralelo->asignacionesDocente()->delete();
+            $paralelo->delete();
+        });
+
+        AuditLogger::academico(AuditLogger::LEVEL_CRITICAL, 'PARALELO_ELIMINADO_DEFINITIVO', [
+            'codigo_paralelo' => $codigo,
+        ], null, 'paralelo');
+
+        return response()->json([
+            'message' => "Baja física definitiva ejecutada para el paralelo {$codigo}."
+        ]);
     }
 }

@@ -46,6 +46,8 @@ export default function DocentesPage() {
   const [modalDocente, setModalDocente] = useState(false);
   const [modoEdicion, setModoEdicion] = useState(false);
   const [idDocenteSeleccionado, setIdDocenteSeleccionado] = useState<number | null>(null);
+  const [modalBajaDocente, setModalBajaDocente] = useState<{ id: number; nombre: string; estado: string } | null>(null);
+  const [modalEliminarFisicoDocente, setModalEliminarFisicoDocente] = useState<{ id: number; nombre: string } | null>(null);
 
   const [modalRotar, setModalRotar] = useState(false);
   const [paraleloARotar, setParaleloARotar] = useState<any | null>(null);
@@ -161,8 +163,60 @@ export default function DocentesPage() {
     setModalDocente(true);
   };
 
+  const abrirModalEditar = (doc: any) => {
+    setModoEdicion(true);
+    setIdDocenteSeleccionado(doc.id_docente);
+    const nombres = (doc.nombre_completo || '').split(' ');
+    const primerNombre = nombres[0] || '';
+    const restoApellidos = nombres.slice(1).join(' ') || '';
+
+    const idsIdiomas = (doc.idiomas || []).map((nom: string) => {
+      const match = idiomasCatalogo.find((ic: any) => ic.nombre_idioma.toLowerCase() === nom.toLowerCase());
+      return match ? match.id_idioma : null;
+    }).filter(Boolean);
+
+    setFormDoc({
+      ci_docente: doc.ci_docente || '',
+      nombre_docente: doc.nombre_docente || primerNombre,
+      apellido_docente: doc.apellido_docente || restoApellidos,
+      telefono_docente: doc.telefono || '',
+      email_docente: doc.email || '',
+      estado_docente: doc.estado || 'Activo',
+      idiomas_ids: idsIdiomas.length > 0 ? idsIdiomas : (idiomasCatalogo.length > 0 ? [idiomasCatalogo[0].id_idioma] : []),
+    });
+    setModalDocente(true);
+  };
+
   const handleGuardarDocente = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const ci = formDoc.ci_docente.trim();
+    if (ci.length < 5 || !/^\d{5,}/.test(ci)) {
+      mostrarMensaje('error', 'El CI debe contener al menos 5 dígitos numéricos.');
+      return;
+    }
+    const nom = formDoc.nombre_docente.trim();
+    const ape = formDoc.apellido_docente.trim();
+    if (nom.length < 3 || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(nom)) {
+      mostrarMensaje('error', 'El nombre debe contener al menos 3 letras (sin caracteres especiales).');
+      return;
+    }
+    if (ape.length < 3 || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(ape)) {
+      mostrarMensaje('error', 'El apellido debe contener al menos 3 letras (sin caracteres especiales).');
+      return;
+    }
+    if (formDoc.telefono_docente) {
+      const tel = formDoc.telefono_docente.trim();
+      if (tel.length < 7 || !/^[0-9\+\-\s]{7,}$/.test(tel)) {
+        mostrarMensaje('error', 'El teléfono debe contener al menos 7 dígitos numéricos.');
+        return;
+      }
+    }
+    if (formDoc.idiomas_ids.length === 0) {
+      mostrarMensaje('error', 'Debe seleccionar al menos un idioma de habilitación.');
+      return;
+    }
+
     try {
       const url = modoEdicion
         ? `/api/v1/docentes/${idDocenteSeleccionado}`
@@ -180,6 +234,38 @@ export default function DocentesPage() {
 
       mostrarMensaje('ok', data.message || 'Docente guardado con éxito.');
       setModalDocente(false);
+      cargarDatos();
+    } catch (err: any) {
+      mostrarMensaje('error', err.message);
+    }
+  };
+
+  const handleConfirmarBajaDocente = async () => {
+    if (!modalBajaDocente) return;
+    try {
+      const res = await fetch(`/api/v1/docentes/${modalBajaDocente.id}/baja-logica`, {
+        method: 'PATCH',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al cambiar estado del docente.');
+      mostrarMensaje('ok', data.message || 'Estado actualizado con éxito.');
+      setModalBajaDocente(null);
+      cargarDatos();
+    } catch (err: any) {
+      mostrarMensaje('error', err.message);
+    }
+  };
+
+  const handleConfirmarEliminacionFisica = async () => {
+    if (!modalEliminarFisicoDocente) return;
+    try {
+      const res = await fetch(`/api/v1/docentes/${modalEliminarFisicoDocente.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al ejecutar baja física.');
+      mostrarMensaje('ok', data.message || 'Docente eliminado definitivamente.');
+      setModalEliminarFisicoDocente(null);
       cargarDatos();
     } catch (err: any) {
       mostrarMensaje('error', err.message);
@@ -420,6 +506,7 @@ export default function DocentesPage() {
                 <th className="p-3 text-center">Días en Aula</th>
                 <th className="p-3">Contacto</th>
                 <th className="p-3 text-center">Estado</th>
+                <th className="p-3 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800 text-neutral-300">
@@ -467,11 +554,44 @@ export default function DocentesPage() {
                       {doc.estado}
                     </span>
                   </td>
+                  <td className="p-3 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        onClick={() => abrirModalEditar(doc)}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 flex items-center gap-1"
+                        title="Editar Ficha"
+                      >
+                        <Edit className="w-3 h-3" /> Editar
+                      </button>
+                      <button
+                        onClick={() => setModalBajaDocente({ id: doc.id_docente, nombre: doc.nombre_completo, estado: doc.estado })}
+                        className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1 ${
+                          doc.estado === 'Activo'
+                            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
+                            : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                        }`}
+                        title={doc.estado === 'Activo' ? 'Dar de Baja Lógica' : 'Reactivar Docente'}
+                      >
+                        <ShieldAlert className="w-3 h-3" />
+                        <span>{doc.estado === 'Activo' ? 'Baja' : 'Reactivar'}</span>
+                      </button>
+                      {doc.estado === 'Inactivo' && (
+                        <button
+                          onClick={() => setModalEliminarFisicoDocente({ id: doc.id_docente, nombre: doc.nombre_completo })}
+                          className="px-2 py-1 rounded text-[10px] font-semibold bg-red-950/60 text-red-300 hover:bg-red-900 border border-red-800/40 flex items-center gap-1"
+                          title="Eliminar Definitivamente (Baja Física)"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Eliminar</span>
+                        </button>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
               {docentesPaginados.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-neutral-500">
+                  <td colSpan={8} className="p-8 text-center text-neutral-500">
                     No se encontraron docentes con los filtros seleccionados.
                   </td>
                 </tr>
@@ -505,7 +625,9 @@ export default function DocentesPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-lg p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-base font-bold text-white">Registro de Nuevo Docente</h3>
+              <h3 className="text-base font-bold text-white">
+                {modoEdicion ? 'Editar Ficha del Docente' : 'Registro de Nuevo Docente'}
+              </h3>
               <button onClick={() => setModalDocente(false)} className="text-neutral-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
@@ -514,10 +636,11 @@ export default function DocentesPage() {
             <form onSubmit={handleGuardarDocente} className="space-y-3 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-neutral-300 block mb-1">Cédula de Identidad (CI)</label>
+                  <label className="text-neutral-300 block mb-1">Cédula de Identidad (CI) * (mín. 5 dígitos)</label>
                   <input
                     type="text"
                     placeholder="Ej: 5849201"
+                    minLength={5}
                     value={formDoc.ci_docente}
                     onChange={(e) => setFormDoc({ ...formDoc, ci_docente: e.target.value })}
                     className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
@@ -539,10 +662,11 @@ export default function DocentesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-neutral-300 block mb-1">Nombres</label>
+                  <label className="text-neutral-300 block mb-1">Nombres * (mín. 3 letras)</label>
                   <input
                     type="text"
                     placeholder="Ej: Fernando"
+                    minLength={3}
                     value={formDoc.nombre_docente}
                     onChange={(e) => setFormDoc({ ...formDoc, nombre_docente: e.target.value })}
                     className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
@@ -550,10 +674,11 @@ export default function DocentesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-neutral-300 block mb-1">Apellidos</label>
+                  <label className="text-neutral-300 block mb-1">Apellidos * (mín. 3 letras)</label>
                   <input
                     type="text"
                     placeholder="Ej: Ríos Torrico"
+                    minLength={3}
                     value={formDoc.apellido_docente}
                     onChange={(e) => setFormDoc({ ...formDoc, apellido_docente: e.target.value })}
                     className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
@@ -564,10 +689,11 @@ export default function DocentesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-neutral-300 block mb-1">Teléfono</label>
+                  <label className="text-neutral-300 block mb-1">Teléfono (mín. 7 dígitos)</label>
                   <input
                     type="text"
                     placeholder="Ej: 71548920"
+                    minLength={7}
                     value={formDoc.telefono_docente}
                     onChange={(e) => setFormDoc({ ...formDoc, telefono_docente: e.target.value })}
                     className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
@@ -625,7 +751,7 @@ export default function DocentesPage() {
                   type="submit"
                   className="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow"
                 >
-                  Guardar Docente
+                  {modoEdicion ? 'Actualizar Ficha' : 'Guardar Docente'}
                 </button>
               </div>
             </form>
@@ -831,6 +957,84 @@ export default function DocentesPage() {
                 className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs rounded-lg transition"
               >
                 Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmación de Baja Lógica del Docente */}
+      {modalBajaDocente && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-amber-500/40 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-solemn-fade">
+            <div className="flex items-center gap-3 text-amber-400">
+              <ShieldAlert className="w-6 h-6 shrink-0" />
+              <h3 className="text-base font-bold text-white">
+                {modalBajaDocente.estado === 'Activo' ? 'Baja Lógica de Docente' : 'Reactivación de Docente'}
+              </h3>
+            </div>
+            <p className="text-xs text-neutral-300">
+              ¿Confirma {modalBajaDocente.estado === 'Activo' ? 'dar de baja lógica' : 'reactivar'} al docente <strong className="text-white">{modalBajaDocente.nombre}</strong>?
+            </p>
+            <p className="text-[11px] text-neutral-400 bg-neutral-950 p-2.5 rounded-lg border border-neutral-800">
+              {modalBajaDocente.estado === 'Activo'
+                ? 'El docente pasará a estado Inactivo. Sus antecedentes académicos y partes de asistencia previos quedarán intactos.'
+                : 'El docente volverá a estar habilitado para asignaciones académicas activas.'}
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalBajaDocente(null)}
+                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarBajaDocente}
+                className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold shadow"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmación de Baja Física Definitiva del Docente */}
+      {modalEliminarFisicoDocente && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-red-500/60 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-solemn-fade">
+            <div className="flex items-center gap-3 text-red-400">
+              <Trash2 className="w-6 h-6 shrink-0" />
+              <h3 className="text-base font-bold text-white">Baja Física Definitiva</h3>
+            </div>
+            <p className="text-xs text-neutral-300">
+              ¿Está completamente seguro de eliminar de forma física y definitiva al docente <strong className="text-white">{modalEliminarFisicoDocente.nombre}</strong>?
+            </p>
+            <div className="text-[11px] text-red-200 bg-red-950/40 p-3 rounded-lg border border-red-800/60 space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                ADVERTENCIA IRREVERSIBLE
+              </p>
+              <p>
+                Esta acción borrará de manera definitiva el registro del docente, sus asociaciones idiomáticas y asignaciones pasadas de la base de datos institucional.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalEliminarFisicoDocente(null)}
+                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmarEliminacionFisica}
+                className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow"
+              >
+                Sí, Eliminar Definitivamente
               </button>
             </div>
           </div>

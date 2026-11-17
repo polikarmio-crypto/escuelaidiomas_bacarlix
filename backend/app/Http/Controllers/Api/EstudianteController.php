@@ -125,16 +125,16 @@ class EstudianteController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'ci_estudiante' => 'required|string|max:15|unique:estudiante,ci_estudiante',
-            'nombre_estudiante' => 'required|string|max:60',
-            'apellido_estudiante' => 'required|string|max:60',
+            'ci_estudiante'      => 'required|string|min:5|max:15|regex:/^\d{5,}(\s[A-Z]{2})?$/|unique:estudiante,ci_estudiante',
+            'nombre_estudiante'  => ['required','string','min:3','max:60','regex:/^[\p{L}\s]+$/u'],
+            'apellido_estudiante'=> ['required','string','min:3','max:60','regex:/^[\p{L}\s]+$/u'],
             'fecha_nacimiento_estudiante' => 'nullable|date|before_or_equal:today|after:1930-01-01',
-            'telefono_estudiante' => 'nullable|string|max:20',
-            'email_estudiante' => 'nullable|email|max:100',
-            'direccion_estudiante' => 'nullable|string|max:150',
-            'tipo_estudiante' => 'required|in:Civil,Militar',
-            'grado_militar' => 'required_if:tipo_estudiante,Militar|nullable|string|max:40',
-            'unidad_militar' => 'required_if:tipo_estudiante,Militar|nullable|string|max:80',
+            'telefono_estudiante'=> 'nullable|string|min:7|max:20|regex:/^[0-9\+\-\s]{7,}$/',
+            'email_estudiante'   => 'nullable|email|max:100',
+            'direccion_estudiante'=> 'nullable|string|max:150',
+            'tipo_estudiante'    => 'required|in:Civil,Militar',
+            'grado_militar'      => 'required_if:tipo_estudiante,Militar|nullable|string|max:40',
+            'unidad_militar'     => 'required_if:tipo_estudiante,Militar|nullable|string|max:80',
             'id_militar_estudiante' => 'required_if:tipo_estudiante,Militar|nullable|string|max:20|unique:estudiante_militar,id_militar_estudiante',
         ]);
 
@@ -223,10 +223,10 @@ class EstudianteController extends Controller
     {
         $estudiante = Estudiante::findOrFail($id);
         $validated = $request->validate([
-            'nombre_estudiante'   => 'sometimes|string|max:60',
-            'apellido_estudiante' => 'sometimes|string|max:60',
-            'ci_estudiante'       => 'sometimes|string|max:20',
-            'telefono_estudiante' => 'nullable|string|max:20',
+            'nombre_estudiante'   => ['sometimes','string','min:3','max:60','regex:/^[\p{L}\s]+$/u'],
+            'apellido_estudiante' => ['sometimes','string','min:3','max:60','regex:/^[\p{L}\s]+$/u'],
+            'ci_estudiante'       => 'sometimes|string|min:5|max:20|regex:/^\d{5,}(\s[A-Z]{2})?$/',
+            'telefono_estudiante' => 'nullable|string|min:7|max:20|regex:/^[0-9\+\-\s]{7,}$/',
             'email_estudiante'    => 'nullable|email|max:100',
             'direccion_estudiante'=> 'nullable|string|max:150',
             'tipo_estudiante'     => 'sometimes|in:Civil,Militar',
@@ -263,13 +263,20 @@ class EstudianteController extends Controller
 
     public function destroy($id)
     {
-        $estudiante = Estudiante::findOrFail($id);
+        $estudiante = Estudiante::withTrashed()->findOrFail($id);
+
+        if (!$estudiante->trashed()) {
+            return response()->json([
+                'error' => 'No se puede ejecutar una baja física sin antes dar de baja lógica al estudiante.'
+            ], 422);
+        }
+
         $nombre = "{$estudiante->nombre_estudiante} {$estudiante->apellido_estudiante}";
 
         DB::transaction(function () use ($estudiante) {
             Usuario::where('id_estudiante', $estudiante->id_estudiante)->delete();
             EstudianteMilitar::where('id_estudiante', $estudiante->id_estudiante)->delete();
-            $estudiante->delete();
+            $estudiante->forceDelete();
         });
 
         AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'ESTUDIANTE_ELIMINADO', [
@@ -278,7 +285,29 @@ class EstudianteController extends Controller
         ], null, 'estudiante');
 
         return response()->json([
-            'message' => "Estudiante {$nombre} y su cuenta asociada han sido dados de baja."
+            'message' => "Estudiante {$nombre} y su cuenta asociada han sido dados de baja definitiva."
+        ]);
+    }
+
+    public function bajaLogica($id)
+    {
+        $estudiante = Estudiante::withTrashed()->findOrFail($id);
+        if ($estudiante->trashed()) {
+            $estudiante->restore();
+            $accion = 'reactivado';
+        } else {
+            $estudiante->delete(); // soft delete
+            $accion = 'dado de baja';
+        }
+
+        AuditLogger::academico(AuditLogger::LEVEL_INFO, 'ESTUDIANTE_BAJA_LOGICA', [
+            'id_estudiante' => $id,
+            'accion'        => $accion,
+        ], null, 'estudiante', $id);
+
+        return response()->json([
+            'message' => "Estudiante {$accion} correctamente.",
+            'data'    => $estudiante,
         ]);
     }
 }

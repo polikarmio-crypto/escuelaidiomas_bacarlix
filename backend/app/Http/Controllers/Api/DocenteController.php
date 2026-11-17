@@ -338,10 +338,10 @@ class DocenteController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'ci_docente' => 'required|string|max:15|unique:docente,ci_docente',
-            'nombre_docente' => 'required|string|max:60',
-            'apellido_docente' => 'required|string|max:60',
-            'telefono_docente' => 'nullable|string|max:20',
+            'ci_docente' => ['required', 'string', 'min:5', 'max:15', 'unique:docente,ci_docente', 'regex:/^\d{5,}(\s[A-Z]{2})?$/'],
+            'nombre_docente' => ['required', 'string', 'min:3', 'max:60', 'regex:/^[\p{L}\s]+$/u'],
+            'apellido_docente' => ['required', 'string', 'min:3', 'max:60', 'regex:/^[\p{L}\s]+$/u'],
+            'telefono_docente' => ['nullable', 'string', 'min:7', 'max:20', 'regex:/^[0-9\+\-\s]{7,}$/'],
             'email_docente' => 'nullable|email|max:100',
             'idiomas_ids' => 'required|array|min:1',
             'idiomas_ids.*' => 'exists:idioma,id_idioma',
@@ -380,10 +380,10 @@ class DocenteController extends Controller
     {
         $docente = Docente::findOrFail($id);
         $validated = $request->validate([
-            'ci_docente'       => 'sometimes|string|max:15',
-            'nombre_docente'   => 'sometimes|string|max:60',
-            'apellido_docente' => 'sometimes|string|max:60',
-            'telefono_docente' => 'nullable|string|max:20',
+            'ci_docente'       => ['sometimes', 'string', 'min:5', 'max:15', 'regex:/^\d{5,}(\s[A-Z]{2})?$/'],
+            'nombre_docente'   => ['sometimes', 'string', 'min:3', 'max:60', 'regex:/^[\p{L}\s]+$/u'],
+            'apellido_docente' => ['sometimes', 'string', 'min:3', 'max:60', 'regex:/^[\p{L}\s]+$/u'],
+            'telefono_docente' => ['nullable', 'string', 'min:7', 'max:20', 'regex:/^[0-9\+\-\s]{7,}$/'],
             'email_docente'    => 'nullable|email|max:100',
             'estado_docente'   => 'sometimes|in:Activo,Inactivo,Licencia',
             'idiomas_ids'      => 'nullable|array',
@@ -427,6 +427,13 @@ class DocenteController extends Controller
     public function destroy($id)
     {
         $docente = Docente::withTrashed()->findOrFail($id);
+
+        if ($docente->estado_docente !== 'Inactivo' && !$docente->trashed()) {
+            return response()->json([
+                'error' => 'No se puede ejecutar una baja física sin antes dar de baja lógica al docente.'
+            ], 422);
+        }
+
         $nombre = "{$docente->nombre_docente} {$docente->apellido_docente}";
 
         DB::transaction(function () use ($docente) {

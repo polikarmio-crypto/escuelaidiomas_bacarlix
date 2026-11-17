@@ -45,6 +45,13 @@ export default function CatalogosPage() {
   const [formMod, setFormMod] = useState({ nombre: '' });
   const [formTipoPago, setFormTipoPago] = useState({ nombre: '' });
 
+  // Modal de confirmación de baja lógica
+  const [modalConfirmar, setModalConfirmar] = useState<{ ruta: string; id: number; nombre: string } | null>(null);
+  // Modal de edición inline
+  const [modalEditar, setModalEditar] = useState<{ ruta: string; id: number; datos: any } | null>(null);
+  const [formEditar, setFormEditar] = useState<any>({});
+  const [errValidacion, setErrValidacion] = useState('');
+
   const cargarCatalogos = async () => {
     setLoading(true);
     try {
@@ -94,7 +101,11 @@ export default function CatalogosPage() {
 
   const handleCrearIdioma = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formIdioma.nombre.trim()) return;
+    const nombre = formIdioma.nombre.trim();
+    if (nombre.length < 3 || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(nombre)) {
+      mostrarMensaje('error', 'El nombre del idioma debe tener al menos 3 letras y solo caracteres alfabéticos.');
+      return;
+    }
     try {
       const res = await fetch('/api/v1/catalogos/idiomas', {
         method: 'POST',
@@ -113,7 +124,11 @@ export default function CatalogosPage() {
 
   const handleCrearAula = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formAula.nombre.trim()) return;
+    const nombre = formAula.nombre.trim();
+    if (nombre.length < 3) {
+      mostrarMensaje('error', 'El nombre del aula debe tener al menos 3 caracteres.');
+      return;
+    }
     try {
       const res = await fetch('/api/v1/catalogos/aulas', {
         method: 'POST',
@@ -149,7 +164,11 @@ export default function CatalogosPage() {
 
   const handleCrearTipoPrograma = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formTipoProg.nombre.trim()) return;
+    const nombre = formTipoProg.nombre.trim();
+    if (nombre.length < 3 || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(nombre)) {
+      mostrarMensaje('error', 'El tipo de programa debe tener al menos 3 letras.');
+      return;
+    }
     try {
       const res = await fetch('/api/v1/catalogos/tipos-programa', {
         method: 'POST',
@@ -168,7 +187,11 @@ export default function CatalogosPage() {
 
   const handleCrearTipoPago = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formTipoPago.nombre.trim()) return;
+    const nombre = formTipoPago.nombre.trim();
+    if (nombre.length < 3) {
+      mostrarMensaje('error', 'El concepto de pago debe tener al menos 3 caracteres.');
+      return;
+    }
     try {
       const res = await fetch('/api/v1/catalogos/tipos-pago', {
         method: 'POST',
@@ -185,21 +208,54 @@ export default function CatalogosPage() {
     }
   };
 
-  const eliminarElemento = async (ruta: string, id: number) => {
-    if (!confirm('¿Confirma eliminar este elemento del catálogo base?')) return;
+  const abrirConfirmarBaja = (ruta: string, id: number, nombre: string) => {
+    setModalConfirmar({ ruta, id, nombre });
+  };
+
+  const confirmarBajaLogica = async () => {
+    if (!modalConfirmar) return;
     try {
-      const res = await fetch(`/api/v1/catalogos/${ruta}/${id}`, {
-        method: 'DELETE',
+      const res = await fetch(`/api/v1/catalogos/${modalConfirmar.ruta}/${modalConfirmar.id}/baja-logica`, {
+        method: 'PATCH',
       });
-      if (res.ok) {
-        mostrarMensaje('ok', 'Elemento eliminado.');
-        cargarCatalogos();
-      } else {
-        const d = await res.json();
-        mostrarMensaje('error', d.error || 'No se puede eliminar porque tiene registros asociados.');
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al cambiar estado.');
+      mostrarMensaje('ok', data.message || 'Estado actualizado.');
+      cargarCatalogos();
     } catch (err: any) {
       mostrarMensaje('error', err.message);
+    } finally {
+      setModalConfirmar(null);
+    }
+  };
+
+  const abrirEditar = (ruta: string, id: number, datos: any) => {
+    setModalEditar({ ruta, id, datos });
+    setFormEditar({ ...datos });
+    setErrValidacion('');
+  };
+
+  const guardarEdicion = async () => {
+    if (!modalEditar) return;
+    // Validar campos de texto
+    const nombre = formEditar.nombre_idioma || formEditar.nombre_aula || formEditar.nombre_tipo_programa || formEditar.nombre_tipo_pago || '';
+    if (nombre && nombre.trim().length < 3) {
+      setErrValidacion('El nombre debe tener al menos 3 caracteres.');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/v1/catalogos/${modalEditar.ruta}/${modalEditar.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formEditar),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al actualizar.');
+      mostrarMensaje('ok', data.message || 'Registro actualizado correctamente.');
+      setModalEditar(null);
+      cargarCatalogos();
+    } catch (err: any) {
+      setErrValidacion(err.message);
     }
   };
 
@@ -487,7 +543,7 @@ export default function CatalogosPage() {
                   <th className="p-3">ID</th>
                   <th className="p-3">Año Gestión</th>
                   <th className="p-3">Estado</th>
-                  <th className="p-3 text-right">Acción</th>
+                  <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800 text-neutral-300">
@@ -500,13 +556,14 @@ export default function CatalogosPage() {
                         {g.estado_gestion}
                       </span>
                     </td>
-                    <td className="p-3 text-right">
+                    <td className="p-3 text-right flex items-center justify-end gap-1">
                       <button
-                        onClick={() => eliminarElemento('gestiones', g.id_gestion)}
-                        className="text-red-400 hover:text-red-300 p-1"
-                        title="Eliminar"
+                        onClick={() => abrirConfirmarBaja('gestiones', g.id_gestion, `Gestión ${g.anio_gestion}`)}
+                        className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1 ${g.estado_gestion === 'Activa' ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'}`}
+                        title={g.estado_gestion === 'Activa' ? 'Dar de baja' : 'Reactivar'}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <ShieldAlert className="w-3 h-3" />
+                        {g.estado_gestion === 'Activa' ? 'Dar de Baja' : 'Reactivar'}
                       </button>
                     </td>
                   </tr>
@@ -521,7 +578,7 @@ export default function CatalogosPage() {
                 <tr>
                   <th className="p-3">ID</th>
                   <th className="p-3">Nombre del Idioma</th>
-                  <th className="p-3 text-right">Acción</th>
+                  <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800 text-neutral-300">
@@ -529,13 +586,20 @@ export default function CatalogosPage() {
                   <tr key={i.id_idioma} className="hover:bg-neutral-800/40">
                     <td className="p-3 font-mono text-neutral-500">#{i.id_idioma}</td>
                     <td className="p-3 font-bold text-white">{i.nombre_idioma}</td>
-                    <td className="p-3 text-right">
+                    <td className="p-3 text-right flex items-center justify-end gap-1">
                       <button
-                        onClick={() => eliminarElemento('idiomas', i.id_idioma)}
-                        className="text-red-400 hover:text-red-300 p-1"
-                        title="Eliminar"
+                        onClick={() => abrirEditar('idiomas', i.id_idioma, { nombre_idioma: i.nombre_idioma })}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 flex items-center gap-1"
+                        title="Editar"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Edit className="w-3 h-3" /> Editar
+                      </button>
+                      <button
+                        onClick={() => abrirConfirmarBaja('idiomas', i.id_idioma, i.nombre_idioma)}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 flex items-center gap-1"
+                        title="Dar de baja"
+                      >
+                        <ShieldAlert className="w-3 h-3" /> Dar de Baja
                       </button>
                     </td>
                   </tr>
@@ -551,7 +615,7 @@ export default function CatalogosPage() {
                   <th className="p-3">ID</th>
                   <th className="p-3">Nombre del Aula</th>
                   <th className="p-3">Capacidad Máx. (Aforo)</th>
-                  <th className="p-3 text-right">Acción</th>
+                  <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800 text-neutral-300">
@@ -560,13 +624,20 @@ export default function CatalogosPage() {
                     <td className="p-3 font-mono text-neutral-500">#{a.id_aula}</td>
                     <td className="p-3 font-bold text-white">{a.nombre_aula}</td>
                     <td className="p-3 text-sky-400 font-semibold">{a.capacidad_aula} estudiantes</td>
-                    <td className="p-3 text-right">
+                    <td className="p-3 text-right flex items-center justify-end gap-1">
                       <button
-                        onClick={() => eliminarElemento('aulas', a.id_aula)}
-                        className="text-red-400 hover:text-red-300 p-1"
-                        title="Eliminar"
+                        onClick={() => abrirEditar('aulas', a.id_aula, { nombre_aula: a.nombre_aula, capacidad_aula: a.capacidad_aula })}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 flex items-center gap-1"
+                        title="Editar"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Edit className="w-3 h-3" /> Editar
+                      </button>
+                      <button
+                        onClick={() => abrirConfirmarBaja('aulas', a.id_aula, a.nombre_aula)}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 flex items-center gap-1"
+                        title="Dar de baja"
+                      >
+                        <ShieldAlert className="w-3 h-3" /> Dar de Baja
                       </button>
                     </td>
                   </tr>
@@ -582,7 +653,7 @@ export default function CatalogosPage() {
                   <th className="p-3">ID</th>
                   <th className="p-3">Hora Inicio</th>
                   <th className="p-3">Hora Fin</th>
-                  <th className="p-3 text-right">Acción</th>
+                  <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800 text-neutral-300">
@@ -591,13 +662,20 @@ export default function CatalogosPage() {
                     <td className="p-3 font-mono text-neutral-500">#{h.id_horario}</td>
                     <td className="p-3 text-white font-mono">{h.hora_inicio_horario}</td>
                     <td className="p-3 text-white font-mono">{h.hora_fin_horario}</td>
-                    <td className="p-3 text-right">
+                    <td className="p-3 text-right flex items-center justify-end gap-1">
                       <button
-                        onClick={() => eliminarElemento('horarios', h.id_horario)}
-                        className="text-red-400 hover:text-red-300 p-1"
-                        title="Eliminar"
+                        onClick={() => abrirEditar('horarios', h.id_horario, { hora_inicio_horario: h.hora_inicio_horario, hora_fin_horario: h.hora_fin_horario })}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 flex items-center gap-1"
+                        title="Editar"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Edit className="w-3 h-3" /> Editar
+                      </button>
+                      <button
+                        onClick={() => abrirConfirmarBaja('horarios', h.id_horario, `${h.hora_inicio_horario} - ${h.hora_fin_horario}`)}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 flex items-center gap-1"
+                        title="Dar de baja"
+                      >
+                        <ShieldAlert className="w-3 h-3" /> Dar de Baja
                       </button>
                     </td>
                   </tr>
@@ -612,13 +690,30 @@ export default function CatalogosPage() {
                 <tr>
                   <th className="p-3">ID</th>
                   <th className="p-3">Nombre del Tipo de Programa</th>
+                  <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800 text-neutral-300">
                 {tiposPrograma.map((tp) => (
-                  <tr key={tp.id_tipo_programa}>
+                  <tr key={tp.id_tipo_programa} className="hover:bg-neutral-800/40">
                     <td className="p-3 font-mono text-neutral-500">#{tp.id_tipo_programa}</td>
                     <td className="p-3 font-bold text-white">{tp.nombre_tipo_programa}</td>
+                    <td className="p-3 text-right flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => abrirEditar('tipos-programa', tp.id_tipo_programa, { nombre_tipo_programa: tp.nombre_tipo_programa })}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 flex items-center gap-1"
+                        title="Editar"
+                      >
+                        <Edit className="w-3 h-3" /> Editar
+                      </button>
+                      <button
+                        onClick={() => abrirConfirmarBaja('tipos-programa', tp.id_tipo_programa, tp.nombre_tipo_programa)}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 flex items-center gap-1"
+                        title="Dar de baja"
+                      >
+                        <ShieldAlert className="w-3 h-3" /> Dar de Baja
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -631,13 +726,30 @@ export default function CatalogosPage() {
                 <tr>
                   <th className="p-3">ID</th>
                   <th className="p-3">Concepto / Tipo de Pago</th>
+                  <th className="p-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800 text-neutral-300">
                 {tiposPago.map((tp) => (
-                  <tr key={tp.id_tipo_pago}>
+                  <tr key={tp.id_tipo_pago} className="hover:bg-neutral-800/40">
                     <td className="p-3 font-mono text-neutral-500">#{tp.id_tipo_pago}</td>
                     <td className="p-3 font-bold text-white">{tp.nombre_tipo_pago}</td>
+                    <td className="p-3 text-right flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => abrirEditar('tipos-pago', tp.id_tipo_pago, { nombre_tipo_pago: tp.nombre_tipo_pago })}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 flex items-center gap-1"
+                        title="Editar"
+                      >
+                        <Edit className="w-3 h-3" /> Editar
+                      </button>
+                      <button
+                        onClick={() => abrirConfirmarBaja('tipos-pago', tp.id_tipo_pago, tp.nombre_tipo_pago)}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 flex items-center gap-1"
+                        title="Dar de baja"
+                      >
+                        <ShieldAlert className="w-3 h-3" /> Dar de Baja
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -645,6 +757,90 @@ export default function CatalogosPage() {
           )}
         </div>
       </div>
+
+      {/* Modal confirmación baja lógica */}
+      {modalConfirmar && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-amber-500/50 rounded-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <ShieldAlert className="w-8 h-8 text-amber-400 shrink-0" />
+              <div>
+                <h3 className="text-base font-bold text-white">Cambio de Estado</h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Registro: <span className="text-amber-300 font-semibold">{modalConfirmar.nombre}</span>
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-neutral-300 leading-relaxed">
+              Esta operación dará de <strong className="text-amber-400">baja lógica</strong> al registro seleccionado.
+              El registro permanecerá en la base de datos pero quedará marcado como inactivo.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+              <button
+                onClick={() => setModalConfirmar(null)}
+                className="px-4 py-2 rounded-lg bg-neutral-800 text-white font-semibold text-xs hover:bg-neutral-700"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarBajaLogica}
+                className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold text-xs"
+              >
+                Confirmar Baja
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de edición */}
+      {modalEditar && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-sky-500/50 rounded-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                <Edit className="w-4 h-4 text-sky-400" /> Editar Registro
+              </h3>
+              <button onClick={() => setModalEditar(null)} className="text-neutral-400 hover:text-white">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              {Object.keys(formEditar).map((key) => (
+                <div key={key}>
+                  <label className="text-neutral-300 block mb-1 capitalize">{key.replace(/_/g, ' ')}</label>
+                  <input
+                    type={typeof formEditar[key] === 'number' ? 'number' : 'text'}
+                    value={formEditar[key]}
+                    onChange={(e) => setFormEditar({ ...formEditar, [key]: typeof formEditar[key] === 'number' ? parseInt(e.target.value) : e.target.value })}
+                    className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
+                    minLength={typeof formEditar[key] === 'string' ? 3 : undefined}
+                  />
+                </div>
+              ))}
+              {errValidacion && (
+                <p className="text-red-400 text-xs flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" /> {errValidacion}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800">
+              <button
+                onClick={() => setModalEditar(null)}
+                className="px-4 py-2 rounded-lg bg-neutral-800 text-white font-semibold text-xs hover:bg-neutral-700"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={guardarEdicion}
+                className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center gap-1"
+              >
+                <Save className="w-3.5 h-3.5" /> Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

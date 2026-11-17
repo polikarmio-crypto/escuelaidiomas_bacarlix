@@ -129,4 +129,46 @@ class InscripcionController extends Controller
 
         return response()->json($inscripcion);
     }
+
+    public function bajaLogica($id)
+    {
+        $inscripcion = Inscripcion::findOrFail($id);
+        $nuevo = $inscripcion->estado_inscripcion === 'Activa' ? 'Inactiva' : 'Activa';
+        $inscripcion->update(['estado_inscripcion' => $nuevo]);
+
+        AuditLogger::academico(AuditLogger::LEVEL_WARNING, 'INSCRIPCION_BAJA_LOGICA', [
+            'id_inscripcion' => $id,
+            'nuevo_estado'  => $nuevo,
+        ], null, 'inscripcion', $id);
+
+        return response()->json([
+            'message' => "Inscripción marcada como {$nuevo}.",
+            'estado'  => $nuevo,
+            'data'    => $inscripcion,
+        ]);
+    }
+
+    public function destroy($id)
+    {
+        $inscripcion = Inscripcion::findOrFail($id);
+
+        if ($inscripcion->estado_inscripcion === 'Activa') {
+            return response()->json([
+                'error' => 'No se puede ejecutar una baja física sin antes dar de baja lógica la inscripción.'
+            ], 422);
+        }
+
+        DB::transaction(function () use ($inscripcion) {
+            $inscripcion->librosAvance()->delete();
+            $inscripcion->delete();
+        });
+
+        AuditLogger::academico(AuditLogger::LEVEL_CRITICAL, 'INSCRIPCION_ELIMINADA_DEFINITIVO', [
+            'id_inscripcion' => $id,
+        ], null, 'inscripcion');
+
+        return response()->json([
+            'message' => 'Inscripción eliminada definitivamente.'
+        ]);
+    }
 }

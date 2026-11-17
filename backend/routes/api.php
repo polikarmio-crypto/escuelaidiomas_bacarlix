@@ -40,31 +40,39 @@ Route::prefix('v1')->group(function () {
         Route::get('/gestiones', [CatalogoController::class, 'gestiones']);
         Route::post('/gestiones', [CatalogoController::class, 'storeGestion']);
         Route::put('/gestiones/{id}', [CatalogoController::class, 'updateGestion']);
+        Route::patch('/gestiones/{id}/baja-logica', [CatalogoController::class, 'bajaLogicaGestion']);
         Route::delete('/gestiones/{id}', [CatalogoController::class, 'destroyGestion']);
 
         Route::get('/idiomas', [CatalogoController::class, 'idiomas']);
         Route::post('/idiomas', [CatalogoController::class, 'storeIdioma']);
         Route::put('/idiomas/{id}', [CatalogoController::class, 'updateIdioma']);
+        Route::patch('/idiomas/{id}/baja-logica', [CatalogoController::class, 'bajaLogicaIdioma']);
         Route::delete('/idiomas/{id}', [CatalogoController::class, 'destroyIdioma']);
 
         Route::get('/aulas', [CatalogoController::class, 'aulas']);
         Route::post('/aulas', [CatalogoController::class, 'storeAula']);
         Route::put('/aulas/{id}', [CatalogoController::class, 'updateAula']);
+        Route::patch('/aulas/{id}/baja-logica', [CatalogoController::class, 'bajaLogicaAula']);
         Route::delete('/aulas/{id}', [CatalogoController::class, 'destroyAula']);
 
         Route::get('/horarios', [CatalogoController::class, 'horarios']);
         Route::post('/horarios', [CatalogoController::class, 'storeHorario']);
         Route::put('/horarios/{id}', [CatalogoController::class, 'updateHorario']);
+        Route::patch('/horarios/{id}/baja-logica', [CatalogoController::class, 'bajaLogicaHorario']);
         Route::delete('/horarios/{id}', [CatalogoController::class, 'destroyHorario']);
 
         Route::get('/tipos-programa', [CatalogoController::class, 'tiposPrograma']);
         Route::post('/tipos-programa', [CatalogoController::class, 'storeTipoPrograma']);
+        Route::put('/tipos-programa/{id}', [CatalogoController::class, 'updateTipoPrograma']);
+        Route::patch('/tipos-programa/{id}/baja-logica', [CatalogoController::class, 'bajaLogicaTipoPrograma']);
 
         Route::get('/modalidades', [CatalogoController::class, 'modalidades']);
         Route::post('/modalidades', [CatalogoController::class, 'storeModalidad']);
 
         Route::get('/tipos-pago', [CatalogoController::class, 'tiposPago']);
         Route::post('/tipos-pago', [CatalogoController::class, 'storeTipoPago']);
+        Route::put('/tipos-pago/{id}', [CatalogoController::class, 'updateTipoPago']);
+        Route::patch('/tipos-pago/{id}/baja-logica', [CatalogoController::class, 'bajaLogicaTipoPago']);
 
         Route::get('/cajas', [CatalogoController::class, 'cajas']);
         Route::post('/cajas', [CatalogoController::class, 'storeCaja']);
@@ -90,6 +98,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/estudiantes', [EstudianteController::class, 'store']);
     Route::get('/estudiantes/{id}', [EstudianteController::class, 'show']);
     Route::put('/estudiantes/{id}', [EstudianteController::class, 'update']);
+    Route::patch('/estudiantes/{id}/baja-logica', [EstudianteController::class, 'bajaLogica']);
     Route::delete('/estudiantes/{id}', [EstudianteController::class, 'destroy']);
 
     Route::get('/docentes', [DocenteController::class, 'index']);
@@ -106,12 +115,17 @@ Route::prefix('v1')->group(function () {
     Route::get('/paralelos', [ParaleloController::class, 'index']);
     Route::post('/paralelos', [ParaleloController::class, 'store']);
     Route::get('/paralelos/{id}', [ParaleloController::class, 'show']);
+    Route::put('/paralelos/{id}', [ParaleloController::class, 'update']);
+    Route::patch('/paralelos/{id}/baja-logica', [ParaleloController::class, 'bajaLogica']);
+    Route::delete('/paralelos/{id}', [ParaleloController::class, 'destroy']);
     Route::post('/paralelos/{id}/asignar-docente', [ParaleloController::class, 'asignarDocente']);
     Route::post('/paralelos/{id}/asignar-aula', [ParaleloController::class, 'asignarAula']);
 
     Route::get('/inscripciones', [InscripcionController::class, 'index']);
     Route::post('/inscripciones', [InscripcionController::class, 'inscribir']);
     Route::get('/inscripciones/{id}', [InscripcionController::class, 'show']);
+    Route::patch('/inscripciones/{id}/baja-logica', [InscripcionController::class, 'bajaLogica']);
+    Route::delete('/inscripciones/{id}', [InscripcionController::class, 'destroy']);
 
     Route::get('/calificaciones/paralelo/{id}', [CalificacionController::class, 'notasParalelo']);
     Route::post('/calificaciones/libro', [CalificacionController::class, 'registrarNotaLibro']);

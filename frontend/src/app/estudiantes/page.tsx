@@ -72,6 +72,8 @@ export default function EstudiantesPage() {
   const [modalCredenciales, setModalCredenciales] = useState(false);
   const [credencialesCreadas, setCredencialesCreadas] = useState<any | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [modalConfirmarBaja, setModalConfirmarBaja] = useState<{ id: number; nombre: string } | null>(null);
+  const [modalConfirmarFisica, setModalConfirmarFisica] = useState<{ id: number; nombre: string } | null>(null);
 
   const [formData, setFormData] = useState({
     ci_estudiante: '',
@@ -176,6 +178,40 @@ export default function EstudiantesPage() {
 
   const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const ci = formData.ci_estudiante.trim();
+    if (ci.length < 5 || !/^\d{5,}/.test(ci)) {
+      mostrarMensaje('error', 'El CI debe contener al menos 5 dígitos numéricos.');
+      return;
+    }
+    const nom = formData.nombre_estudiante.trim();
+    const ape = formData.apellido_estudiante.trim();
+    if (nom.length < 3 || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(nom)) {
+      mostrarMensaje('error', 'El nombre debe tener al menos 3 caracteres alfabéticos.');
+      return;
+    }
+    if (ape.length < 3 || !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(ape)) {
+      mostrarMensaje('error', 'El apellido debe tener al menos 3 caracteres alfabéticos.');
+      return;
+    }
+    if (formData.telefono_estudiante) {
+      const tel = formData.telefono_estudiante.trim();
+      if (tel.length < 7 || !/^[0-9\+\-\s]{7,}$/.test(tel)) {
+        mostrarMensaje('error', 'El teléfono debe contener al menos 7 dígitos.');
+        return;
+      }
+    }
+    if (formData.tipo_estudiante === 'Militar') {
+      if (!formData.grado_militar || formData.grado_militar.trim().length < 2) {
+        mostrarMensaje('error', 'Debe especificar el grado militar del estudiante.');
+        return;
+      }
+      if (!formData.unidad_militar || formData.unidad_militar.trim().length < 3) {
+        mostrarMensaje('error', 'Debe especificar la unidad militar de procedencia.');
+        return;
+      }
+    }
+
     try {
       const url = modoEdicion
         ? `/api/v1/estudiantes/${idSeleccionado}`
@@ -226,15 +262,32 @@ export default function EstudiantesPage() {
     }
   };
 
-  const handleBajaLogica = async (id: number) => {
-    if (!confirm('¿Confirma dar de baja lógica al estudiante? Sus registros académicos se preservarán.')) return;
+  const confirmarBajaLogica = async () => {
+    if (!modalConfirmarBaja) return;
     try {
-      const res = await fetch(`/api/v1/estudiantes/${id}/baja-logica`, {
+      const res = await fetch(`/api/v1/estudiantes/${modalConfirmarBaja.id}/baja-logica`, {
         method: 'PATCH',
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al procesar baja lógica.');
-      mostrarMensaje('ok', data.message);
+      mostrarMensaje('ok', data.message || 'Estado del estudiante actualizado.');
+      setModalConfirmarBaja(null);
+      cargarEstudiantes();
+    } catch (err: any) {
+      mostrarMensaje('error', err.message);
+    }
+  };
+
+  const confirmarBajaFisica = async () => {
+    if (!modalConfirmarFisica) return;
+    try {
+      const res = await fetch(`/api/v1/estudiantes/${modalConfirmarFisica.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al ejecutar baja física.');
+      mostrarMensaje('ok', data.message || 'Estudiante eliminado definitivamente.');
+      setModalConfirmarFisica(null);
       cargarEstudiantes();
     } catch (err: any) {
       mostrarMensaje('error', err.message);
@@ -442,18 +495,27 @@ export default function EstudiantesPage() {
                     <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => abrirModalEditar(est)}
-                        className="p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition"
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 flex items-center gap-1"
                         title="Editar Datos"
                       >
-                        <Edit className="w-3.5 h-3.5" />
+                        <Edit className="w-3 h-3" /> Editar
                       </button>
                       <button
-                        onClick={() => handleBajaLogica(est.id_estudiante || est.id)}
-                        className="p-1.5 rounded bg-red-950/60 hover:bg-red-900 text-red-300 border border-red-800/40 transition"
-                        title="Baja Lógica"
+                        onClick={() => setModalConfirmarBaja({ id: est.id_estudiante || est.id, nombre: `${est.nombres} ${est.apellidos}` })}
+                        className="px-2 py-1 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 flex items-center gap-1"
+                        title="Baja Lógica / Reactivar"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <ShieldAlert className="w-3 h-3" /> Baja
                       </button>
+                      {est.estado === 'Inactivo' && (
+                        <button
+                          onClick={() => setModalConfirmarFisica({ id: est.id_estudiante || est.id, nombre: `${est.nombres} ${est.apellidos}` })}
+                          className="px-2 py-1 rounded text-[10px] font-semibold bg-red-950/60 text-red-300 hover:bg-red-900 border border-red-800/40 flex items-center gap-1"
+                          title="Baja Física Definitiva"
+                        >
+                          <Trash2 className="w-3 h-3" /> Eliminar
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -542,10 +604,11 @@ export default function EstudiantesPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-neutral-300 block mb-1">Cédula de Identidad (CI)</label>
+                  <label className="text-neutral-300 block mb-1">Cédula de Identidad (CI) * (mín. 5 dígitos)</label>
                   <input
                     type="text"
                     placeholder="Ej: 6849201"
+                    minLength={5}
                     value={formData.ci_estudiante}
                     onChange={(e) => setFormData({ ...formData, ci_estudiante: e.target.value })}
                     className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white"
@@ -566,10 +629,11 @@ export default function EstudiantesPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-neutral-300 block mb-1">Nombres</label>
+                  <label className="text-neutral-300 block mb-1">Nombres * (mín. 3 letras)</label>
                   <input
                     type="text"
                     placeholder="Ej: Carlos Fernando"
+                    minLength={3}
                     value={formData.nombre_estudiante}
                     onChange={(e) => setFormData({ ...formData, nombre_estudiante: e.target.value })}
                     className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white"
@@ -577,10 +641,11 @@ export default function EstudiantesPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-neutral-300 block mb-1">Apellidos</label>
+                  <label className="text-neutral-300 block mb-1">Apellidos * (mín. 3 letras)</label>
                   <input
                     type="text"
                     placeholder="Ej: Mamani Quispe"
+                    minLength={3}
                     value={formData.apellido_estudiante}
                     onChange={(e) => setFormData({ ...formData, apellido_estudiante: e.target.value })}
                     className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white"
@@ -591,10 +656,11 @@ export default function EstudiantesPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-neutral-300 block mb-1">Teléfono / Celular</label>
+                  <label className="text-neutral-300 block mb-1">Teléfono / Celular (mín. 7 dígitos)</label>
                   <input
                     type="text"
                     placeholder="Ej: 71548920"
+                    minLength={7}
                     value={formData.telefono_estudiante}
                     onChange={(e) => setFormData({ ...formData, telefono_estudiante: e.target.value })}
                     className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white"
@@ -752,6 +818,80 @@ export default function EstudiantesPage() {
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition"
               >
                 Aceptar y Finalizar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmación Baja Lógica Estudiante */}
+      {modalConfirmarBaja && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-amber-500/40 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-solemn-fade">
+            <div className="flex items-center gap-3 text-amber-400">
+              <ShieldAlert className="w-6 h-6 shrink-0" />
+              <h3 className="text-base font-bold text-white">Baja Lógica de Estudiante</h3>
+            </div>
+            <p className="text-xs text-neutral-300">
+              ¿Confirma procesar la baja lógica del estudiante <strong className="text-white">{modalConfirmarBaja.nombre}</strong>?
+            </p>
+            <p className="text-[11px] text-neutral-400 bg-neutral-950 p-2.5 rounded-lg border border-neutral-800">
+              El estudiante será desactivado del sistema. Su historial de calificaciones, inscripciones y avance curricular se mantendrá preservado en la base de datos.
+            </p>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalConfirmarBaja(null)}
+                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarBajaLogica}
+                className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold shadow"
+              >
+                Confirmar Baja
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmación Baja Física Estudiante */}
+      {modalConfirmarFisica && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-red-500/60 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl animate-solemn-fade">
+            <div className="flex items-center gap-3 text-red-400">
+              <Trash2 className="w-6 h-6 shrink-0" />
+              <h3 className="text-base font-bold text-white">Baja Física Definitiva</h3>
+            </div>
+            <p className="text-xs text-neutral-300">
+              ¿Confirma eliminar definitivamente de la base de datos al estudiante <strong className="text-white">{modalConfirmarFisica.nombre}</strong>?
+            </p>
+            <div className="text-[11px] text-red-200 bg-red-950/40 p-3 rounded-lg border border-red-800/60 space-y-1">
+              <p className="font-bold flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                ADVERTENCIA IRREVERSIBLE
+              </p>
+              <p>
+                Esta acción removerá físicamente el expediente del estudiante y su usuario de acceso. Solo es permitida porque el estudiante ya cuenta con baja lógica previa.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setModalConfirmarFisica(null)}
+                className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white text-xs font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarBajaFisica}
+                className="px-4 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow"
+              >
+                Sí, Eliminar Definitivamente
               </button>
             </div>
           </div>

@@ -400,6 +400,92 @@ export default function DashboardSacaPage() {
               )}
             </div>
           </div>
+        ) : rolActivo === 'DOCENTE' ? (
+          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
+                Mi Asignación y Aula Docente
+              </h3>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">Titular</span>
+            </div>
+            <div className="space-y-2">
+              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 space-y-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">ING-101-A • Inglés</span>
+                  <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
+                    En Aula (6 d.)
+                  </span>
+                </div>
+                <p className="text-[10.5px] text-slate-600 dark:text-slate-400">Básico A1/A2 • Aula 102 (Pabellón Alfa)</p>
+                <div className="pt-1 flex flex-col gap-0.5 text-[10.5px] text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-neutral-800/40">
+                  <span><strong>Horario:</strong> 08:30 - 10:00 (Turno Mañana)</span>
+                  <span><strong>Estudiantes:</strong> 18 alumnos matriculados</span>
+                  <span><strong>Próximo Relevo:</strong> En 9 días pedagógicos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : rolActivo === 'JEFE_ACADEMICO' ? (
+          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-blue-500" />
+                Supervisión Académica y Cursos
+              </h3>
+              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono font-bold">26 Cursos</span>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Rotaciones Obligatorias (15 Días)</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Docentes que alcanzaron el límite de rotación</p>
+                </div>
+                <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+                  {data?.kpis?.docentes?.alertas_rotacion_15d ?? 1} pendientes
+                </span>
+              </div>
+              <div className="p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Ocupación Promedio de Paralelos</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Aforo máximo promedio: 30 plazas</p>
+                </div>
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  60% cubierto
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : rolActivo === 'ALMACENERO' ? (
+          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Package className="w-3.5 h-3.5 text-pink-500" />
+                Control de Textos y Depósito
+              </h3>
+              <span className="text-[10px] text-pink-600 dark:text-pink-400 font-mono font-bold">Depósito Central</span>
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Títulos Bajo Umbral de Reorden</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Requieren orden de reposición de imprenta</p>
+                </div>
+                <span className="text-[11px] font-bold text-red-600 dark:text-red-400 px-2 py-0.5 rounded bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800">
+                  {data?.kpis?.almacen?.alertas_reorden ?? 12} títulos
+                </span>
+              </div>
+              <div className="p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 flex items-center justify-between">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Stock Total en Inventario</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Total ejemplares físicos en estantería</p>
+                </div>
+                <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+                  {data?.kpis?.almacen?.total_unidades ?? 673} unidades
+                </span>
+              </div>
+            </div>
+          </div>
         ) : (
           <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
