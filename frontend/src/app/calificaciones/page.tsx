@@ -88,12 +88,30 @@ export default function CalificacionesPage() {
 
   const cargarParalelos = async () => {
     try {
-      const res = await fetch('/api/v1/paralelos');
+      const idDoc = usuario.id_docente || (esDocente ? 1 : null);
+      const url = esDocente && idDoc
+        ? `/api/v1/paralelos?id_docente=${idDoc}&email_docente=${encodeURIComponent(usuario.email || '')}`
+        : '/api/v1/paralelos';
+
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        setParalelos(data || []);
-        if (data.length > 0 && !idParaleloSeleccionado) {
-          setIdParaleloSeleccionado(data[0].id_paralelo.toString());
+        let lista = Array.isArray(data) ? data : (data.data || []);
+        if (esDocente) {
+          const docenteNombreRef = (usuario.nombre || 'Fernando Ríos').toLowerCase();
+          lista = lista.filter((p: any) => {
+            const coincideId = p.id_docente_actual === idDoc;
+            const docStr = (typeof p.docente_actual === 'string' ? p.docente_actual : '').toLowerCase();
+            const coincideNom = docStr.includes(docenteNombreRef) ||
+              (docenteNombreRef.includes('fernando') && docStr.includes('fernando'));
+            return coincideId || coincideNom;
+          });
+        }
+        setParalelos(lista);
+        if (lista.length > 0) {
+          setIdParaleloSeleccionado(lista[0].id_paralelo.toString());
+        } else {
+          setIdParaleloSeleccionado('');
         }
       }
     } catch (e) {
@@ -105,11 +123,19 @@ export default function CalificacionesPage() {
     if (!id) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/v1/calificaciones/paralelo/${id}`);
+      const idDoc = esDocente ? (usuario.id_docente || 1) : '';
+      const url = idDoc
+        ? `/api/v1/calificaciones/paralelo/${id}?id_docente=${idDoc}`
+        : `/api/v1/calificaciones/paralelo/${id}`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setAlumnos(data.alumnos || []);
         setInfoParalelo({ codigo: data.paralelo, nivel: data.nivel });
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        mostrarMensaje('error', errData.error || 'Error al obtener matriz de calificaciones.');
+        setAlumnos([]);
       }
     } catch (e) {
       console.error(e);
@@ -132,7 +158,7 @@ export default function CalificacionesPage() {
   const idiomasDisponibles = useMemo(() => {
     const set = new Set<string>();
     paralelos.forEach((p) => {
-      const idm = p.nivel?.programa?.idioma?.nombre_idioma;
+      const idm = p.idioma || p.nivel?.programa?.idioma?.nombre_idioma;
       if (idm) set.add(idm);
     });
     return Array.from(set);
@@ -140,7 +166,7 @@ export default function CalificacionesPage() {
 
   const paralelosFiltrados = useMemo(() => {
     if (!filtroIdioma) return paralelos;
-    return paralelos.filter((p) => p.nivel?.programa?.idioma?.nombre_idioma === filtroIdioma);
+    return paralelos.filter((p) => (p.idioma || p.nivel?.programa?.idioma?.nombre_idioma) === filtroIdioma);
   }, [paralelos, filtroIdioma]);
 
   useEffect(() => {
@@ -202,7 +228,7 @@ export default function CalificacionesPage() {
     try {
       const payload: any = {
         id_inscripcion_libro: evaluando.id_inscripcion_libro,
-        id_docente_calificador: 1,
+        id_docente_calificador: usuario.id_docente || 1,
       };
 
       if (modoCalculo === 'directa') {

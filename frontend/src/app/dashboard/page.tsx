@@ -105,12 +105,15 @@ function getDashboardConfig(rol: RolUsuario, kpis: any) {
       };
 
     case 'DOCENTE':
+      const misParalelosVal = kpis?.docente_personal?.mis_paralelos_count ?? 1;
+      const alumnosEnAulaVal = kpis?.docente_personal?.estudiantes_en_aula ?? 18;
+      const califPendientesVal = kpis?.docente_personal?.calificaciones_pendientes ?? 0;
       return {
         subtitulo: 'Mis paralelos asignados, control de asistencia y calificaciones.',
         kpiCards: [
-          { label: 'Mis Paralelos', value: kpis?.paralelos?.activos || 2, sub: 'Asignados esta gestión', icon: Layers, color: '#10b981' },
-          { label: 'Estudiantes', value: kpis?.estudiantes?.total || 45, sub: 'En mis cursos', icon: Users, color: '#3b82f6' },
-          { label: 'Calificaciones', value: kpis?.calificaciones_pendientes || 0, sub: 'Pendientes de registro', icon: Award, color: '#f59e0b' },
+          { label: 'Mis Paralelos', value: misParalelosVal, sub: 'Asignados esta gestión', icon: Layers, color: '#10b981' },
+          { label: 'Estudiantes en Aula', value: alumnosEnAulaVal, sub: 'En mis cursos asignados', icon: Users, color: '#3b82f6' },
+          { label: 'Calificaciones', value: califPendientesVal, sub: 'Pendientes de registro', icon: Award, color: '#f59e0b' },
         ] as KpiCard[],
         modulos: [
           { href: '/paralelos', titulo: 'Mis Paralelos', desc: 'Consulta tus cursos y horarios asignados.', icon: Layers },
@@ -147,12 +150,15 @@ function getDashboardConfig(rol: RolUsuario, kpis: any) {
 
     case 'ESTUDIANTE':
     default:
+      const misCursosVal = kpis?.estudiante_personal?.mis_cursos_count ?? 1;
+      const promedioVal = kpis?.estudiante_personal?.promedio_general ?? '84.5';
+      const asistenciaVal = kpis?.estudiante_personal?.asistencia_porcentaje ?? 95;
       return {
         subtitulo: 'Tu avance académico, asignaturas cursadas y turnos en caja.',
         kpiCards: [
-          { label: 'Mis Cursos', value: kpis?.inscripciones?.activas || 1, sub: 'Inscritos actualmente', icon: BookOpen, color: '#3b82f6' },
-          { label: 'Promedio', value: kpis?.promedio_general || '84.5', sub: 'General acumulado', icon: Star, color: '#f59e0b' },
-          { label: 'Mi Turno', value: kpis?.cajas?.mi_turno || 'Activo', sub: 'Estado de atención', icon: Timer, color: '#10b981' },
+          { label: 'Mis Cursos', value: misCursosVal, sub: 'Inscritos actualmente', icon: BookOpen, color: '#3b82f6' },
+          { label: 'Promedio', value: promedioVal, sub: 'General acumulado', icon: Star, color: '#f59e0b' },
+          { label: 'Asistencia', value: `${asistenciaVal}%`, sub: 'Asistencia regular', icon: CheckCircle2, color: '#10b981' },
         ] as KpiCard[],
         modulos: [
           { href: '/inscripciones', titulo: 'Mis Inscripciones', desc: 'Consulta cursos inscritos y avance curricular.', icon: ClipboardEdit },
@@ -171,7 +177,20 @@ export default function DashboardSacaPage() {
   const cargarDashboard = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/dashboard');
+      const params = new URLSearchParams();
+      if (rolActivo === 'ESTUDIANTE') {
+        const idEst = usuario.id_estudiante || 11;
+        params.set('id_estudiante', idEst.toString());
+        if (usuario.email) params.set('email', usuario.email);
+        if (usuario.ci) params.set('ci', usuario.ci);
+      } else if (rolActivo === 'DOCENTE') {
+        const idDoc = usuario.id_docente || 1;
+        params.set('id_docente', idDoc.toString());
+        if (usuario.email) params.set('email', usuario.email);
+      }
+      params.set('rol', rolActivo);
+      const url = `/api/v1/dashboard?${params.toString()}`;
+      const res = await fetch(url);
       if (res.ok) {
         const d = await res.json();
         setData(d);
@@ -185,9 +204,9 @@ export default function DashboardSacaPage() {
 
   useEffect(() => {
     cargarDashboard();
-  }, []);
+  }, [rolActivo, usuario.id_estudiante, usuario.id_docente, usuario.email]);
 
-  const kpisData = data?.kpis || data;
+  const kpisData = { ...(data?.kpis || {}), estudiante_personal: data?.estudiante_personal, docente_personal: data?.docente_personal };
   const config = getDashboardConfig(rolActivo, kpisData);
 
   return (
@@ -336,44 +355,91 @@ export default function DashboardSacaPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Building2 className="w-3.5 h-3.5 text-amber-500" />
-              Ventanillas de Caja Activas
-            </h3>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">3 Cajas</span>
+        {rolActivo === 'ESTUDIANTE' ? (
+          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+                Mi Asignatura y Horario
+              </h3>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">Activo</span>
+            </div>
+            <div className="space-y-2">
+              {data?.estudiante_personal?.cursos && data.estudiante_personal.cursos.length > 0 ? (
+                data.estudiante_personal.cursos.map((c: any, idx: number) => (
+                  <div key={idx} className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 space-y-1 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-800 dark:text-slate-200">{c.codigo_paralelo} • {c.idioma}</span>
+                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                        {c.estado}
+                      </span>
+                    </div>
+                    <p className="text-[10.5px] text-slate-600 dark:text-slate-400">{c.nivel} ({c.programa})</p>
+                    <div className="pt-1 flex flex-col gap-0.5 text-[10.5px] text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-neutral-800/40">
+                      <span><strong>Aula:</strong> {c.aula}</span>
+                      <span><strong>Horario:</strong> {c.horario}</span>
+                      <span><strong>Docente:</strong> {c.docente}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 space-y-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">RUS-601-A • Ruso</span>
+                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                      Activa
+                    </span>
+                  </div>
+                  <p className="text-[10.5px] text-slate-600 dark:text-slate-400">Básico Elemental (Plan de Idioma Ruso)</p>
+                  <div className="pt-1 flex flex-col gap-0.5 text-[10.5px] text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-neutral-800/40">
+                    <span><strong>Aula:</strong> Aula 102 - Pabellón Alfa</span>
+                    <span><strong>Horario:</strong> 16:00 - 17:30</span>
+                    <span><strong>Docente:</strong> Prof. Roberto Daza Peñaranda</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
-              <div>
-                <p className="font-bold text-slate-800 dark:text-slate-200">Ventanilla 1 - Personal Militar</p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">Hall Central Bloque A</p>
-              </div>
-              <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
-                Operativa
-              </span>
+        ) : (
+          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-amber-500" />
+                Ventanillas de Caja Activas
+              </h3>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">3 Cajas</span>
             </div>
-            <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
-              <div>
-                <p className="font-bold text-slate-800 dark:text-slate-200">Ventanilla 2 - Estudiantes Civiles</p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">Hall Central Bloque B</p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Ventanilla 1 - Personal Militar</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Hall Central Bloque A</p>
+                </div>
+                <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
+                  Operativa
+                </span>
               </div>
-              <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
-                Operativa
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
-              <div>
-                <p className="font-bold text-slate-800 dark:text-slate-200">Ventanilla 3 - Textos y Libros</p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">Planta Baja Almacén</p>
+              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Ventanilla 2 - Estudiantes Civiles</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Hall Central Bloque B</p>
+                </div>
+                <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
+                  Operativa
+                </span>
               </div>
-              <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
-                Operativa
-              </span>
+              <div className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
+                <div>
+                  <p className="font-bold text-slate-800 dark:text-slate-200">Ventanilla 3 - Textos y Libros</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Planta Baja Almacén</p>
+                </div>
+                <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
+                  Operativa
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
           <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">

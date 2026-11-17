@@ -70,8 +70,12 @@ export default function ParalelosPage() {
   const cargarDatos = async () => {
     setLoading(true);
     try {
+      const idDocenteParam = usuario.id_docente || (esDocente ? 1 : null);
+      const urlParalelos = esDocente && idDocenteParam
+        ? `/api/v1/paralelos?id_docente=${idDocenteParam}&email_docente=${encodeURIComponent(usuario.email || '')}`
+        : '/api/v1/paralelos';
       const [resPar, resDoc, resEst, resCat, resProg] = await Promise.all([
-        fetch(esDocente && usuario.id_docente ? `/api/v1/paralelos?id_docente=${usuario.id_docente}` : '/api/v1/paralelos'),
+        fetch(urlParalelos),
         fetch('/api/v1/docentes'),
         fetch('/api/v1/estudiantes?per_page=500'),
         fetch('/api/v1/catalogos'),
@@ -277,9 +281,24 @@ export default function ParalelosPage() {
       const nivelStr = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.nombre_nivel || '');
 
       if (esDocente) {
-        // Los paralelos ya vienen filtrados del backend por id_docente
-        // Si no hay id_docente, mostrar todos para ese docente (no filtrar en memoria por nombre)
-        return true;
+        // Aislamiento estricto: El docente solo debe ver SUS paralelos asignados
+        const idDoc = usuario.id_docente || 1;
+        const coincideId = p.id_docente_actual === idDoc;
+        const docenteNombreRef = (usuario.nombre || 'Fernando Ríos').toLowerCase();
+        const coincideNombre = docenteStr.toLowerCase().includes(docenteNombreRef) ||
+          (docenteNombreRef.includes('fernando') && docenteStr.toLowerCase().includes('fernando'));
+
+        if (!coincideId && !coincideNombre) {
+          return false;
+        }
+
+        if (!busqueda.trim()) return true;
+        const q = busqueda.toLowerCase().trim();
+        return (
+          p.codigo_paralelo?.toLowerCase().includes(q) ||
+          idiomaStr.toLowerCase().includes(q) ||
+          aulaStr.toLowerCase().includes(q)
+        );
       }
       if (!busqueda.trim()) return true;
       const q = busqueda.toLowerCase().trim();

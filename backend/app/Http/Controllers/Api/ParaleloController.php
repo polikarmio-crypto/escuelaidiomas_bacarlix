@@ -32,8 +32,13 @@ class ParaleloController extends Controller
 
         if ($request->filled('id_docente')) {
             $idDoc = (int) $request->id_docente;
-            $query->whereHas('docenteActual', function ($q) use ($idDoc) {
-                $q->where('id_docente', $idDoc);
+            $query->whereHas('asignacionesDocente', function ($q) use ($idDoc) {
+                $q->where('id_docente', $idDoc)->whereNull('fecha_fin_asignacion');
+            });
+        } elseif ($request->filled('email_docente')) {
+            $email = trim($request->email_docente);
+            $query->whereHas('asignacionesDocente.docente', function ($q) use ($email) {
+                $q->where('email_docente', 'ilike', "%{$email}%")->whereNull('asignacion_docente_paralelo.fecha_fin_asignacion');
             });
         }
 

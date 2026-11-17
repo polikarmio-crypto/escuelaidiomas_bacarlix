@@ -24,6 +24,20 @@ class CalificacionController extends Controller
             'inscripciones.librosAvance.evaluacion.docenteCalificador',
         ])->findOrFail($idParalelo);
 
+        if ($request->filled('id_docente')) {
+            $idDoc = (int) $request->id_docente;
+            $esDocenteAsignado = AsignacionDocenteParalelo::where('id_paralelo', $idParalelo)
+                ->where('id_docente', $idDoc)
+                ->whereNull('fecha_fin_asignacion')
+                ->exists();
+
+            if (!$esDocenteAsignado) {
+                return response()->json([
+                    'error' => "Acceso restringido: Usted no tiene asignación activa para el paralelo {$paralelo->codigo_paralelo}."
+                ], 403);
+            }
+        }
+
         $inscripcionesColeccion = $paralelo->inscripciones;
 
         if ($request->filled('id_estudiante')) {

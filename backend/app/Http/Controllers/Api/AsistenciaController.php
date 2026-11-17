@@ -34,6 +34,20 @@ class AsistenciaController extends Controller
             }
         ])->findOrFail($idParalelo);
 
+        if ($request->filled('id_docente')) {
+            $idDoc = (int) $request->id_docente;
+            $esAsignado = \App\Models\AsignacionDocenteParalelo::where('id_paralelo', $idParalelo)
+                ->where('id_docente', $idDoc)
+                ->whereNull('fecha_fin_asignacion')
+                ->exists();
+
+            if (!$esAsignado) {
+                return response()->json([
+                    'error' => "Acceso restringido: Usted no tiene asignación docente activa en el paralelo {$paralelo->codigo_paralelo}."
+                ], 403);
+            }
+        }
+
         $asistenciasExistentes = Asistencia::where('id_paralelo', $idParalelo)
             ->where('fecha_asistencia', $fecha)
             ->get()
@@ -94,6 +108,20 @@ class AsistenciaController extends Controller
             'asistencias.*.estado_asistencia' => 'required|in:Presente,Falta,Atraso,Licencia',
             'asistencias.*.observacion' => 'nullable|string|max:200',
         ]);
+
+        if (!empty($validated['id_docente'])) {
+            $idDoc = (int) $validated['id_docente'];
+            $esAsignado = \App\Models\AsignacionDocenteParalelo::where('id_paralelo', $validated['id_paralelo'])
+                ->where('id_docente', $idDoc)
+                ->whereNull('fecha_fin_asignacion')
+                ->exists();
+
+            if (!$esAsignado) {
+                return response()->json([
+                    'error' => 'Acceso denegado: El docente no tiene asignación activa en este paralelo para registrar asistencia.'
+                ], 403);
+            }
+        }
 
         return DB::transaction(function () use ($validated) {
             $guardados = [];

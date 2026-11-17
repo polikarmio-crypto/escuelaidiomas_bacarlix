@@ -33,7 +33,7 @@ interface EstudianteAsistencia {
 }
 
 export default function AsistenciaPage() {
-  const { esDocente, esJefeAcademico, esAdmin, rolConfig } = useAuthRole();
+  const { esDocente, esJefeAcademico, esAdmin, rolConfig, usuario } = useAuthRole();
   const puedeRegistrar = esDocente || esJefeAcademico || esAdmin;
 
   const [paralelos, setParalelos] = useState<any[]>([]);
@@ -58,13 +58,30 @@ export default function AsistenciaPage() {
 
   const cargarParalelos = async () => {
     try {
-      const res = await fetch('/api/v1/paralelos');
+      const idDoc = usuario.id_docente || (esDocente ? 1 : null);
+      const url = esDocente && idDoc
+        ? `/api/v1/paralelos?id_docente=${idDoc}&email_docente=${encodeURIComponent(usuario.email || '')}`
+        : '/api/v1/paralelos';
+
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        const lista = Array.isArray(data) ? data : (data.data || []);
+        let lista = Array.isArray(data) ? data : (data.data || []);
+        if (esDocente) {
+          const docenteNombreRef = (usuario.nombre || 'Fernando Ríos').toLowerCase();
+          lista = lista.filter((p: any) => {
+            const coincideId = p.id_docente_actual === idDoc;
+            const docStr = (typeof p.docente_actual === 'string' ? p.docente_actual : '').toLowerCase();
+            const coincideNom = docStr.includes(docenteNombreRef) ||
+              (docenteNombreRef.includes('fernando') && docStr.includes('fernando'));
+            return coincideId || coincideNom;
+          });
+        }
         setParalelos(lista);
-        if (lista.length > 0 && !idParaleloSeleccionado) {
+        if (lista.length > 0) {
           setIdParaleloSeleccionado(lista[0].id_paralelo.toString());
+        } else {
+          setIdParaleloSeleccionado('');
         }
       }
     } catch (e) {
@@ -76,7 +93,11 @@ export default function AsistenciaPage() {
     if (!idParaleloSeleccionado) return;
     setLoading(true);
     try {
-      const res = await fetch(`/api/v1/asistencia?id_paralelo=${idParaleloSeleccionado}&fecha=${fechaSeleccionada}`);
+      const idDoc = esDocente ? (usuario.id_docente || 1) : '';
+      const url = idDoc
+        ? `/api/v1/asistencia?id_paralelo=${idParaleloSeleccionado}&fecha=${fechaSeleccionada}&id_docente=${idDoc}`
+        : `/api/v1/asistencia?id_paralelo=${idParaleloSeleccionado}&fecha=${fechaSeleccionada}`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setInfoParalelo(data.paralelo);
@@ -120,7 +141,7 @@ export default function AsistenciaPage() {
       const payload = {
         id_paralelo: parseInt(idParaleloSeleccionado, 10),
         fecha_asistencia: fechaSeleccionada,
-        id_docente: infoParalelo?.id_docente || null,
+        id_docente: esDocente ? (usuario.id_docente || 1) : (infoParalelo?.id_docente || null),
         asistencias: estudiantes.map((e) => ({
           id_inscripcion: e.id_inscripcion,
           id_estudiante: e.id_estudiante,

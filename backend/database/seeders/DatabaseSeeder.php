@@ -753,6 +753,7 @@ class DatabaseSeeder extends Seeder
             'password_usuario'      => $passwordHash,
             'rol_usuario'           => 'Estudiante',
             'id_docente'            => null,
+            'id_estudiante'         => 11,
             'estado_usuario'        => 'Activo',
             'ultimo_acceso_usuario' => Carbon::now()->subMinutes(10),
             'created_at'            => now(),
