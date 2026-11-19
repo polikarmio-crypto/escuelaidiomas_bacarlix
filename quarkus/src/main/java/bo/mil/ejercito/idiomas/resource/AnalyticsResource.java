@@ -17,12 +17,15 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.jboss.logging.Logger;
 import java.util.*;
 
 @Path("/api/analytics")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class AnalyticsResource {
+
+    private static final Logger LOG = Logger.getLogger(AnalyticsResource.class);
 
     @Inject
     AsignacionDocenteService asignacionDocenteService;
@@ -84,6 +87,7 @@ public class AnalyticsResource {
     @GET
     @Path("/status")
     public Response status() {
+        LOG.info("Status check: Microservicio de Analítica y Métodos Numéricos operativo");
         Map<String, Object> status = new LinkedHashMap<>();
         status.put("servicio", "Microservicio de Métodos Numéricos, Investigación Operativa y Analítica Predictiva");
         status.put("institucion", "Escuela de Idiomas del Ejército (EIE) • CEDMIL");
@@ -125,15 +129,18 @@ public class AnalyticsResource {
     @Path("/prediccion-rendimiento")
     public Response predecirRendimiento(PrediccionRequest req) {
         if (req == null || req.calificaciones == null || req.calificaciones.isEmpty()) {
+            LOG.warn("Solicitud inválida: faltan calificaciones del estudiante");
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", "Se requieren las calificaciones del estudiante (lista de {libro, nota})."))
                 .build();
         }
 
         try {
+            LOG.infof("Predicción de rendimiento para estudiante ID: %s (%d calificaciones)", req.estudianteId, req.calificaciones.size());
             PrediccionResultado resultado = prediccionRendimientoService.predecir(req);
             return Response.ok(resultado).build();
         } catch (Exception e) {
+            LOG.errorf("Error al procesar predicción de rendimiento: %s", e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", e.getMessage()))
                 .build();
@@ -202,15 +209,18 @@ public class AnalyticsResource {
     @Path("/minimos-cuadrados")
     public Response calcularMinimosCuadrados(MinimosCuadradosRequest req) {
         if (req == null || req.puntos == null || req.puntos.size() < 2) {
+            LOG.warn("Cálculo Mínimos Cuadrados rechazado: se requieren al menos 2 puntos");
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", "Se requieren al menos 2 puntos (x, y) para el método de mínimos cuadrados."))
                 .build();
         }
 
         try {
+            LOG.infof("Cálculo Mínimos Cuadrados para %d puntos de datos", req.puntos.size());
             MinimosCuadradosResultado res = metodosNumericosService.calcularMinimosCuadrados(req.puntos, req.periodosFuturos);
             return Response.ok(res).build();
         } catch (Exception e) {
+            LOG.errorf("Fallo en Mínimos Cuadrados: %s", e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", e.getMessage()))
                 .build();
@@ -222,15 +232,18 @@ public class AnalyticsResource {
     @Path("/interpolacion-newton")
     public Response calcularNewton(NewtonRequest req) {
         if (req == null || req.x == null || req.y == null || req.x.size() < 2) {
+            LOG.warn("Interpolación Newton rechazada: datos insuficientes");
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", "Se requieren al menos 2 pares de datos para la interpolación de Newton."))
                 .build();
         }
 
         try {
+            LOG.infof("Interpolación de Newton para evaluación en x=%.3f", req.xEval);
             NewtonResultado res = metodosNumericosService.calcularNewtonDivididas(req.x, req.y, req.xEval);
             return Response.ok(res).build();
         } catch (Exception e) {
+            LOG.errorf("Fallo en Interpolación Newton: %s", e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", e.getMessage()))
                 .build();
@@ -242,15 +255,18 @@ public class AnalyticsResource {
     @Path("/simplex")
     public Response resolverSimplex(SimplexRequest req) {
         if (req == null || req.c == null || req.A == null || req.b == null) {
+            LOG.warn("Simplex rechazado: coeficientes incompletos");
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", "Parámetros c, A y b son obligatorios para el método Simplex."))
                 .build();
         }
 
         try {
+            LOG.infof("Optimización lineal Simplex: %d variables de decisión, %d restricciones", req.c.length, req.b.length);
             SimplexResultado res = metodosNumericosService.resolverSimplexMax(req.c, req.A, req.b);
             return Response.ok(res).build();
         } catch (Exception e) {
+            LOG.errorf("Fallo en resolución Simplex: %s", e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", e.getMessage()))
                 .build();
@@ -262,10 +278,17 @@ public class AnalyticsResource {
     @Path("/asignacion-optima")
     public Response calcularAsignacion(AsignacionRequest request) {
         if (request == null || request.paralelos == null || request.candidatos == null) {
+            LOG.warn("Asignación docente rechazada: solicitud nula o incompleta");
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", "Los campos paralelos, idiomaRequerido y candidatos son obligatorios."))
                 .build();
         }
+
+        LOG.infof("Optimizando asignación docente para idioma '%s': %d paralelos, %d docentes candidatos",
+            request.idiomaRequerido != null ? request.idiomaRequerido : "General",
+            request.paralelos.size(),
+            request.candidatos.size()
+        );
 
         List<AsignacionOptima> resultado = asignacionDocenteService.calcularAsignacionOptima(
             request.paralelos,
@@ -285,10 +308,13 @@ public class AnalyticsResource {
     @Path("/teoria-colas/mmc")
     public Response evaluarColaMmc(QueueMmcRequest req) {
         if (req == null || req.lambda <= 0 || req.mu <= 0 || req.c <= 0) {
+            LOG.warn("Teoría de Colas M/M/c rechazada: parámetros lambda/mu/c no válidos");
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(Map.of("error", "Los parámetros lambda (>0), mu (>0) y c (>=1) son requeridos."))
                 .build();
         }
+
+        LOG.infof("Cálculo Teoría de Colas M/M/%d: lambda=%.2f est/h, mu=%.2f est/h por ventanilla", req.c, req.lambda, req.mu);
 
         QueueMmcResponse resp = new QueueMmcResponse();
         resp.lambda = req.lambda;

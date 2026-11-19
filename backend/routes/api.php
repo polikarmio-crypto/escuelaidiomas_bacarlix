@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\AlmacenController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AsistenciaController;
 use App\Http\Controllers\Api\MetodosNumericosController;
+use App\Http\Controllers\Api\LogViewerController;
 
 Route::prefix('v1')->group(function () {
 
@@ -167,5 +168,16 @@ Route::prefix('v1')->group(function () {
         Route::post('/prediccion-rendimiento', [MetodosNumericosController::class, 'prediccionRendimiento']);
         Route::get('/prediccion-rendimiento/validacion-h3', [MetodosNumericosController::class, 'validacionH3']);
         Route::post('/prediccion-rendimiento/lote', [MetodosNumericosController::class, 'recalcularLote']);
+    });
+
+    Route::prefix('logs')->group(function () {
+        Route::get('/folders', [LogViewerController::class, 'folders']);
+        Route::get('/files', [LogViewerController::class, 'files']);
+        Route::get('/entries', [LogViewerController::class, 'entries']);
+        Route::post('/frontend', [LogViewerController::class, 'frontendLog']);
+        Route::post('/quarkus', [LogViewerController::class, 'quarkusLog']);
+        Route::post('/test', [LogViewerController::class, 'testLogs']);
+        Route::get('/download', [LogViewerController::class, 'download']);
+        Route::delete('/clear', [LogViewerController::class, 'clear']);
     });
 });

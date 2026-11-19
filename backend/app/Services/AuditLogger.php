@@ -13,6 +13,7 @@ class AuditLogger
     public const LEVEL_WARNING = 'WARNING';
     public const LEVEL_ERROR = 'ERROR';
     public const LEVEL_CRITICAL = 'CRITICAL';
+    public const LEVEL_AUDIT = 'AUDIT';
     public const LEVEL_EMERGENCY = 'EMERGENCY';
 
     public static function auth(string $level, string $action, array $context = [], ?int $userId = null): void
@@ -38,6 +39,21 @@ class AuditLogger
     public static function api(string $level, string $action, array $context = [], ?int $userId = null): void
     {
         self::log('api', $level, $action, $context, $userId);
+    }
+
+    public static function frontend(string $level, string $action, array $context = [], ?int $userId = null): void
+    {
+        self::log('frontend', $level, $action, $context, $userId, 'cliente_web');
+    }
+
+    public static function quarkus(string $level, string $action, array $context = [], ?int $userId = null): void
+    {
+        self::log('quarkus', $level, $action, $context, $userId, 'microservicio_analitica');
+    }
+
+    public static function sistema(string $level, string $action, array $context = [], ?int $userId = null): void
+    {
+        self::log('sistema', $level, $action, $context, $userId, 'sistema_general');
     }
 
     public static function log(

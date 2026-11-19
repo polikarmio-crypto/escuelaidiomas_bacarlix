@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 
 class MetodosNumericosController extends Controller
@@ -97,6 +98,13 @@ class MetodosNumericosController extends Controller
             ];
         }
 
+        AuditLogger::quarkus(AuditLogger::LEVEL_INFO, 'MINIMOS_CUADRADOS_CALCULADO', [
+            'puntos' => $n,
+            'pendiente_m' => round($m, 4),
+            'intercepto_b' => round($b, 4),
+            'r2' => round($r2, 4),
+        ]);
+
         return response()->json([
             'metodo' => 'Proyección de Demanda y Análisis de Tendencias',
             'n' => $n,
@@ -171,6 +179,12 @@ class MetodosNumericosController extends Controller
                 $poli .= sprintf("(x - %.1f)", $x[$k]);
             }
         }
+
+        AuditLogger::quarkus(AuditLogger::LEVEL_INFO, 'NEWTON_INTERPOLACION_CALCULADA', [
+            'grado' => $n - 1,
+            'xEvaluado' => $xEval,
+            'valorInterpolado' => round($resultado, 4),
+        ]);
 
         return response()->json([
             'metodo' => 'Punto de Equilibrio y Capacidad Operativa',
@@ -287,6 +301,12 @@ class MetodosNumericosController extends Controller
             $decision["X" . ($j + 1)] = ($unos === 1 && $fUno !== -1) ? round($tabla[$fUno][$cols - 1], 2) : 0.0;
         }
 
+        AuditLogger::quarkus(AuditLogger::LEVEL_INFO, 'SIMPLEX_OPTIMIZACION_EJECUTADA', [
+            'variables' => $numVars,
+            'restricciones' => $numRestricciones,
+            'valorZOptimo' => round($tabla[$filas - 1][$cols - 1], 2),
+        ]);
+
         return response()->json([
             'metodo' => 'Optimización de Asignación Presupuestaria y Recursos',
             'optimoEncontrado' => true,
@@ -309,7 +329,18 @@ class MetodosNumericosController extends Controller
             'libro_examen_nivel_objetivo' => 'nullable|integer|min:1|max:36',
         ]);
 
-        return response()->json($this->calcularPrediccionH3($validated));
+        $res = $this->calcularPrediccionH3($validated);
+        AuditLogger::quarkus(
+            ($res['nivelRiesgo'] ?? 'BAJO') === 'ALTO' ? AuditLogger::LEVEL_WARNING : AuditLogger::LEVEL_INFO,
+            'PREDICCION_RENDIMIENTO_CALCULADA',
+            [
+                'id_estudiante' => $validated['id_estudiante'] ?? 0,
+                'nivel_riesgo' => $res['nivelRiesgo'] ?? 'BAJO',
+                'nota_proyectada' => $res['notaProyectada'] ?? 0,
+                'r2' => $res['r2'] ?? 0,
+            ]
+        );
+        return response()->json($res);
     }
 
     public function validacionH3()
@@ -329,7 +360,18 @@ class MetodosNumericosController extends Controller
             ],
         ];
 
-        return response()->json($this->calcularPrediccionH3($caso));
+        $res = $this->calcularPrediccionH3($caso);
+        AuditLogger::quarkus(
+            AuditLogger::LEVEL_WARNING,
+            'VALIDACION_H3_CASO_PRUEBA_EJECUTADO',
+            [
+                'estudiante' => 'Caso de Monitoreo Académico H3',
+                'nota_proyectada' => $res['notaProyectada'] ?? 0,
+                'nivel_riesgo' => $res['nivelRiesgo'] ?? 'BAJO',
+                'r2' => $res['r2'] ?? 0,
+            ]
+        );
+        return response()->json($res);
     }
 
     public function recalcularLote(Request $request)
@@ -368,6 +410,17 @@ class MetodosNumericosController extends Controller
                 }
             }
         }
+
+        AuditLogger::quarkus(
+            $alto > 0 ? AuditLogger::LEVEL_WARNING : AuditLogger::LEVEL_INFO,
+            'PREDICCION_LOTE_PROCESADO',
+            [
+                'total_estudiantes' => $total,
+                'riesgo_alto' => $alto,
+                'riesgo_medio' => $medio,
+                'riesgo_bajo' => $bajo,
+            ]
+        );
 
         return response()->json([
             'totalEstudiantes' => $total,

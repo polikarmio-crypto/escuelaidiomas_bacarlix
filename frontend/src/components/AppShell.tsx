@@ -44,6 +44,7 @@ import {
   Sliders
 } from 'lucide-react';
 import { useAuthRole, RolUsuario, ROLES_CONFIG } from '@/context/AuthRoleContext';
+import { logger } from '@/utils/logger';
 
 export interface InfoRol {
   id: RolUsuario;
@@ -104,6 +105,7 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { href: '/cajas', label: 'Cajas y Recaudaciones', icon: Landmark },
   { href: '/almacen', label: 'Almacén de Libros', icon: Package },
   { href: '/metodos-numericos', label: 'Modelos y Proyecciones', icon: LineChart },
+  { href: '/logs', label: 'Logs del Sistema', icon: ShieldAlert },
 ];
 
 export type ThemeMode = 'dark' | 'light' | 'high-contrast';
@@ -157,6 +159,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const cambiarTema = (nuevoTema: ThemeMode) => {
     setTheme(nuevoTema);
+    logger.info('CLIENT_THEME_CHANGED', { nuevoTema });
     try {
       localStorage.setItem('eie_theme', nuevoTema);
       document.documentElement.setAttribute('data-theme', nuevoTema);

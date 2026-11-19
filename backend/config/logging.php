@@ -49,6 +49,20 @@ return [
             'level' => 'debug',
             'days' => 30,
         ],
+
+        'frontend' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/frontend/frontend.log'),
+            'level' => 'debug',
+            'days' => 30,
+        ],
+
+        'quarkus' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/quarkus/quarkus.log'),
+            'level' => 'debug',
+            'days' => 30,
+        ],
     ],
 ];
 

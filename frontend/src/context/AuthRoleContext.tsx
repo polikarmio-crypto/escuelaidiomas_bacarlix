@@ -46,7 +46,7 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     pinSeguridad: '9999',
     descripcion: 'Administra los catálogos base del sistema: gestiones, idiomas, aulas y aforos, horarios, modalidades, tipos de programa y tipos de pago.',
     color: '#eab308',
-    rutasPermitidas: ['/', '/login', '/dashboard', '/catalogos', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/asistencia', '/cajas', '/almacen', '/metodos-numericos'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/catalogos', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/asistencia', '/cajas', '/almacen', '/metodos-numericos', '/logs'],
   },
   JEFE_ACADEMICO: {
     id: 'JEFE_ACADEMICO',
@@ -58,7 +58,7 @@ export const ROLES_CONFIG: Record<RolUsuario, InfoRolConfig> = {
     pinSeguridad: '5050',
     descripcion: 'Planifica programas, niveles y libros; registra docentes e idiomas; inscribe alumnos validando cupos; apertura paralelos y supervisa actas y exámenes de nivel.',
     color: '#3b82f6',
-    rutasPermitidas: ['/', '/login', '/dashboard', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/asistencia', '/metodos-numericos'],
+    rutasPermitidas: ['/', '/login', '/dashboard', '/estructura', '/docentes', '/estudiantes', '/paralelos', '/inscripciones', '/calificaciones', '/asistencia', '/metodos-numericos', '/logs'],
   },
   DOCENTE: {
     id: 'DOCENTE',
