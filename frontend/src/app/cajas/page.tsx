@@ -33,9 +33,9 @@ export default function CajasPage() {
 
   const [modalPago, setModalPago] = useState(false);
   const [formPago, setFormPago] = useState({
-    id_tipo_pago: 1,
+    id_tipo_pago: 2,
     monto: 150,
-    concepto: 'Matrícula Regular',
+    concepto: 'Matrícula Regular Civil',
   });
 
   const [comprobanteEmitido, setComprobanteEmitido] = useState<any | null>(null);
@@ -346,6 +346,21 @@ export default function CajasPage() {
                   >
                     <CreditCard className="w-4 h-4" /> Cobrar Arancel / Emitir Comprobante
                   </button>
+                  <button
+                    onClick={async () => {
+                      await fetch(`${API_BASE}/cajas/ficha/finalizar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id_ficha: turnoEnAtencion.id_ficha }),
+                      });
+                      setTurnoEnAtencion(null);
+                      mostrarMensaje('ok', 'Atención finalizada sin cobro.');
+                      cargarDatosCaja();
+                    }}
+                    className="w-full py-1.5 bg-neutral-700 hover:bg-neutral-600 text-neutral-300 rounded-lg text-xs transition flex items-center justify-center gap-2"
+                  >
+                    <X className="w-3.5 h-3.5" /> Finalizar sin cobro
+                  </button>
                 </div>
               ) : (
                 <div className="text-center py-6 space-y-3 bg-neutral-950/40 rounded-xl border border-neutral-800">
@@ -442,15 +457,22 @@ export default function CajasPage() {
                   value={formPago.id_tipo_pago}
                   onChange={(e) => {
                     const id = parseInt(e.target.value);
-                    const concepto = id === 1 ? 'Matrícula Regular' : id === 2 ? 'Mensualidad' : 'Compra de Texto Guía';
-                    const monto = id === 1 ? 150 : id === 2 ? 220 : 180;
+                    const concepto =
+                      id === 1 ? 'Beca Militar (100% Exenta)'
+                      : id === 2 ? 'Matrícula Regular Civil'
+                      : id === 3 ? 'Mensualidad Civil'
+                      : id === 4 ? 'Adquisición de Texto Oficial'
+                      : 'Certificado de Suficiencia';
+                    const monto = id === 1 ? 0 : id === 2 ? 150 : id === 3 ? 220 : id === 4 ? 180 : 80;
                     setFormPago({ id_tipo_pago: id, concepto, monto });
                   }}
                   className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
                 >
-                  <option value={1}>Matrícula Regular</option>
-                  <option value={2}>Mensualidad Académica</option>
-                  <option value={3}>Compra de Texto Guía / Libro</option>
+                  <option value={1}>Beca Militar (100% Exenta)</option>
+                  <option value={2}>Matrícula Regular Civil</option>
+                  <option value={3}>Mensualidad Civil</option>
+                  <option value={4}>Adquisición de Texto Oficial</option>
+                  <option value={5}>Certificado de Suficiencia</option>
                 </select>
               </div>
 

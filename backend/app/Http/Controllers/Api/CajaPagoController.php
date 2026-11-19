@@ -18,12 +18,15 @@ class CajaPagoController extends Controller
     {
         $hoy = Carbon::today();
         $cajas = Caja::all()->map(function ($caja) use ($hoy) {
-            $fichasHoy = FichaAtencion::where('id_caja', $caja->id_caja)
-                ->whereDate('hora_llegada_ficha', $hoy)
+            // Atendidas hoy: por hora_fin (cubre fichas con llegada anterior atendidas hoy)
+            $atendidas = FichaAtencion::where('id_caja', $caja->id_caja)
+                ->where('estado_ficha', 'Atendida')
+                ->whereDate('hora_fin_atencion_ficha', $hoy)
                 ->get();
 
-            $atendidas = $fichasHoy->where('estado_ficha', 'Atendida');
-            $enAtencion = $fichasHoy->where('estado_ficha', 'En atencion')->first();
+            $enAtencion = FichaAtencion::where('id_caja', $caja->id_caja)
+                ->where('estado_ficha', 'En atencion')
+                ->first();
 
             $tiemposServicio = $atendidas->map(fn($f) => $f->tiempo_servicio_minutos)->filter();
             $tiemposEspera = $atendidas->map(fn($f) => $f->tiempo_espera_minutos)->filter();
@@ -287,11 +290,20 @@ class CajaPagoController extends Controller
     public function metricasCola()
     {
         $hoy = Carbon::today();
-        $fichasHoy = FichaAtencion::whereDate('hora_llegada_ficha', $hoy)->get();
 
-        $atendidas = $fichasHoy->where('estado_ficha', 'Atendida');
-        $enEspera = $fichasHoy->where('estado_ficha', 'En espera');
-        $enAtencion = $fichasHoy->where('estado_ficha', 'En atencion');
+        // Fichas en espera o en atención hoy (por hora de llegada)
+        $fichasEnCola = FichaAtencion::whereDate('hora_llegada_ficha', $hoy)->get();
+        $enEspera   = $fichasEnCola->where('estado_ficha', 'En espera');
+        $enAtencion = $fichasEnCola->where('estado_ficha', 'En atencion');
+
+        // Fichas atendidas hoy: contar por hora_fin_atencion para incluir
+        // fichas cuya llegada fue otro día pero fueron atendidas hoy
+        $atendidas = FichaAtencion::where('estado_ficha', 'Atendida')
+            ->whereDate('hora_fin_atencion_ficha', $hoy)
+            ->get();
+
+        // Conjunto total para tasas (todo lo visto hoy)
+        $fichasHoy = $fichasEnCola->merge($atendidas)->unique('id_ficha');
 
         $tiemposServicio = $atendidas->map(fn($f) => $f->tiempo_servicio_minutos)->filter();
         $tiemposEspera = $atendidas->map(fn($f) => $f->tiempo_espera_minutos)->filter();
