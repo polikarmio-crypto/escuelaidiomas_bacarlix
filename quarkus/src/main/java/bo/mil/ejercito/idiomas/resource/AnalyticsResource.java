@@ -136,7 +136,7 @@ public class AnalyticsResource {
         }
 
         try {
-            LOG.infof("Predicción de rendimiento para estudiante ID: %s (%d calificaciones)", req.estudianteId, req.calificaciones.size());
+            LOG.infof("Predicción de rendimiento para estudiante ID: %s (%d calificaciones)", req.idEstudiante, req.calificaciones.size());
             PrediccionResultado resultado = prediccionRendimientoService.predecir(req);
             return Response.ok(resultado).build();
         } catch (Exception e) {
