@@ -129,7 +129,19 @@ class AuthController extends Controller
                 'id_usuario'     => $usuario->id_usuario,
                 'nombre_usuario' => $usuario->nombre_usuario,
                 'email_usuario'  => $usuario->email_usuario,
-                'rol_usuario'    => strtoupper($usuario->rol_usuario) === 'DOCENTE' ? 'DOCENTE' : (strtoupper($usuario->rol_usuario) === 'ESTUDIANTE' ? 'ESTUDIANTE' : $usuario->rol_usuario),
+                'rol_usuario'    => (function($rol) {
+                    $map = [
+                        'admin'          => 'ADMIN',
+                        'jefeacademico'  => 'JEFE_ACADEMICO',
+                        'docente'        => 'DOCENTE',
+                        'cajero'         => 'CAJERO',
+                        'almacenero'     => 'ALMACENERO',
+                        'estudiante'     => 'ESTUDIANTE',
+                        'secretaria'     => 'ADMIN',
+                    ];
+                    $key = strtolower(str_replace(['_', ' '], '', $rol));
+                    return $map[$key] ?? strtoupper($rol);
+                })($usuario->rol_usuario),
                 'id_docente'     => $usuario->id_docente,
                 'id_estudiante'  => $usuario->id_estudiante,
                 'ci'             => $ciUsuario,

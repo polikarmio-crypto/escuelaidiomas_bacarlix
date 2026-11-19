@@ -198,7 +198,7 @@ export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {}
   };
 
-  const rolConfig = ROLES_CONFIG[rolActivo];
+  const rolConfig = ROLES_CONFIG[rolActivo] ?? ROLES_CONFIG['ADMIN'];
 
   const usuario: UsuarioActual = {
     id: usuarioPersonalizado?.id || 1,

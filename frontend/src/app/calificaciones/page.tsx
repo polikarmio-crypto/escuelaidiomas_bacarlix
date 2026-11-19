@@ -88,6 +88,32 @@ export default function CalificacionesPage() {
 
   const cargarParalelos = async () => {
     try {
+      // Flujo especial para ESTUDIANTE: buscar en qué paralelo está inscrito
+      if (esEstudiante && usuario.id_estudiante) {
+        const insRes = await fetch(`/api/v1/inscripciones?id_estudiante=${usuario.id_estudiante}`);
+        if (insRes.ok) {
+          const insData = await insRes.json();
+          const inscList: any[] = insData.data || (Array.isArray(insData) ? insData : []);
+          if (inscList.length > 0) {
+            const paraleloIds = inscList.map((i: any) => i.id_paralelo);
+            const resP = await fetch('/api/v1/paralelos');
+            if (resP.ok) {
+              const dataP = await resP.json();
+              const all = Array.isArray(dataP) ? dataP : (dataP.data || []);
+              const lista = all.filter((p: any) => paraleloIds.includes(p.id_paralelo));
+              setParalelos(lista);
+              if (lista.length > 0) setIdParaleloSeleccionado(lista[0].id_paralelo.toString());
+              else setIdParaleloSeleccionado('');
+            }
+          } else {
+            // Estudiante sin inscripciones
+            setParalelos([]);
+            setIdParaleloSeleccionado('');
+          }
+        }
+        return;
+      }
+
       const idDoc = usuario.id_docente || (esDocente ? 1 : null);
       const url = esDocente && idDoc
         ? `/api/v1/paralelos?id_docente=${idDoc}&email_docente=${encodeURIComponent(usuario.email || '')}`
@@ -121,9 +147,14 @@ export default function CalificacionesPage() {
     setLoading(true);
     try {
       const idDoc = esDocente ? (usuario.id_docente || 1) : '';
-      const url = idDoc
-        ? `/api/v1/calificaciones/paralelo/${id}?id_docente=${idDoc}`
-        : `/api/v1/calificaciones/paralelo/${id}`;
+      let url: string;
+      if (esEstudiante && usuario.id_estudiante) {
+        url = `/api/v1/calificaciones/paralelo/${id}?id_estudiante=${usuario.id_estudiante}`;
+      } else if (idDoc) {
+        url = `/api/v1/calificaciones/paralelo/${id}?id_docente=${idDoc}`;
+      } else {
+        url = `/api/v1/calificaciones/paralelo/${id}`;
+      }
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
