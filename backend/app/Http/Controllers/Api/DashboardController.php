@@ -40,10 +40,14 @@ class DashboardController extends Controller
 
         $inscripcionesActivas = Inscripcion::where('estado_inscripcion', 'Activa')->count();
 
-        $fichasHoy = FichaAtencion::whereDate('hora_llegada_ficha', $hoy)->get();
-        $enEspera = $fichasHoy->where('estado_ficha', 'En espera')->count();
-        $atendidasHoy = $fichasHoy->where('estado_ficha', 'Atendida')->count();
-        $tiemposEspera = $fichasHoy->where('estado_ficha', 'Atendida')
+        // En espera: fichas de hoy por hora_llegada
+        $fichasEnEsperaHoy = FichaAtencion::whereDate('hora_llegada_ficha', $hoy)->get();
+        $enEspera = $fichasEnEsperaHoy->whereIn('estado_ficha', ['En espera', 'En atencion'])->count();
+        // Atendidas hoy: por hora_fin (cubre fichas con llegada de otro día atendidas hoy)
+        $fichasAtendidasHoy = FichaAtencion::where('estado_ficha', 'Atendida')
+            ->whereDate('hora_fin_atencion_ficha', $hoy)->get();
+        $atendidasHoy = $fichasAtendidasHoy->count();
+        $tiemposEspera = $fichasAtendidasHoy
             ->map(fn($f) => $f->tiempo_espera_minutos)->filter();
         $promedioEspera = $tiemposEspera->isNotEmpty() ? round($tiemposEspera->avg(), 1) : 0;
 
