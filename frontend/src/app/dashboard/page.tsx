@@ -151,14 +151,20 @@ function getDashboardConfig(rol: RolUsuario, kpis: any) {
     case 'ESTUDIANTE':
     default:
       const misCursosVal = kpis?.estudiante_personal?.mis_cursos_count ?? 0;
-      const promedioVal = kpis?.estudiante_personal?.promedio_general ?? '84.5';
-      const asistenciaVal = kpis?.estudiante_personal?.asistencia_porcentaje ?? 95;
+      const promedioRaw = kpis?.estudiante_personal?.promedio_general;
+      const promedioVal = (promedioRaw !== null && promedioRaw !== undefined && promedioRaw !== '')
+        ? promedioRaw
+        : '--';
+      const asistenciaRaw = kpis?.estudiante_personal?.asistencia_porcentaje;
+      const asistenciaVal = (asistenciaRaw !== null && asistenciaRaw !== undefined && misCursosVal > 0)
+        ? `${asistenciaRaw}%`
+        : '--';
       return {
         subtitulo: 'Tu avance académico, asignaturas cursadas y turnos en caja.',
         kpiCards: [
           { label: 'Mis Cursos', value: misCursosVal, sub: 'Inscritos actualmente', icon: BookOpen, color: '#3b82f6' },
-          { label: 'Promedio', value: promedioVal, sub: 'General acumulado', icon: Star, color: '#f59e0b' },
-          { label: 'Asistencia', value: `${asistenciaVal}%`, sub: 'Asistencia regular', icon: CheckCircle2, color: '#10b981' },
+          { label: 'Promedio', value: promedioVal, sub: (promedioRaw !== null && promedioRaw !== undefined && promedioRaw !== '') ? 'General acumulado' : 'Sin materias evaluadas', icon: Star, color: '#f59e0b' },
+          { label: 'Asistencia', value: asistenciaVal, sub: misCursosVal > 0 ? 'Asistencia regular' : 'Sin cursos activos', icon: CheckCircle2, color: '#10b981' },
         ] as KpiCard[],
         modulos: [
           { href: '/inscripciones', titulo: 'Mis Inscripciones', desc: 'Consulta cursos inscritos y avance curricular.', icon: ClipboardEdit },
@@ -179,8 +185,9 @@ export default function DashboardSacaPage() {
     try {
       const params = new URLSearchParams();
       if (rolActivo === 'ESTUDIANTE') {
-        const idEst = usuario.id_estudiante || 11;
-        params.set('id_estudiante', idEst.toString());
+        if (usuario.id_estudiante) {
+          params.set('id_estudiante', usuario.id_estudiante.toString());
+        }
         if (usuario.email) params.set('email', usuario.email);
         if (usuario.ci) params.set('ci', usuario.ci);
       } else if (rolActivo === 'DOCENTE') {
@@ -362,7 +369,15 @@ export default function DashboardSacaPage() {
                 <BookOpen className="w-3.5 h-3.5 text-blue-500" />
                 Mi Asignatura y Horario
               </h3>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">Activo</span>
+              {data?.estudiante_personal?.cursos && data.estudiante_personal.cursos.length > 0 ? (
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">
+                  Activo ({data.estudiante_personal.cursos.length})
+                </span>
+              ) : (
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold">
+                  Sin Cursos
+                </span>
+              )}
             </div>
             <div className="space-y-2">
               {data?.estudiante_personal?.cursos && data.estudiante_personal.cursos.length > 0 ? (
@@ -383,19 +398,20 @@ export default function DashboardSacaPage() {
                   </div>
                 ))
               ) : (
-                <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 space-y-1 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800 dark:text-slate-200">RUS-601-A • Ruso</span>
-                    <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
-                      Activa
-                    </span>
-                  </div>
-                  <p className="text-[10.5px] text-slate-600 dark:text-slate-400">Básico Elemental (Plan de Idioma Ruso)</p>
-                  <div className="pt-1 flex flex-col gap-0.5 text-[10.5px] text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-neutral-800/40">
-                    <span><strong>Aula:</strong> Aula 102 - Pabellón Alfa</span>
-                    <span><strong>Horario:</strong> 16:00 - 17:30</span>
-                    <span><strong>Docente:</strong> Prof. Roberto Daza Peñaranda</span>
-                  </div>
+                <div className="p-4 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-dashed border-slate-200 dark:border-neutral-800 text-center space-y-2">
+                  <BookOpen className="w-6 h-6 text-slate-400 mx-auto" />
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Sin asignaturas ni paralelos inscritos actualmente
+                  </p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                    Acérquese a Ventanilla de Caja para formalizar su matrícula académica y asignación de paralelo curricular.
+                  </p>
+                  <Link
+                    href="/cajas"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline pt-1"
+                  >
+                    Solicitar Turno en Caja &rarr;
+                  </Link>
                 </div>
               )}
             </div>

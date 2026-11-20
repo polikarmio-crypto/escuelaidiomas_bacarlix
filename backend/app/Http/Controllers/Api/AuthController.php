@@ -128,16 +128,16 @@ class AuthController extends Controller
             }
         } elseif (strtoupper($usuario->rol_usuario) === 'ESTUDIANTE' || $usuario->rol_usuario === 'Estudiante') {
             if (!$usuario->id_estudiante) {
-                $est = \App\Models\Estudiante::where('email_estudiante', $usuario->email_usuario)
-                    ->orWhere('email_estudiante', 'c.mamani11@ejercito.mil.bo')
-                    ->first();
+                $est = \App\Models\Estudiante::where('email_estudiante', $usuario->email_usuario)->first();
+                if (!$est && $usuario->ci) {
+                    $ciRaw = explode(' ', trim($usuario->ci))[0];
+                    $est = \App\Models\Estudiante::where('ci_estudiante', 'like', $ciRaw . '%')->first();
+                }
                 if ($est) {
                     $usuario->id_estudiante = $est->id_estudiante;
                     $ciUsuario = $est->ci_estudiante;
-                } else {
-                    $usuario->id_estudiante = 11;
+                    $usuario->save();
                 }
-                $usuario->save();
             } else {
                 $est = \App\Models\Estudiante::find($usuario->id_estudiante);
                 if ($est) $ciUsuario = $est->ci_estudiante;

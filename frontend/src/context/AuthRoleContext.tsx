@@ -210,10 +210,10 @@ export function AuthRoleProvider({ children }: { children: React.ReactNode }) {
     subtitulo: rolConfig.badge,
     id_estudiante: usuarioPersonalizado?.id_estudiante !== undefined && usuarioPersonalizado?.id_estudiante !== null
       ? usuarioPersonalizado.id_estudiante
-      : (rolActivo === 'ESTUDIANTE' ? 11 : null),
+      : null,
     id_docente: usuarioPersonalizado?.id_docente !== undefined && usuarioPersonalizado?.id_docente !== null
       ? usuarioPersonalizado.id_docente
-      : (rolActivo === 'DOCENTE' ? 1 : null),
+      : null,
   };
 
   const canAccessRoute = (pathname: string): boolean => {

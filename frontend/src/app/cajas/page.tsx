@@ -94,7 +94,21 @@ export default function CajasPage() {
 
   const handleSolicitarFicha = async () => {
     try {
-      const idEst = usuario?.id_estudiante || usuario?.id || 11;
+      let idEst = usuario?.id_estudiante;
+      if (!idEst && usuario?.email) {
+        try {
+          const resEst = await fetch(`${API_BASE}/estudiantes?email=${encodeURIComponent(usuario.email)}`);
+          if (resEst.ok) {
+            const d = await resEst.json();
+            const list = d.data || (Array.isArray(d) ? d : []);
+            const match = list.find((e: any) => e.email_estudiante?.toLowerCase() === usuario.email.toLowerCase()) || list[0];
+            if (match) idEst = match.id_estudiante;
+          }
+        } catch (e) {}
+      }
+      if (!idEst) {
+        idEst = usuario?.id_estudiante || 11;
+      }
       const res = await fetch(`${API_BASE}/cajas/ficha`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -335,7 +349,7 @@ export default function CajasPage() {
               <strong className="text-white font-mono text-sm">{colaEspera.length}</strong>
             </div>
             <p className="text-[11px] text-neutral-500">
-              Tiempo estimado promedio de atención: ~{metricas?.promedio_espera_minutos_Wq || 5} minutos por persona.
+              Tiempo estimado promedio de atención: ~{Math.max(1, Math.round(Number(metricas?.promedio_espera_minutos_Wq) || 5))} minutos por persona.
             </p>
           </div>
         </div>

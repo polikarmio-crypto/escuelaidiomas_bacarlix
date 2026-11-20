@@ -556,14 +556,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div style={{ padding: '0.75rem 0.85rem', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface-elevated)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--military-green-primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
-                  {(session?.user?.name || rolConfig.nombrePorDefecto).slice(0, 2).toUpperCase()}
+                  {(usuario?.nombre || session?.user?.name || rolConfig.nombrePorDefecto).slice(0, 2).toUpperCase()}
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {session?.user?.name || rolConfig.nombrePorDefecto}
+                    {usuario?.nombre || session?.user?.name || rolConfig.nombrePorDefecto}
                   </p>
                   <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {session?.user?.email || rolConfig.emailPorDefecto}
+                    {usuario?.email || session?.user?.email || rolConfig.emailPorDefecto}
                   </p>
                 </div>
               </div>
@@ -675,11 +675,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       fontWeight: 700,
                     }}
                   >
-                    {(session?.user?.name || rolConfig.nombrePorDefecto).slice(0, 2).toUpperCase()}
+                    {(usuario?.nombre || session?.user?.name || rolConfig.nombrePorDefecto).slice(0, 2).toUpperCase()}
                   </div>
                   <div className="hidden sm:block">
                     <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, lineHeight: 1.1 }}>
-                      {session?.user?.name || rolConfig.nombrePorDefecto}
+                      {usuario?.nombre || session?.user?.name || rolConfig.nombrePorDefecto}
                     </p>
                   </div>
                 </div>
