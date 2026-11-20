@@ -15,12 +15,69 @@ import {
   Shield,
   Sparkles,
   ChevronRight,
-  Monitor
+  Monitor,
+  Lock,
+  KeyRound,
+  AlertCircle
 } from 'lucide-react';
+import { useAuthRole } from '@/context/AuthRoleContext';
 
 export default function ConfiguracionPage() {
+  const { usuario, autenticado } = useAuthRole();
   const [theme, setTheme] = useState<'light' | 'dark' | 'high-contrast'>('light');
   const [fontSize, setFontSize] = useState<'normal' | 'medium' | 'large'>('normal');
+
+  // Estado para cambio de contraseñas
+  const [passActual, setPassActual] = useState('');
+  const [passNueva, setPassNueva] = useState('');
+  const [passConfirm, setPassConfirm] = useState('');
+  const [passLoading, setPassLoading] = useState(false);
+  const [passMensaje, setPassMensaje] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
+
+  const handleCambiarPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassMensaje(null);
+
+    if (!passActual) {
+      setPassMensaje({ tipo: 'error', texto: 'Por favor ingrese su contraseña actual o clave temporal.' });
+      return;
+    }
+    if (!passNueva || passNueva.length < 4) {
+      setPassMensaje({ tipo: 'error', texto: 'La nueva contraseña debe tener al menos 4 caracteres.' });
+      return;
+    }
+    if (passNueva !== passConfirm) {
+      setPassMensaje({ tipo: 'error', texto: 'La confirmación de la nueva contraseña no coincide.' });
+      return;
+    }
+
+    setPassLoading(true);
+    try {
+      const res = await fetch('/api/v1/auth/cambiar-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_usuario: usuario?.id,
+          email: usuario?.email,
+          password_actual: passActual,
+          password_nueva: passNueva,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'No fue posible actualizar la contraseña.');
+      }
+
+      setPassMensaje({ tipo: 'ok', texto: '¡Contraseña actualizada con éxito! Sus nuevas credenciales ya están activas.' });
+      setPassActual('');
+      setPassNueva('');
+      setPassConfirm('');
+    } catch (err: any) {
+      setPassMensaje({ tipo: 'error', texto: err.message || 'Error de conexión al cambiar contraseña.' });
+    } finally {
+      setPassLoading(false);
+    }
+  };
 
   useEffect(() => {
     try {
@@ -225,6 +282,107 @@ export default function ConfiguracionPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Sección: Seguridad & Cambio de Contraseña */}
+      <div className="rounded-2xl border p-6 shadow-sm bg-white dark:bg-[#121d2b] border-slate-200 dark:border-[#24354a]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              Seguridad de la Cuenta & Cambio de Contraseña
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Modifique su contraseña de acceso institucional. Recomendado especialmente tras el primer ingreso con credenciales temporales.
+            </p>
+          </div>
+          {usuario?.email && (
+            <span className="text-[11px] font-mono px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 w-fit">
+              {usuario.email}
+            </span>
+          )}
+        </div>
+
+        <form onSubmit={handleCambiarPassword} className="space-y-4 max-w-xl">
+          {passMensaje && (
+            <div
+              className={`p-3 rounded-xl border text-xs flex items-center gap-2.5 ${
+                passMensaje.tipo === 'ok'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-200'
+                  : 'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-500/40 text-red-800 dark:text-red-200'
+              }`}
+            >
+              {passMensaje.tipo === 'ok' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              )}
+              <span>{passMensaje.texto}</span>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+              Contraseña Actual o Clave Temporal:
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="password"
+                value={passActual}
+                onChange={(e) => setPassActual(e.target.value)}
+                placeholder="Ingrese su clave actual o temporal"
+                required
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-amber-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                Nueva Contraseña:
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  value={passNueva}
+                  onChange={(e) => setPassNueva(e.target.value)}
+                  placeholder="Mínimo 4 caracteres"
+                  required
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                Confirmar Nueva Contraseña:
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="password"
+                  value={passConfirm}
+                  onChange={(e) => setPassConfirm(e.target.value)}
+                  placeholder="Repita la nueva clave"
+                  required
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white outline-none focus:border-amber-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={passLoading}
+            className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#1b4332] hover:bg-[#245842] text-white flex items-center gap-2 transition shadow-sm disabled:opacity-50"
+          >
+            <KeyRound className="w-3.5 h-3.5 text-amber-300" />
+            <span>{passLoading ? 'Actualizando...' : 'Guardar Nueva Contraseña'}</span>
+          </button>
+        </form>
       </div>
 
       <div className="rounded-2xl border p-6 shadow-sm bg-white dark:bg-[#121d2b] border-slate-200 dark:border-[#24354a]">

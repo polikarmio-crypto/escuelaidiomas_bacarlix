@@ -31,6 +31,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/usuarios', [AuthController::class, 'usuarios']);
+        Route::post('/activar-cuenta-estudiante', [AuthController::class, 'activarCuentaEstudiante']);
+        Route::post('/cambiar-password', [AuthController::class, 'cambiarPassword']);
     });
 
     Route::get('/dashboard', [DashboardController::class, 'index']);

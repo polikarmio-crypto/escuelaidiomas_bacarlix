@@ -28,8 +28,10 @@ export default function CajasPage() {
   const [alerta, setAlerta] = useState<{ tipo: 'ok' | 'error'; mensaje: string } | null>(null);
 
   const [cajaActivaId, setCajaActivaId] = useState<number>(1);
+  const [filtrarPorVentanilla, setFiltrarPorVentanilla] = useState<boolean>(true);
   const [turnoEnAtencion, setTurnoEnAtencion] = useState<any | null>(null);
   const [miFicha, setMiFicha] = useState<any | null>(null);
+  const [tipoTramiteFicha, setTipoTramiteFicha] = useState<'regular' | 'libros'>('regular');
 
   const [modalPago, setModalPago] = useState(false);
   const [formPago, setFormPago] = useState({
@@ -45,12 +47,18 @@ export default function CajasPage() {
     setTimeout(() => setAlerta(null), 5000);
   };
 
-  const cargarDatosCaja = async () => {
+  const cargarDatosCaja = async (cajaIdOverride?: number, forzarTodas?: boolean) => {
     setLoading(true);
     try {
+      const activeCaja = cajaIdOverride !== undefined ? cajaIdOverride : cajaActivaId;
+      const usarFiltro = forzarTodas !== undefined ? !forzarTodas : filtrarPorVentanilla;
+      const urlCola = (puedeOperarCaja && usarFiltro && activeCaja)
+        ? `${API_BASE}/cajas/cola-espera?id_caja=${activeCaja}`
+        : `${API_BASE}/cajas/cola-espera`;
+
       const [resCajas, resCola, resMetricas] = await Promise.all([
         fetch(`${API_BASE}/cajas`).catch(() => null),
-        fetch(`${API_BASE}/cajas/cola-espera`).catch(() => null),
+        fetch(urlCola).catch(() => null),
         fetch(`${API_BASE}/cajas/metricas`).catch(() => null),
       ]);
 
@@ -80,31 +88,36 @@ export default function CajasPage() {
 
   useEffect(() => {
     cargarDatosCaja();
-    const interval = setInterval(cargarDatosCaja, 15000);
+    const interval = setInterval(() => cargarDatosCaja(), 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [cajaActivaId, filtrarPorVentanilla]);
 
   const handleSolicitarFicha = async () => {
     try {
-      const idEst = usuario?.id || 1;
+      const idEst = usuario?.id_estudiante || usuario?.id || 11;
       const res = await fetch(`${API_BASE}/cajas/ficha`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_estudiante: idEst }),
+        body: JSON.stringify({
+          id_estudiante: idEst,
+          tipo_tramite: tipoTramiteFicha,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'No fue posible emitir el turno en este momento.');
+        throw new Error(data.error || data.message || 'No fue posible emitir el turno en este momento.');
       }
 
       const fichaObj = data.data || {
         numero_ficha: data.numero_ficha,
         estado_ficha: 'En espera',
         hora_llegada_ficha: new Date().toISOString(),
+        id_caja: tipoTramiteFicha === 'libros' ? 3 : 1,
       };
 
       setMiFicha(fichaObj);
-      mostrarMensaje('ok', `Turno N° ${data.numero_ficha || fichaObj.numero_ficha} asignado. Por favor aguarde el llamado en pantalla.`);
+      const ventanillaNombre = fichaObj.caja?.nombre_caja || (fichaObj.id_caja === 3 ? 'Ventanilla 3 - Material & Libros' : (fichaObj.id_caja === 1 ? 'Ventanilla 1 - Militar' : 'Ventanilla 2 - Civiles'));
+      mostrarMensaje('ok', `Turno N° ${data.numero_ficha || fichaObj.numero_ficha} emitido para ${ventanillaNombre}.`);
       cargarDatosCaja();
     } catch (err: any) {
       mostrarMensaje('error', err.message);
@@ -213,7 +226,7 @@ export default function CajasPage() {
           </div>
         </div>
         <button
-          onClick={cargarDatosCaja}
+          onClick={() => cargarDatosCaja()}
           disabled={loading}
           className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
         >
@@ -241,17 +254,64 @@ export default function CajasPage() {
             <Ticket className="w-16 h-16 text-cyan-400 mx-auto" />
             <h2 className="text-xl font-bold text-white">Emisión de Ticket de Atención</h2>
             <p className="text-xs text-neutral-400 max-w-md mx-auto">
-              Presione el botón para solicitar su turno de atención presencial en ventanilla. Será convocado mediante pantalla y avisador sonoro.
+              Seleccione el tipo de trámite a realizar en ventanilla y solicite su ficha de atención digital en tiempo real:
             </p>
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto text-left pt-2">
+              <button
+                type="button"
+                onClick={() => setTipoTramiteFicha('regular')}
+                className={`p-3.5 rounded-xl border text-xs transition ${
+                  tipoTramiteFicha === 'regular'
+                    ? 'border-cyan-500 bg-cyan-950/40 text-white shadow-sm ring-1 ring-cyan-500/50'
+                    : 'border-neutral-800 bg-neutral-950/50 text-neutral-400 hover:border-neutral-700'
+                }`}
+              >
+                <div className="font-bold text-white mb-1 flex items-center justify-between">
+                  <span>Trámite Regular / Matrícula</span>
+                  {tipoTramiteFicha === 'regular' && <span className="w-2 h-2 rounded-full bg-cyan-400" />}
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Inscripciones, pagos de matrícula y mensualidades académicas.
+                </p>
+                <span className="inline-block mt-2 text-[10px] font-mono text-cyan-400/90 font-bold bg-cyan-950/80 px-2 py-0.5 rounded">
+                  {usuario?.subtitulo?.toLowerCase().includes('militar') || usuario?.nombre?.includes('Cad.') ? 'Ventanilla 1 - Militar' : 'Ventanilla 2 - Civiles'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTipoTramiteFicha('libros')}
+                className={`p-3.5 rounded-xl border text-xs transition ${
+                  tipoTramiteFicha === 'libros'
+                    ? 'border-amber-500 bg-amber-950/40 text-white shadow-sm ring-1 ring-amber-500/50'
+                    : 'border-neutral-800 bg-neutral-950/50 text-neutral-400 hover:border-neutral-700'
+                }`}
+              >
+                <div className="font-bold text-white mb-1 flex items-center justify-between">
+                  <span>Adquisición de Libros</span>
+                  {tipoTramiteFicha === 'libros' && <span className="w-2 h-2 rounded-full bg-amber-400" />}
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Compra de texto guía oficial y material bibliográfico.
+                </p>
+                <span className="inline-block mt-2 text-[10px] font-mono text-amber-400/90 font-bold bg-amber-950/80 px-2 py-0.5 rounded">
+                  Ventanilla 3 - Material & Libros
+                </span>
+              </button>
+            </div>
+
             {miFicha ? (
-              <div className="bg-cyan-950/40 border border-cyan-500/40 rounded-xl p-6 space-y-2 max-w-sm mx-auto">
+              <div className="bg-cyan-950/40 border border-cyan-500/40 rounded-xl p-6 space-y-2 max-w-sm mx-auto animate-solemn-fade">
                 <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">Su Turno Asignado</span>
                 <div className="text-5xl font-extrabold font-mono text-white py-2">
                   #{miFicha.numero_ficha}
                 </div>
                 <p className="text-xs text-neutral-300">
                   Estado: <strong className="text-amber-400">{miFicha.estado_ficha || 'En espera'}</strong>
+                </p>
+                <p className="text-xs text-neutral-300">
+                  Ventanilla: <strong className="text-cyan-300">{miFicha.caja?.nombre_caja || (miFicha.id_caja === 3 ? 'Ventanilla 3 - Material & Libros' : (miFicha.id_caja === 1 ? 'Ventanilla 1 - Militar' : 'Ventanilla 2 - Civiles'))}</strong>
                 </p>
                 {miFicha.hora_llegada_ficha && (
                   <p className="text-[11px] text-neutral-400">
@@ -262,7 +322,7 @@ export default function CajasPage() {
             ) : (
               <button
                 onClick={handleSolicitarFicha}
-                className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-cyan-600/30"
+                className="px-8 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-cyan-600/30"
               >
                 Solicitar Ficha de Turno
               </button>
@@ -271,7 +331,7 @@ export default function CajasPage() {
 
           <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-4 text-xs">
             <div className="flex items-center justify-between text-neutral-400 mb-2">
-              <span>Personas esperando atención:</span>
+              <span>Personas esperando atención hoy:</span>
               <strong className="text-white font-mono text-sm">{colaEspera.length}</strong>
             </div>
             <p className="text-[11px] text-neutral-500">
@@ -313,7 +373,11 @@ export default function CajasPage() {
                 </h3>
                 <select
                   value={cajaActivaId}
-                  onChange={(e) => setCajaActivaId(parseInt(e.target.value) || 1)}
+                  onChange={(e) => {
+                    const newId = parseInt(e.target.value) || 1;
+                    setCajaActivaId(newId);
+                    cargarDatosCaja(newId);
+                  }}
                   className="bg-neutral-950 border border-neutral-700 text-xs text-white rounded px-2 py-1"
                 >
                   {cajas.map((c) => (
@@ -378,12 +442,33 @@ export default function CajasPage() {
             </div>
 
             <div className="lg:col-span-2 bg-neutral-900/50 border border-neutral-800 rounded-xl p-5 space-y-3">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Users className="w-4 h-4 text-sky-400" />
-                  Turnos en Sala de Espera ({colaEspera.length})
-                </h3>
-                <span className="text-[11px] text-neutral-500 font-mono">Orden por hora de llegada</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Users className="w-4 h-4 text-sky-400" />
+                    Turnos en Sala de Espera ({colaEspera.length})
+                  </h3>
+                  <span className="text-[11px] text-neutral-500 font-mono">
+                    {filtrarPorVentanilla ? `Filtrando por ${cajas.find(c => c.id_caja === cajaActivaId)?.nombre_caja || 'Mi Ventanilla'}` : 'Mostrando todas las ventanillas'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const nuevo = !filtrarPorVentanilla;
+                      setFiltrarPorVentanilla(nuevo);
+                      cargarDatosCaja(cajaActivaId, !nuevo);
+                    }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                      filtrarPorVentanilla
+                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-300'
+                        : 'bg-neutral-800 border-neutral-700 text-neutral-300'
+                    }`}
+                  >
+                    {filtrarPorVentanilla ? 'Filtrado: Mi Ventanilla' : 'Ver Todos los Turnos'}
+                  </button>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -394,6 +479,7 @@ export default function CajasPage() {
                       <th className="p-2.5">N° Turno</th>
                       <th className="p-2.5">Estudiante</th>
                       <th className="p-2.5">Tipo</th>
+                      <th className="p-2.5">Ventanilla Asignada</th>
                       <th className="p-2.5">Llegada</th>
                       <th className="p-2.5">Tiempo Espera</th>
                     </tr>
@@ -409,13 +495,18 @@ export default function CajasPage() {
                             {f.tipo_estudiante}
                           </span>
                         </td>
+                        <td className="p-2.5">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-neutral-950 border border-neutral-800 text-neutral-300">
+                            {f.nombre_caja || (f.id_caja === 3 ? 'Material & Libros' : (f.id_caja === 1 ? 'Ventanilla Militar' : 'Ventanilla Civiles'))}
+                          </span>
+                        </td>
                         <td className="p-2.5 font-mono text-neutral-400">{f.hora_llegada}</td>
                         <td className="p-2.5 font-mono text-amber-400">{f.minutos_esperando || 0} min</td>
                       </tr>
                     ))}
                     {colaEspera.length === 0 && (
                       <tr>
-                        <td colSpan={6} className="p-6 text-center text-neutral-500">
+                        <td colSpan={7} className="p-6 text-center text-neutral-500">
                           No hay turnos pendientes en sala de espera.
                         </td>
                       </tr>

@@ -49,32 +49,46 @@ class CajaPagoController extends Controller
         return response()->json($cajas);
     }
 
-    public function colaAtencion()
+    public function colaAtencion(Request $request)
     {
-        return $this->colaEspera();
+        return $this->colaEspera($request);
     }
 
-    public function colaEspera()
+    public function colaEspera(Request $request = null)
     {
-        $fichasEnEspera = FichaAtencion::with('estudiante.militar')
+        $idCaja = $request ? $request->get('id_caja') : null;
+
+        $query = FichaAtencion::with(['estudiante.militar', 'caja'])
             ->enEspera()
-            ->orderBy('hora_llegada_ficha', 'asc')
+            ->whereDate('hora_llegada_ficha', Carbon::today());
+
+        if (!empty($idCaja) && is_numeric($idCaja)) {
+            $query->where(function ($q) use ($idCaja) {
+                $q->where('id_caja', (int) $idCaja)
+                  ->orWhereNull('id_caja');
+            });
+        }
+
+        $fichasEnEspera = $query->orderBy('hora_llegada_ficha', 'asc')
             ->get()
             ->map(function ($ficha, $index) {
                 return [
-                    'posicion'        => $index + 1,
-                    'posicion_cola'   => $index + 1,
-                    'id_ficha'        => $ficha->id_ficha,
-                    'numero_ficha'    => $ficha->numero_ficha,
-                    'estudiante'      => "{$ficha->estudiante->nombre_estudiante} {$ficha->estudiante->apellido_estudiante}",
-                    'tipo_estudiante' => $ficha->estudiante->tipo_estudiante,
-                    'hora_llegada'    => $ficha->hora_llegada_ficha->format('H:i:s'),
+                    'posicion'          => $index + 1,
+                    'posicion_cola'     => $index + 1,
+                    'id_ficha'          => $ficha->id_ficha,
+                    'numero_ficha'      => $ficha->numero_ficha,
+                    'id_caja'           => $ficha->id_caja,
+                    'nombre_caja'       => $ficha->caja?->nombre_caja ?? 'Ventanilla General',
+                    'estudiante'        => "{$ficha->estudiante->nombre_estudiante} {$ficha->estudiante->apellido_estudiante}",
+                    'tipo_estudiante'   => $ficha->estudiante->tipo_estudiante,
+                    'hora_llegada'      => $ficha->hora_llegada_ficha->format('H:i:s'),
                     'minutos_esperando' => $ficha->tiempo_espera_minutos,
                 ];
             });
 
         return response()->json([
             'total_en_espera' => $fichasEnEspera->count(),
+            'id_caja_filtro'  => $idCaja,
             'cola_espera'     => $fichasEnEspera,
             'cola_atencion'   => $fichasEnEspera,
         ]);
@@ -84,9 +98,26 @@ class CajaPagoController extends Controller
     {
         $validated = $request->validate([
             'id_estudiante' => 'required|exists:estudiante,id_estudiante',
+            'id_caja'       => 'nullable|exists:caja,id_caja',
+            'tipo_tramite'  => 'nullable|string|in:regular,libros,general',
         ]);
 
-        return DB::transaction(function () use ($validated) {
+        return DB::transaction(function () use ($validated, $request) {
+            $estudiante = \App\Models\Estudiante::findOrFail($validated['id_estudiante']);
+
+            // Determinar ventanilla id_caja:
+            // 1: Militar, 2: Civil, 3: Material & Libros
+            $idCajaAsignada = null;
+            if (!empty($validated['id_caja'])) {
+                $idCajaAsignada = (int) $validated['id_caja'];
+            } elseif ($request->get('tipo_tramite') === 'libros') {
+                $idCajaAsignada = 3; // Ventanilla 3 - Material & Libros
+            } else {
+                // Trámite regular: según condición militar o civil
+                $esMilitar = strtoupper(trim($estudiante->tipo_estudiante)) === 'MILITAR';
+                $idCajaAsignada = $esMilitar ? 1 : 2;
+            }
+
             $fichaActiva = FichaAtencion::where('id_estudiante', $validated['id_estudiante'])
                 ->whereIn('estado_ficha', ['En espera', 'En atencion'])
                 ->whereDate('hora_llegada_ficha', Carbon::today())
@@ -95,6 +126,7 @@ class CajaPagoController extends Controller
 
             if ($fichaActiva) {
                 $posicionExistente = FichaAtencion::where('estado_ficha', 'En espera')
+                    ->whereDate('hora_llegada_ficha', Carbon::today())
                     ->where('hora_llegada_ficha', '<=', $fichaActiva->hora_llegada_ficha)
                     ->count();
 
@@ -108,7 +140,7 @@ class CajaPagoController extends Controller
                     'numero_ficha'   => $fichaActiva->numero_ficha,
                     'posicion'       => $posicionExistente,
                     'posicion_cola'  => $posicionExistente,
-                    'data'           => $fichaActiva->load('estudiante'),
+                    'data'           => $fichaActiva->load(['estudiante.militar', 'caja']),
                 ], 200);
             }
 
@@ -120,7 +152,7 @@ class CajaPagoController extends Controller
             $nuevoNumero = $ultimaFicha ? ($ultimaFicha->numero_ficha + 1) : 101;
 
             $ficha = FichaAtencion::create([
-                'id_caja'                    => null,
+                'id_caja'                    => $idCajaAsignada,
                 'id_estudiante'              => $validated['id_estudiante'],
                 'numero_ficha'               => $nuevoNumero,
                 'hora_llegada_ficha'         => Carbon::now(),
@@ -130,13 +162,15 @@ class CajaPagoController extends Controller
             ]);
 
             $posicion = FichaAtencion::where('estado_ficha', 'En espera')
+                ->whereDate('hora_llegada_ficha', Carbon::today())
                 ->where('hora_llegada_ficha', '<=', $ficha->hora_llegada_ficha)
                 ->count();
 
             AuditLogger::cajas(AuditLogger::LEVEL_INFO, 'EMISION_FICHA_ATENCION', [
                 'id_estudiante' => $validated['id_estudiante'],
-                'numero_ficha' => $nuevoNumero,
-                'posicion' => $posicion,
+                'numero_ficha'  => $nuevoNumero,
+                'id_caja'       => $idCajaAsignada,
+                'posicion'      => $posicion,
             ], null, $ficha->id_ficha);
 
             return response()->json([
@@ -144,7 +178,7 @@ class CajaPagoController extends Controller
                 'numero_ficha'   => $nuevoNumero,
                 'posicion'       => $posicion,
                 'posicion_cola'  => $posicion,
-                'data'           => $ficha->load('estudiante'),
+                'data'           => $ficha->load(['estudiante.militar', 'caja']),
             ], 201);
         });
     }
@@ -179,14 +213,20 @@ class CajaPagoController extends Controller
                 ], 422);
             }
 
+            // Buscar siguiente turno en espera asignado a esta ventanilla (o general) de hoy
             $siguienteFicha = FichaAtencion::where('estado_ficha', 'En espera')
+                ->whereDate('hora_llegada_ficha', Carbon::today())
+                ->where(function ($q) use ($validated) {
+                    $q->where('id_caja', $validated['id_caja'])
+                      ->orWhereNull('id_caja');
+                })
                 ->orderBy('hora_llegada_ficha', 'asc')
                 ->lockForUpdate()
                 ->first();
 
             if (!$siguienteFicha) {
                 return response()->json([
-                    'message' => 'No hay turnos pendientes en sala de espera.'
+                    'message' => 'No hay turnos pendientes en espera para esta ventanilla hoy.'
                 ], 200);
             }
 

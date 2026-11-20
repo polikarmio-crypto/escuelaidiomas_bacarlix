@@ -313,6 +313,21 @@ export default function IndexPage() {
       const ciNumerico = ci.replace(/\D/g, '').slice(-4) || '2026';
       const passTemporal = `Eie.${ciNumerico}*!`;
 
+      // Activar la cuenta de usuario en la base de datos para que las credenciales funcionen en el Login
+      try {
+        await fetch('/api/v1/auth/activar-cuenta-estudiante', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id_estudiante: coincidencia.id_estudiante || coincidencia.id,
+            email: emailOficial,
+            password: passTemporal,
+          }),
+        });
+      } catch (actErr) {
+        console.warn('No se pudo autovincular con el backend inmediatamente', actErr);
+      }
+
       setResultadoCorreo({
         estudiante: coincidencia,
         emailGenerado: emailOficial,
@@ -1587,6 +1602,14 @@ export default function IndexPage() {
                     <ExternalLink className="w-3.5 h-3.5 text-amber-300" />
                     <span>Abrir Google Workspace</span>
                   </a>
+
+                  <Link
+                    href="/login"
+                    className="text-xs px-5 py-2.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-neutral-950 flex items-center gap-2 transition shadow-sm"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Ingresar al Sistema SACA</span>
+                  </Link>
                 </div>
               </div>
             )}
