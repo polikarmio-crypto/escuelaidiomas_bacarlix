@@ -210,11 +210,11 @@ export default function CajasPage() {
   if (!puedeOperarCaja && !esEstudiante) {
     return (
       <div className="max-w-4xl mx-auto p-8">
-        <div className="bg-red-950/40 border border-red-500/40 rounded-xl p-8 text-center space-y-4">
-          <ShieldAlert className="w-16 h-16 text-red-500 mx-auto" />
-          <h2 className="text-2xl font-bold text-white">Acceso Restringido</h2>
-          <p className="text-neutral-300 max-w-xl mx-auto">
-            La atención en ventanilla y el cobro de aranceles corresponde exclusivamente a los <strong className="text-amber-400">Cajeros</strong> autorizados.
+        <div className="bg-[var(--bg-card)] border border-red-500/40 rounded-[3px] p-8 text-center space-y-4 shadow-xs">
+          <ShieldAlert className="w-12 h-12 text-red-600 dark:text-red-400 mx-auto" />
+          <h2 className="text-xl font-bold text-[var(--text-main)] font-sans">Acceso Restringido</h2>
+          <p className="text-xs text-[var(--text-muted)] max-w-xl mx-auto">
+            La atención en ventanilla y el cobro de aranceles corresponde exclusivamente a los <strong className="text-[var(--color-accent)] font-mono">Cajeros</strong> autorizados del sistema SACA CEDMIL.
           </p>
         </div>
       </div>
@@ -222,73 +222,77 @@ export default function CajasPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-neutral-800">
+    <div className="w-full max-w-[1550px] mx-auto space-y-6 pb-12">
+      {/* Encabezado Editorial de Módulo */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--border-fine)]">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm shrink-0">
+          <div className="w-12 h-12 rounded-[3px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-center text-[var(--color-primary)] dark:text-[var(--color-accent)] shadow-xs shrink-0">
             <Landmark className="w-6 h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5 text-xs font-mono text-neutral-400">
+            <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-muted)]">
               <span>SACA</span>
               <span>/</span>
-              <span className="text-amber-400 font-semibold">Cajas</span>
+              <span className="text-[var(--color-accent)] font-semibold">Cajas & Recaudaciones</span>
             </div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-white">
-              {esEstudiante ? 'Atención en Caja — Turno Digital' : 'Cajas y Recaudaciones'}
+            <h1 className="text-xl md:text-2xl font-extrabold text-[var(--text-main)] tracking-tight">
+              {esEstudiante ? 'Atención en Caja — Turno Digital' : 'Cajas y Recaudaciones Institucionales'}
             </h1>
           </div>
         </div>
         <button
           onClick={() => cargarDatosCaja()}
           disabled={loading}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
+          className="btn-primary text-xs font-semibold px-4 py-2 rounded-[3px] flex items-center gap-2 transition shrink-0 shadow-xs"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Actualizar Cola
+          <span>Actualizar Cola</span>
         </button>
       </div>
 
       {alerta && (
         <div
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
+          className={`flex items-center gap-3 p-3.5 rounded-[2px] border text-xs font-medium ${
             alerta.tipo === 'ok'
-              ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200'
-              : 'bg-red-950/50 border-red-500/50 text-red-200'
+              ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
+              : 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200'
           }`}
         >
-          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertTriangle className="w-5 h-5 flex-shrink-0" />}
+          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
           <span>{alerta.mensaje}</span>
         </div>
       )}
 
       {esEstudiante ? (
+        /* VISTA EDITORIAL ESTUDIANTE: DISPENSADOR DE TURNO DIGITAL */
         <div className="max-w-2xl mx-auto space-y-6">
-          <div className="bg-neutral-900/60 border border-neutral-800 rounded-2xl p-6 text-center space-y-4 shadow-xl">
-            <Ticket className="w-16 h-16 text-cyan-400 mx-auto" />
-            <h2 className="text-xl font-bold text-white">Emisión de Ticket de Atención</h2>
-            <p className="text-xs text-neutral-400 max-w-md mx-auto">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-6 text-center space-y-4 shadow-xs">
+            <div className="w-12 h-12 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-center text-[var(--color-accent)] mx-auto">
+              <Ticket className="w-6 h-6" />
+            </div>
+            <h2 className="text-lg font-bold text-[var(--text-main)] font-sans">Emisión de Ticket de Atención</h2>
+            <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
               Seleccione el tipo de trámite a realizar en ventanilla y solicite su ficha de atención digital en tiempo real:
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto text-left pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto text-left pt-1">
               <button
                 type="button"
                 onClick={() => setTipoTramiteFicha('regular')}
-                className={`p-3.5 rounded-xl border text-xs transition ${
+                className={`p-3.5 rounded-[2px] border text-xs transition ${
                   tipoTramiteFicha === 'regular'
-                    ? 'border-cyan-500 bg-cyan-950/40 text-white shadow-sm ring-1 ring-cyan-500/50'
-                    : 'border-neutral-800 bg-neutral-950/50 text-neutral-400 hover:border-neutral-700'
+                    ? 'border-[var(--color-primary)] dark:border-[var(--color-accent)] bg-[var(--bg-surface)] text-[var(--text-main)] shadow-xs ring-1 ring-[var(--color-accent)]/50'
+                    : 'border-[var(--border-fine)] bg-[var(--bg-card)] text-[var(--text-muted)] hover:border-[var(--color-accent)]'
                 }`}
               >
-                <div className="font-bold text-white mb-1 flex items-center justify-between">
+                <div className="font-bold text-[var(--text-main)] mb-1 flex items-center justify-between">
                   <span>Trámite Regular / Matrícula</span>
-                  {tipoTramiteFicha === 'regular' && <span className="w-2 h-2 rounded-full bg-cyan-400" />}
+                  {tipoTramiteFicha === 'regular' && <span className="w-2 h-2 rounded-[1px] bg-[var(--color-accent)]" />}
                 </div>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                   Inscripciones, pagos de matrícula y mensualidades académicas.
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-mono text-cyan-400/90 font-bold bg-cyan-950/80 px-2 py-0.5 rounded">
+                <span className="inline-block mt-2 text-[10px] font-mono text-[var(--color-primary)] dark:text-[var(--color-accent)] font-bold bg-[var(--bg-card)] border border-[var(--border-fine)] px-2 py-0.5 rounded-[2px]">
                   {usuario?.subtitulo?.toLowerCase().includes('militar') || usuario?.nombre?.includes('Cad.') ? 'Ventanilla 1 - Militar' : 'Ventanilla 2 - Civiles'}
                 </span>
               </button>
@@ -296,39 +300,41 @@ export default function CajasPage() {
               <button
                 type="button"
                 onClick={() => setTipoTramiteFicha('libros')}
-                className={`p-3.5 rounded-xl border text-xs transition ${
+                className={`p-3.5 rounded-[2px] border text-xs transition ${
                   tipoTramiteFicha === 'libros'
-                    ? 'border-amber-500 bg-amber-950/40 text-white shadow-sm ring-1 ring-amber-500/50'
-                    : 'border-neutral-800 bg-neutral-950/50 text-neutral-400 hover:border-neutral-700'
+                    ? 'border-[var(--color-accent)] bg-[var(--bg-surface)] text-[var(--text-main)] shadow-xs ring-1 ring-[var(--color-accent)]/50'
+                    : 'border-[var(--border-fine)] bg-[var(--bg-card)] text-[var(--text-muted)] hover:border-[var(--color-accent)]'
                 }`}
               >
-                <div className="font-bold text-white mb-1 flex items-center justify-between">
+                <div className="font-bold text-[var(--text-main)] mb-1 flex items-center justify-between">
                   <span>Adquisición de Libros</span>
-                  {tipoTramiteFicha === 'libros' && <span className="w-2 h-2 rounded-full bg-amber-400" />}
+                  {tipoTramiteFicha === 'libros' && <span className="w-2 h-2 rounded-[1px] bg-[var(--color-accent)]" />}
                 </div>
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
                   Compra de texto guía oficial y material bibliográfico.
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-mono text-amber-400/90 font-bold bg-amber-950/80 px-2 py-0.5 rounded">
+                <span className="inline-block mt-2 text-[10px] font-mono text-[var(--color-accent)] font-bold bg-[var(--bg-card)] border border-[var(--border-fine)] px-2 py-0.5 rounded-[2px]">
                   Ventanilla 3 - Material & Libros
                 </span>
               </button>
             </div>
 
             {miFicha ? (
-              <div className="bg-cyan-950/40 border border-cyan-500/40 rounded-xl p-6 space-y-2 max-w-sm mx-auto animate-solemn-fade">
-                <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest">Su Turno Asignado</span>
-                <div className="text-5xl font-extrabold font-mono text-white py-2">
+              <div className="bg-[var(--bg-surface)] border border-[var(--border-fine)] border-t-4 border-t-[var(--color-primary)] dark:border-t-[var(--color-accent)] rounded-[2px] p-6 space-y-2 max-w-sm mx-auto shadow-xs">
+                <span className="text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-widest font-mono">
+                  Su Turno Asignado
+                </span>
+                <div className="text-5xl font-black font-mono text-[var(--text-main)] py-1">
                   #{miFicha.numero_ficha}
                 </div>
-                <p className="text-xs text-neutral-300">
-                  Estado: <strong className="text-amber-400">{miFicha.estado_ficha || 'En espera'}</strong>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Estado: <strong className="text-[var(--color-accent)] font-mono">{miFicha.estado_ficha || 'En espera'}</strong>
                 </p>
-                <p className="text-xs text-neutral-300">
-                  Ventanilla: <strong className="text-cyan-300">{miFicha.caja?.nombre_caja || (miFicha.id_caja === 3 ? 'Ventanilla 3 - Material & Libros' : (miFicha.id_caja === 1 ? 'Ventanilla 1 - Militar' : 'Ventanilla 2 - Civiles'))}</strong>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Ventanilla: <strong className="text-[var(--text-main)] font-mono">{miFicha.caja?.nombre_caja || (miFicha.id_caja === 3 ? 'Ventanilla 3 - Material & Libros' : (miFicha.id_caja === 1 ? 'Ventanilla 1 - Militar' : 'Ventanilla 2 - Civiles'))}</strong>
                 </p>
                 {miFicha.hora_llegada_ficha && (
-                  <p className="text-[11px] text-neutral-400">
+                  <p className="text-[11px] text-[var(--text-muted)] font-mono">
                     Hora de solicitud: {new Date(miFicha.hora_llegada_ficha).toLocaleTimeString()}
                   </p>
                 )}
@@ -336,53 +342,60 @@ export default function CajasPage() {
             ) : (
               <button
                 onClick={handleSolicitarFicha}
-                className="px-8 py-3.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-cyan-600/30"
+                className="btn-primary px-8 py-2.5 rounded-[2px] text-xs font-bold transition shadow-xs"
               >
                 Solicitar Ficha de Turno
               </button>
             )}
           </div>
 
-          <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-4 text-xs">
-            <div className="flex items-center justify-between text-neutral-400 mb-2">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[2px] p-4 text-xs shadow-xs">
+            <div className="flex items-center justify-between text-[var(--text-muted)] mb-1">
               <span>Personas esperando atención hoy:</span>
-              <strong className="text-white font-mono text-sm">{colaEspera.length}</strong>
+              <strong className="text-[var(--text-main)] font-mono text-sm">{colaEspera.length}</strong>
             </div>
-            <p className="text-[11px] text-neutral-500">
-              Tiempo estimado promedio de atención: ~{Math.max(1, Math.round(Number(metricas?.promedio_espera_minutos_Wq) || 5))} minutos por persona.
+            <p className="text-[11px] text-[var(--text-muted)] font-mono">
+              Tiempo estimado promedio de atención: ~{Math.max(1, Math.min(120, Math.round(Number(metricas?.promedio_espera_minutos_Wq) || 5)))} minutos por persona.
             </p>
           </div>
         </div>
       ) : (
+        /* VISTA EDITORIAL CAJERO / OPERADOR */
         <div className="space-y-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-            <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
-              <span className="text-neutral-400 text-[11px] block truncate">En Sala de Espera</span>
-              <p className="text-xl font-bold font-mono text-amber-400 mt-0.5">{colaEspera.length}</p>
-              <span className="text-[10px] text-neutral-500">Estudiantes esperando</span>
-            </div>
-            <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
-              <span className="text-neutral-400 text-[11px] block truncate">Tiempo Medio Espera</span>
-              <p className="text-xl font-bold font-mono text-sky-400 mt-0.5">{metricas?.promedio_espera_minutos_Wq || 0} min</p>
-              <span className="text-[10px] text-neutral-500">Promedio actual</span>
-            </div>
-            <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
-              <span className="text-neutral-400 text-[11px] block truncate">Atendidos Hoy</span>
-              <p className="text-xl font-bold font-mono text-emerald-400 mt-0.5">{metricas?.atendidas || 0}</p>
-              <span className="text-[10px] text-neutral-500">Turnos completados</span>
-            </div>
-            <div className="bg-neutral-900/60 border border-neutral-800 p-2.5 rounded-lg">
-              <span className="text-neutral-400 text-[11px] block truncate">Ventanillas Activas</span>
-              <p className="text-xl font-bold font-mono text-purple-400 mt-0.5">{cajas.length}</p>
-              <span className="text-[10px] text-neutral-500">Puestos habilitados</span>
+          {/* Tira Ledger de KPIs de Caja */}
+          <div className="border border-[var(--border-fine)] rounded-[2px] bg-[var(--bg-card)] shadow-xs overflow-hidden">
+            <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-[var(--border-fine)]">
+              <div className="p-3.5 bg-[var(--bg-card)]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">En Sala de Espera</span>
+                <p className="text-2xl font-black font-mono text-[var(--text-main)] mt-0.5">{colaEspera.length}</p>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">Estudiantes en cola</span>
+              </div>
+              <div className="p-3.5 bg-[var(--bg-card)]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">Tiempo Medio Espera</span>
+                <p className="text-2xl font-black font-mono text-[var(--color-accent)] mt-0.5">
+                  {Math.max(0, Math.min(120, Math.round(Number(metricas?.promedio_espera_minutos_Wq) || 0)))} min
+                </p>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">Promedio de jornada</span>
+              </div>
+              <div className="p-3.5 bg-[var(--bg-card)]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">Atendidos Hoy</span>
+                <p className="text-2xl font-black font-mono text-[var(--color-primary)] dark:text-[var(--color-accent)] mt-0.5">{metricas?.atendidas || 0}</p>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">Turnos completados</span>
+              </div>
+              <div className="p-3.5 bg-[var(--bg-card)]">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">Ventanillas Activas</span>
+                <p className="text-2xl font-black font-mono text-[var(--text-main)] mt-0.5">{cajas.length}</p>
+                <span className="text-[10px] text-[var(--text-muted)] font-mono">Puestos habilitados</span>
+              </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                  <Landmark className="w-4 h-4 text-amber-400" />
+            {/* Puesto de Ventanilla */}
+            <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[2px] p-5 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between border-b border-[var(--border-fine)] pb-3">
+                <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2 font-sans">
+                  <Landmark className="w-4 h-4 text-[var(--color-accent)]" />
                   Mi Ventanilla
                 </h3>
                 <select
@@ -392,7 +405,7 @@ export default function CajasPage() {
                     setCajaActivaId(newId);
                     cargarDatosCaja(newId);
                   }}
-                  className="bg-neutral-950 border border-neutral-700 text-xs text-white rounded px-2 py-1"
+                  className="bg-[var(--bg-surface)] border border-[var(--border-fine)] text-xs text-[var(--text-main)] rounded-[2px] px-2 py-1 font-mono"
                 >
                   {cajas.map((c) => (
                     <option key={c.id_caja} value={c.id_caja}>{c.nombre_caja}</option>
@@ -401,26 +414,28 @@ export default function CajasPage() {
               </div>
 
               {turnoEnAtencion ? (
-                <div className="bg-amber-950/30 border border-amber-500/50 rounded-xl p-4 space-y-3">
+                <div className="bg-[var(--bg-surface)] border border-[var(--color-accent)]/60 rounded-[2px] p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase text-amber-400 tracking-wider">Atendiendo Actualmente</span>
-                    <span className="font-mono text-xs text-white bg-neutral-900 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-bold uppercase text-[var(--color-accent)] tracking-wider font-mono">
+                      Atendiendo Actualmente
+                    </span>
+                    <span className="font-mono text-xs text-[var(--text-main)] bg-[var(--bg-card)] border border-[var(--border-fine)] px-2 py-0.5 rounded-[2px] font-bold">
                       Turno #{turnoEnAtencion.numero_ficha}
                     </span>
                   </div>
-                  <h4 className="text-base font-bold text-white">
+                  <h4 className="text-base font-bold text-[var(--text-main)]">
                     {turnoEnAtencion.estudiante?.nombre_estudiante
                       ? `${turnoEnAtencion.estudiante.nombre_estudiante} ${turnoEnAtencion.estudiante.apellido_estudiante}`
                       : (typeof turnoEnAtencion.estudiante === 'string' ? turnoEnAtencion.estudiante : 'Estudiante')}
                   </h4>
                   {turnoEnAtencion.hora_inicio_atencion_ficha && (
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-[var(--text-muted)] font-mono">
                       Hora inicio: {new Date(turnoEnAtencion.hora_inicio_atencion_ficha).toLocaleTimeString()}
                     </p>
                   )}
                   <button
                     onClick={() => setModalPago(true)}
-                    className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition flex items-center justify-center gap-2 shadow"
+                    className="w-full py-2 btn-primary rounded-[2px] text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs"
                   >
                     <CreditCard className="w-4 h-4" /> Cobrar Arancel / Emitir Comprobante
                   </button>
@@ -435,19 +450,19 @@ export default function CajasPage() {
                       mostrarMensaje('ok', 'Atención finalizada sin cobro.');
                       cargarDatosCaja();
                     }}
-                    className="w-full py-1.5 bg-neutral-700 hover:bg-neutral-600 text-neutral-300 rounded-lg text-xs transition flex items-center justify-center gap-2"
+                    className="w-full py-1.5 border border-[var(--border-fine)] bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] text-[var(--text-muted)] rounded-[2px] text-xs transition flex items-center justify-center gap-2"
                   >
                     <X className="w-3.5 h-3.5" /> Finalizar sin cobro
                   </button>
                 </div>
               ) : (
-                <div className="text-center py-6 space-y-3 bg-neutral-950/40 rounded-xl border border-neutral-800">
-                  <UserCheck className="w-10 h-10 text-neutral-600 mx-auto" />
-                  <p className="text-xs text-neutral-400">Ventanilla lista para convocar turno</p>
+                <div className="text-center py-6 space-y-3 bg-[var(--bg-surface)] rounded-[2px] border border-dashed border-[var(--border-fine)]">
+                  <UserCheck className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
+                  <p className="text-xs text-[var(--text-muted)]">Ventanilla lista para convocar turno</p>
                   <button
                     onClick={handleLlamarSiguiente}
                     disabled={colaEspera.length === 0}
-                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-neutral-950 font-bold rounded-lg text-xs transition shadow-md shadow-amber-500/20"
+                    className="px-5 py-2 btn-gold disabled:opacity-40 rounded-[2px] text-xs font-bold transition shadow-xs"
                   >
                     Llamar Siguiente Turno
                   </button>
@@ -455,14 +470,15 @@ export default function CajasPage() {
               )}
             </div>
 
-            <div className="lg:col-span-2 bg-neutral-900/50 border border-neutral-800 rounded-xl p-5 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800 pb-3">
+            {/* Listado Editorial de Sala de Espera */}
+            <div className="lg:col-span-2 bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[2px] p-5 space-y-3 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-fine)] pb-3">
                 <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Users className="w-4 h-4 text-sky-400" />
+                  <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2 font-sans">
+                    <Users className="w-4 h-4 text-[var(--color-accent)]" />
                     Turnos en Sala de Espera ({colaEspera.length})
                   </h3>
-                  <span className="text-[11px] text-neutral-500 font-mono">
+                  <span className="text-[11px] text-[var(--text-muted)] font-mono">
                     {filtrarPorVentanilla ? `Filtrando por ${cajas.find(c => c.id_caja === cajaActivaId)?.nombre_caja || 'Mi Ventanilla'}` : 'Mostrando todas las ventanillas'}
                   </span>
                 </div>
@@ -474,10 +490,10 @@ export default function CajasPage() {
                       setFiltrarPorVentanilla(nuevo);
                       cargarDatosCaja(cajaActivaId, !nuevo);
                     }}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                    className={`px-3 py-1 rounded-[2px] text-xs font-mono font-semibold border transition ${
                       filtrarPorVentanilla
-                        ? 'bg-amber-500/10 border-amber-500/40 text-amber-300'
-                        : 'bg-neutral-800 border-neutral-700 text-neutral-300'
+                        ? 'bg-[var(--bg-surface)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                        : 'bg-[var(--bg-card)] border-[var(--border-fine)] text-[var(--text-muted)]'
                     }`}
                   >
                     {filtrarPorVentanilla ? 'Filtrado: Mi Ventanilla' : 'Ver Todos los Turnos'}
@@ -486,8 +502,8 @@ export default function CajasPage() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-950 text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
+                <table className="w-full text-left text-xs border border-[var(--border-fine)]">
+                  <thead className="bg-[var(--bg-surface)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-fine)] font-mono text-[10px]">
                     <tr>
                       <th className="p-2.5">Pos.</th>
                       <th className="p-2.5">N° Turno</th>
@@ -498,29 +514,29 @@ export default function CajasPage() {
                       <th className="p-2.5">Tiempo Espera</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-neutral-800 text-neutral-300">
+                  <tbody className="divide-y divide-[var(--border-fine)] text-[var(--text-main)]">
                     {colaEspera.map((f) => (
-                      <tr key={f.id_ficha} className="hover:bg-neutral-800/30">
-                        <td className="p-2.5 font-bold text-sky-400 font-mono">#{f.posicion || f.posicion_cola}</td>
-                        <td className="p-2.5 font-bold text-white font-mono">{f.numero_ficha}</td>
-                        <td className="p-2.5 font-semibold text-white">{f.estudiante}</td>
+                      <tr key={f.id_ficha} className="hover:bg-[var(--bg-surface)]/50 transition">
+                        <td className="p-2.5 font-bold font-mono text-[var(--color-accent)]">#{f.posicion || f.posicion_cola}</td>
+                        <td className="p-2.5 font-bold font-mono text-[var(--text-main)]">{f.numero_ficha}</td>
+                        <td className="p-2.5 font-semibold text-[var(--text-main)]">{f.estudiante}</td>
                         <td className="p-2.5">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-neutral-800 text-neutral-300">
+                          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-bold font-mono bg-[var(--bg-surface)] border border-[var(--border-fine)] text-[var(--text-muted)]">
                             {f.tipo_estudiante}
                           </span>
                         </td>
                         <td className="p-2.5">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-neutral-950 border border-neutral-800 text-neutral-300">
+                          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono font-bold bg-[var(--bg-surface)] border border-[var(--border-fine)] text-[var(--text-main)]">
                             {f.nombre_caja || (f.id_caja === 3 ? 'Material & Libros' : (f.id_caja === 1 ? 'Ventanilla Militar' : 'Ventanilla Civiles'))}
                           </span>
                         </td>
-                        <td className="p-2.5 font-mono text-neutral-400">{f.hora_llegada}</td>
-                        <td className="p-2.5 font-mono text-amber-400">{f.minutos_esperando || 0} min</td>
+                        <td className="p-2.5 font-mono text-[var(--text-muted)]">{f.hora_llegada}</td>
+                        <td className="p-2.5 font-mono text-[var(--color-accent)] font-semibold">{f.minutos_esperando || 0} min</td>
                       </tr>
                     ))}
                     {colaEspera.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="p-6 text-center text-neutral-500">
+                        <td colSpan={7} className="p-6 text-center text-[var(--text-muted)] font-mono">
                           No hay turnos pendientes en sala de espera.
                         </td>
                       </tr>
@@ -533,31 +549,34 @@ export default function CajasPage() {
         </div>
       )}
 
+      {/* Modal de Cobro y Recaudación */}
       {modalPago && turnoEnAtencion && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="text-base font-bold text-white">Procesar Recaudación en Ventanilla</h3>
-              <button onClick={() => setModalPago(false)} className="text-neutral-400 hover:text-white">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] w-full max-w-md p-6 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-[var(--border-fine)] pb-3">
+              <h3 className="text-sm font-bold text-[var(--text-main)] font-sans uppercase tracking-wider">
+                Procesar Recaudación en Ventanilla
+              </h3>
+              <button onClick={() => setModalPago(false)} className="text-[var(--text-muted)] hover:text-[var(--text-main)]">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleProcesarPago} className="space-y-3 text-xs">
               <div>
-                <label className="text-neutral-300 block mb-1">Estudiante</label>
+                <label className="text-[var(--text-muted)] block mb-1 font-mono text-[11px]">Estudiante</label>
                 <input
                   type="text"
                   disabled
                   value={turnoEnAtencion.estudiante?.nombre_estudiante
                     ? `${turnoEnAtencion.estudiante.nombre_estudiante} ${turnoEnAtencion.estudiante.apellido_estudiante}`
                     : (typeof turnoEnAtencion.estudiante === 'string' ? turnoEnAtencion.estudiante : 'Estudiante')}
-                  className="w-full bg-neutral-950 border border-neutral-800 rounded px-3 py-2 text-white font-bold"
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border-fine)] rounded-[2px] px-3 py-2 text-[var(--text-main)] font-bold font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-neutral-300 block mb-1">Concepto</label>
+                <label className="text-[var(--text-muted)] block mb-1 font-mono text-[11px]">Concepto</label>
                 <select
                   value={formPago.id_tipo_pago}
                   onChange={(e) => {
@@ -571,7 +590,7 @@ export default function CajasPage() {
                     const monto = id === 1 ? 0 : id === 2 ? 150 : id === 3 ? 220 : id === 4 ? 180 : 80;
                     setFormPago({ id_tipo_pago: id, concepto, monto });
                   }}
-                  className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white"
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border-fine)] rounded-[2px] px-3 py-2 text-[var(--text-main)] font-mono text-xs"
                 >
                   <option value={1}>Beca Militar (100% Exenta)</option>
                   <option value={2}>Matrícula Regular Civil</option>
@@ -582,29 +601,29 @@ export default function CajasPage() {
               </div>
 
               <div>
-                <label className="text-neutral-300 block mb-1">Monto a Cobrar (Bs.)</label>
+                <label className="text-[var(--text-muted)] block mb-1 font-mono text-[11px]">Monto a Cobrar (Bs.)</label>
                 <input
                   type="number"
-                  min="10"
+                  min="0"
                   step="5"
                   value={formPago.monto}
                   onChange={(e) => setFormPago({ ...formPago, monto: parseFloat(e.target.value) || 0 })}
-                  className="w-full bg-neutral-950 border border-neutral-700 rounded px-3 py-2 text-white font-mono text-base font-bold text-emerald-400"
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border-fine)] rounded-[2px] px-3 py-2 text-[var(--text-main)] font-mono text-base font-bold"
                   required
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-800">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--border-fine)]">
                 <button
                   type="button"
                   onClick={() => setModalPago(false)}
-                  className="px-3 py-1.5 rounded bg-neutral-800 text-white font-semibold"
+                  className="px-3 py-1.5 rounded-[2px] border border-[var(--border-fine)] bg-[var(--bg-surface)] text-[var(--text-muted)] font-semibold"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow"
+                  className="px-4 py-1.5 rounded-[2px] btn-primary text-xs font-bold transition shadow-xs"
                 >
                   Confirmar Cobro & Comprobante
                 </button>
@@ -614,19 +633,22 @@ export default function CajasPage() {
         </div>
       )}
 
+      {/* Comprobante Oficial Emitido */}
       {comprobanteEmitido && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-emerald-500/50 rounded-2xl w-full max-w-sm p-6 space-y-4 text-center">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-            <h3 className="text-base font-bold text-white">Comprobante Oficial de Pago</h3>
-            <div className="bg-neutral-950 p-4 rounded-xl border border-neutral-800 text-left text-xs space-y-1 font-mono">
-              <p className="text-neutral-400">Recibo: <strong className="text-white">#{comprobanteEmitido.id_pago}</strong></p>
-              <p className="text-neutral-400">Monto: <strong className="text-emerald-400 text-sm">{comprobanteEmitido.monto_pago} Bs.</strong></p>
-              <p className="text-neutral-400">Fecha: <strong className="text-white">{new Date(comprobanteEmitido.fecha_pago).toLocaleString()}</strong></p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] w-full max-w-sm p-6 space-y-4 text-center shadow-xl">
+            <CheckCircle2 className="w-10 h-10 text-[var(--color-primary)] dark:text-[var(--color-accent)] mx-auto" />
+            <h3 className="text-sm font-bold text-[var(--text-main)] font-sans uppercase tracking-wider">
+              Comprobante Oficial de Pago
+            </h3>
+            <div className="bg-[var(--bg-surface)] p-4 rounded-[2px] border border-[var(--border-fine)] text-left text-xs space-y-1 font-mono">
+              <p className="text-[var(--text-muted)]">Recibo: <strong className="text-[var(--text-main)]">#{comprobanteEmitido.id_pago}</strong></p>
+              <p className="text-[var(--text-muted)]">Monto: <strong className="text-[var(--color-accent)] text-sm">{comprobanteEmitido.monto_pago} Bs.</strong></p>
+              <p className="text-[var(--text-muted)]">Fecha: <strong className="text-[var(--text-main)]">{new Date(comprobanteEmitido.fecha_pago).toLocaleString()}</strong></p>
             </div>
             <button
               onClick={() => setComprobanteEmitido(null)}
-              className="w-full py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-bold rounded-lg text-xs"
+              className="w-full py-2 btn-primary rounded-[2px] text-xs font-bold"
             >
               Cerrar Comprobante
             </button>

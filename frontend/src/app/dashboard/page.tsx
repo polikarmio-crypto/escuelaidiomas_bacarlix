@@ -217,32 +217,33 @@ export default function DashboardSacaPage() {
   const config = getDashboardConfig(rolActivo, kpisData);
 
   return (
-    <div className="w-full max-w-[1550px] mx-auto space-y-6 pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200 dark:border-neutral-800">
+    <div className="w-full max-w-[1550px] mx-auto space-y-6 pb-12">
+      {/* Encabezado Institucional Táctico */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-fine)]">
         <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-neutral-900 border border-amber-400/40 flex items-center justify-center p-1.5 shrink-0 shadow-sm">
+          <div className="w-12 h-12 rounded-[3px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-center p-1.5 shrink-0 shadow-xs">
             <img
               src="/images/logos/logo-eie.png"
               alt="Logo Escuela de Idiomas del Ejército"
-              className="w-full h-full object-contain filter drop-shadow"
+              className="w-full h-full object-contain filter drop-shadow-xs"
             />
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="badge-bolivia-tricolor shadow-xs">
+              <span className="badge-bolivia-tricolor shadow-none text-[11px] font-mono">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#dc2626]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]" />
                 <span className="w-1.5 h-1.5 rounded-full bg-[#15803d]" />
-                <span className="text-slate-800 dark:text-slate-200">SACA &bull; CEDMIL</span>
+                <span className="text-[var(--text-main)] font-bold">SACA &bull; CEDMIL</span>
               </span>
-              <span className="text-xs font-semibold text-amber-700 dark:text-amber-400 font-mono">
+              <span className="text-xs font-semibold text-[var(--color-accent)] font-mono">
                 Gestión {data?.gestion_activa || '2026'} • Escuela de Idiomas del Ejército
               </span>
             </div>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-xl md:text-2xl font-extrabold text-[var(--text-main)] tracking-tight">
               Bienvenido, {usuario.nombre}
             </h1>
-            <p className="text-xs text-slate-600 dark:text-slate-400 max-w-2xl">
+            <p className="text-xs text-[var(--text-muted)] max-w-2xl mt-0.5">
               {config.subtitulo}
             </p>
           </div>
@@ -251,86 +252,108 @@ export default function DashboardSacaPage() {
         <button
           onClick={cargarDashboard}
           disabled={loading}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg btn-bolivia-green text-white text-xs font-semibold transition shadow-sm shrink-0"
+          className="btn-primary text-xs font-semibold px-4 py-2 rounded-[3px] flex items-center gap-2 transition shrink-0 shadow-xs"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span>Actualizar Datos</span>
         </button>
       </div>
 
-      <div className={`grid gap-3.5 ${
-        config.kpiCards.length <= 3
-          ? 'grid-cols-1 sm:grid-cols-3'
-          : config.kpiCards.length === 4
-          ? 'grid-cols-2 lg:grid-cols-4'
-          : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
-      }`}>
-        {config.kpiCards.map((kpi, i) => {
-          const Icon = kpi.icon;
-          return (
-            <div
-              key={i}
-              className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] p-3.5 rounded-xl shadow-xs transition hover:border-slate-300 dark:hover:border-[#364d68]"
-            >
-              <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 mb-1">
-                <span className="text-[11px] font-bold truncate uppercase tracking-wider">{kpi.label}</span>
-                <div className="w-6 h-6 rounded-md flex items-center justify-center bg-slate-100 dark:bg-neutral-900">
-                  <Icon className="w-3.5 h-3.5 shrink-0" style={{ color: kpi.color }} />
+      {/* Tira de Ledger KPI Institucional (Reemplazo de Bento Grid) */}
+      <div className="border border-[var(--border-fine)] rounded-[3px] bg-[var(--bg-card)] shadow-xs overflow-hidden">
+        <div className="bg-[var(--bg-surface)] px-4 py-2 border-b border-[var(--border-fine)] flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-[1px] bg-[var(--color-accent)]" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] font-mono">
+              Indicadores de Operación & Rendimiento
+            </span>
+          </div>
+          <span className="text-[10px] font-mono text-[var(--text-muted)] hidden sm:inline-block">
+            SACA &bull; Registros en Línea
+          </span>
+        </div>
+        <div className={`grid divide-y md:divide-y-0 md:divide-x divide-[var(--border-fine)] ${
+          config.kpiCards.length <= 3
+            ? 'grid-cols-1 md:grid-cols-3'
+            : config.kpiCards.length === 4
+            ? 'grid-cols-2 md:grid-cols-4'
+            : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6'
+        }`}>
+          {config.kpiCards.map((kpi, i) => {
+            const Icon = kpi.icon;
+            return (
+              <div
+                key={i}
+                className="p-3.5 bg-[var(--bg-card)] hover:bg-[var(--bg-surface)]/50 transition-colors"
+              >
+                <div className="flex items-center justify-between text-[var(--text-muted)] mb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider truncate font-sans">{kpi.label}</span>
+                  <div className="w-5 h-5 rounded-[2px] flex items-center justify-center bg-[var(--bg-surface)] border border-[var(--border-fine)]">
+                    <Icon className="w-3 h-3 shrink-0 text-[var(--color-accent)]" />
+                  </div>
                 </div>
+                <p className="text-2xl font-black font-mono text-[var(--text-main)] my-0.5 tracking-tight">
+                  {kpi.value}
+                </p>
+                {kpi.sub && (
+                  <span className="text-[11px] text-[var(--text-muted)] font-mono truncate block">
+                    {kpi.sub}
+                  </span>
+                )}
               </div>
-              <p className="text-2xl font-black font-mono text-slate-900 dark:text-white my-0.5">
-                {kpi.value}
-              </p>
-              {kpi.sub && (
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate block">
-                  {kpi.sub}
-                </span>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      <div className="space-y-3.5">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-neutral-800">
+      {/* Directorio de Módulos Operativos (Reemplazo editorial con orden táctico) */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-[var(--border-fine)]">
           <div className="flex items-center gap-2">
-            <h2 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5">
-              <FolderTree className="w-3.5 h-3.5 text-amber-500" />
+            <h2 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+              <FolderTree className="w-3.5 h-3.5 text-[var(--color-accent)]" />
               Módulos del Sistema
             </h2>
-            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 dark:bg-neutral-900 text-slate-700 dark:text-neutral-400 border border-slate-200 dark:border-neutral-800 font-mono font-bold">
+            <span className="text-[10px] px-2 py-0.5 rounded-[2px] bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-fine)] font-mono font-bold">
               {config.modulos.length} disponibles
             </span>
           </div>
+          <span className="text-[10px] text-[var(--text-muted)] font-mono hidden sm:inline-block">
+            Régimen de Acceso Académico-Militar
+          </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5">
-          {config.modulos.map((m) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+          {config.modulos.map((m, idx) => {
             const Icon = m.icon;
+            const code = (idx + 1).toString().padStart(2, '0');
             return (
               <Link
                 key={m.href}
                 href={m.href}
-                className="p-4 rounded-xl border bg-white dark:bg-[#121d2b] border-slate-200 dark:border-[#24354a] hover:border-amber-500/50 hover:bg-slate-50 dark:hover:bg-[#1a2738] transition flex flex-col justify-between space-y-3 group shadow-xs hover:shadow-sm"
+                className="p-3.5 rounded-[3px] border border-[var(--border-fine)] bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] hover:border-[var(--color-accent)] transition-all flex flex-col justify-between group shadow-xs"
               >
                 <div>
-                  <div className="flex items-center gap-2.5 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-neutral-950 border border-slate-200 dark:border-neutral-800 flex items-center justify-center text-amber-500 shrink-0 group-hover:scale-105 transition">
-                      <Icon className="w-4 h-4" />
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-mono font-bold text-[var(--color-accent)]">
+                      MOD-{code}
+                    </span>
+                    <div className="w-6 h-6 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-center text-[var(--color-primary)] dark:text-[var(--color-accent)] group-hover:bg-[var(--color-primary)] group-hover:text-white transition">
+                      <Icon className="w-3.5 h-3.5" />
                     </div>
-                    <h3 className="font-bold text-slate-900 dark:text-white text-xs group-hover:text-amber-500 transition truncate">
-                      {m.titulo}
-                    </h3>
                   </div>
-                  <p className="text-[11.5px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                  <h3 className="font-bold text-[var(--text-main)] text-xs mb-1 group-hover:text-[var(--color-primary)] dark:group-hover:text-[var(--color-accent)] transition truncate">
+                    {m.titulo}
+                  </h3>
+                  <p className="text-[11px] text-[var(--text-muted)] line-clamp-2 leading-relaxed">
                     {m.desc}
                   </p>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-neutral-800/60 text-[11px]">
-                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Ingresar
+                <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-[var(--border-fine)] text-[10.5px]">
+                  <span className="text-[var(--color-primary)] dark:text-[var(--color-accent)] font-semibold font-mono flex items-center gap-1">
+                    Ingresar &rarr;
                   </span>
-                  <ArrowRight className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500 group-hover:translate-x-1 transition group-hover:text-amber-500" />
+                  <ArrowRight className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:translate-x-1 group-hover:text-[var(--color-accent)] transition" />
                 </div>
               </Link>
             );
@@ -338,23 +361,25 @@ export default function DashboardSacaPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-2">
-        <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+      {/* Paneles de Expediente, Normativa y Doctrina Institucional */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-1">
+        {/* Panel 1: Planes Oficiales */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-fine)]">
+            <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+              <ShieldCheck className="w-3.5 h-3.5 text-[var(--color-accent)]" />
               Planes de Idioma Oficiales
             </h3>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">7 Planes</span>
+            <span className="text-[10px] text-[var(--text-muted)] font-mono">7 Planes</span>
           </div>
-          <div className="space-y-2">
+          <div className="divide-y divide-[var(--border-fine)]">
             {PLANES_OFICIALES.slice(0, 4).map((p, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
+              <div key={idx} className="py-2 flex items-center justify-between text-xs first:pt-0 last:pb-0">
                 <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">{p.nombre}</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">{p.niveles}</p>
+                  <p className="font-bold text-[var(--text-main)]">{p.nombre}</p>
+                  <p className="text-[10.5px] text-[var(--text-muted)] font-mono">{p.niveles}</p>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                <span className="text-[10px] font-bold font-mono text-[var(--color-primary)] dark:text-[var(--color-accent)] px-2 py-0.5 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)]">
                   {p.estado}
                 </span>
               </div>
@@ -362,11 +387,12 @@ export default function DashboardSacaPage() {
           </div>
         </div>
 
+        {/* Panel 2: Específico por Rol */}
         {rolActivo === 'ESTUDIANTE' ? (
-          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-blue-500" />
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-fine)]">
+              <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <BookOpen className="w-3.5 h-3.5 text-[var(--color-accent)]" />
                 Mi Asignatura y Horario
               </h3>
               {data?.estudiante_personal?.cursos && data.estudiante_personal.cursos.length > 0 ? (
@@ -374,7 +400,7 @@ export default function DashboardSacaPage() {
                   Activo ({data.estudiante_personal.cursos.length})
                 </span>
               ) : (
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-mono font-bold">
+                <span className="text-[10px] text-[var(--color-accent)] font-mono font-bold">
                   Sin Cursos
                 </span>
               )}
@@ -382,15 +408,15 @@ export default function DashboardSacaPage() {
             <div className="space-y-2">
               {data?.estudiante_personal?.cursos && data.estudiante_personal.cursos.length > 0 ? (
                 data.estudiante_personal.cursos.map((c: any, idx: number) => (
-                  <div key={idx} className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 space-y-1 text-xs">
+                  <div key={idx} className="p-2.5 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] space-y-1 text-xs">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-800 dark:text-slate-200">{c.codigo_paralelo} • {c.idioma}</span>
-                      <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                      <span className="font-bold text-[var(--text-main)] font-mono">{c.codigo_paralelo} • {c.idioma}</span>
+                      <span className="text-[10px] font-bold font-mono text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-[2px] bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
                         {c.estado}
                       </span>
                     </div>
-                    <p className="text-[10.5px] text-slate-600 dark:text-slate-400">{c.nivel} ({c.programa})</p>
-                    <div className="pt-1 flex flex-col gap-0.5 text-[10.5px] text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-neutral-800/40">
+                    <p className="text-[10.5px] text-[var(--text-muted)]">{c.nivel} ({c.programa})</p>
+                    <div className="pt-1 flex flex-col gap-0.5 text-[10.5px] text-[var(--text-muted)] border-t border-[var(--border-fine)] font-mono">
                       <span><strong>Aula:</strong> {c.aula}</span>
                       <span><strong>Horario:</strong> {c.horario}</span>
                       <span><strong>Docente:</strong> {c.docente}</span>
@@ -398,17 +424,17 @@ export default function DashboardSacaPage() {
                   </div>
                 ))
               ) : (
-                <div className="p-4 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-dashed border-slate-200 dark:border-neutral-800 text-center space-y-2">
-                  <BookOpen className="w-6 h-6 text-slate-400 mx-auto" />
-                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                <div className="p-4 rounded-[2px] bg-[var(--bg-surface)] border border-dashed border-[var(--border-fine)] text-center space-y-2">
+                  <BookOpen className="w-5 h-5 text-[var(--text-muted)] mx-auto" />
+                  <p className="text-xs font-semibold text-[var(--text-main)]">
                     Sin asignaturas ni paralelos inscritos actualmente
                   </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  <p className="text-[11px] text-[var(--text-muted)] max-w-sm mx-auto">
                     Acérquese a Ventanilla de Caja para formalizar su matrícula académica y asignación de paralelo curricular.
                   </p>
                   <Link
                     href="/cajas"
-                    className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline pt-1"
+                    className="inline-flex items-center gap-1.5 text-[11px] font-bold font-mono text-[var(--color-accent)] hover:underline pt-1"
                   >
                     Solicitar Turno en Caja &rarr;
                   </Link>
@@ -417,24 +443,24 @@ export default function DashboardSacaPage() {
             </div>
           </div>
         ) : rolActivo === 'DOCENTE' ? (
-          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                <GraduationCap className="w-3.5 h-3.5 text-emerald-500" />
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-fine)]">
+              <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <GraduationCap className="w-3.5 h-3.5 text-[var(--color-accent)]" />
                 Mi Asignación y Aula Docente
               </h3>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">Titular</span>
+              <span className="text-[10px] text-[var(--color-accent)] font-mono font-bold">Titular</span>
             </div>
             <div className="space-y-2">
-              <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 space-y-1 text-xs">
+              <div className="p-2.5 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] space-y-1 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-800 dark:text-slate-200 font-mono">ING-101-A • Inglés</span>
-                  <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
+                  <span className="font-bold text-[var(--text-main)] font-mono">ING-101-A • Inglés</span>
+                  <span className="text-[10px] font-bold font-mono text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded-[2px] bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">
                     En Aula (6 d.)
                   </span>
                 </div>
-                <p className="text-[10.5px] text-slate-600 dark:text-slate-400">Básico A1/A2 • Aula 102 (Pabellón Alfa)</p>
-                <div className="pt-1 flex flex-col gap-0.5 text-[10.5px] text-slate-500 dark:text-slate-400 border-t border-slate-200/50 dark:border-neutral-800/40">
+                <p className="text-[10.5px] text-[var(--text-muted)]">Básico A1/A2 • Aula 102 (Pabellón Alfa)</p>
+                <div className="pt-1 flex flex-col gap-0.5 text-[10.5px] text-[var(--text-muted)] border-t border-[var(--border-fine)] font-mono">
                   <span><strong>Horario:</strong> 08:30 - 10:00 (Turno Mañana)</span>
                   <span><strong>Estudiantes:</strong> 18 alumnos matriculados</span>
                   <span><strong>Próximo Relevo:</strong> En 9 días pedagógicos</span>
@@ -443,129 +469,131 @@ export default function DashboardSacaPage() {
             </div>
           </div>
         ) : rolActivo === 'JEFE_ACADEMICO' ? (
-          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-blue-500" />
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-fine)]">
+              <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <Layers className="w-3.5 h-3.5 text-[var(--color-accent)]" />
                 Supervisión Académica y Cursos
               </h3>
-              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-mono font-bold">26 Cursos</span>
+              <span className="text-[10px] text-[var(--color-accent)] font-mono font-bold">26 Cursos</span>
             </div>
             <div className="space-y-2 text-xs">
-              <div className="p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 flex items-center justify-between">
+              <div className="p-2 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Rotaciones Obligatorias (15 Días)</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Docentes que alcanzaron el límite de rotación</p>
+                  <p className="font-bold text-[var(--text-main)]">Rotaciones Obligatorias (15 Días)</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">Docentes que alcanzaron el límite de rotación</p>
                 </div>
-                <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
+                <span className="text-[11px] font-bold font-mono text-amber-600 dark:text-amber-400 px-2 py-0.5 rounded-[2px] bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800">
                   {data?.kpis?.docentes?.alertas_rotacion_15d ?? 1} pendientes
                 </span>
               </div>
-              <div className="p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 flex items-center justify-between">
+              <div className="p-2 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Ocupación Promedio de Paralelos</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Aforo máximo promedio: 30 plazas</p>
+                  <p className="font-bold text-[var(--text-main)]">Ocupación Promedio de Paralelos</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">Aforo máximo promedio: 30 plazas</p>
                 </div>
-                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                <span className="text-[11px] font-bold font-mono text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-[2px] bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
                   60% cubierto
                 </span>
               </div>
             </div>
           </div>
         ) : rolActivo === 'ALMACENERO' ? (
-          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Package className="w-3.5 h-3.5 text-pink-500" />
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-fine)]">
+              <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <Package className="w-3.5 h-3.5 text-[var(--color-accent)]" />
                 Control de Textos y Depósito
               </h3>
-              <span className="text-[10px] text-pink-600 dark:text-pink-400 font-mono font-bold">Depósito Central</span>
+              <span className="text-[10px] text-[var(--color-accent)] font-mono font-bold">Depósito Central</span>
             </div>
             <div className="space-y-2 text-xs">
-              <div className="p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 flex items-center justify-between">
+              <div className="p-2 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Títulos Bajo Umbral de Reorden</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Requieren orden de reposición de imprenta</p>
+                  <p className="font-bold text-[var(--text-main)]">Títulos Bajo Umbral de Reorden</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">Requieren orden de reposición de imprenta</p>
                 </div>
-                <span className="text-[11px] font-bold text-red-600 dark:text-red-400 px-2 py-0.5 rounded bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800">
+                <span className="text-[11px] font-bold font-mono text-red-600 dark:text-red-400 px-2 py-0.5 rounded-[2px] bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800">
                   {data?.kpis?.almacen?.alertas_reorden ?? 12} títulos
                 </span>
               </div>
-              <div className="p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 flex items-center justify-between">
+              <div className="p-2 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-slate-800 dark:text-slate-200">Stock Total en Inventario</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400">Total ejemplares físicos en estantería</p>
+                  <p className="font-bold text-[var(--text-main)]">Stock Total en Inventario</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">Total ejemplares físicos en estantería</p>
                 </div>
-                <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800">
+                <span className="text-[11px] font-bold font-mono text-[var(--color-primary)] dark:text-[var(--color-accent)] px-2 py-0.5 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)]">
                   {data?.kpis?.almacen?.total_unidades ?? 673} unidades
                 </span>
               </div>
             </div>
           </div>
         ) : rolActivo === 'CAJERO' ? (
-          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
-            {/* Ventanillas de Caja panel - solo CAJERO */}
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-amber-500" />
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-fine)]">
+              <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <Building2 className="w-3.5 h-3.5 text-[var(--color-accent)]" />
                 Ventanillas de Caja Activas
               </h3>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">3 Cajas</span>
+              <span className="text-[10px] text-[var(--text-muted)] font-mono">3 Cajas</span>
             </div>
-            <div className="space-y-2">
+            <div className="divide-y divide-[var(--border-fine)]">
               {[
                 { nombre: 'Ventanilla 1 - Personal Militar', ubicacion: 'Hall Central Bloque A' },
                 { nombre: 'Ventanilla 2 - Estudiantes Civiles', ubicacion: 'Hall Central Bloque B' },
                 { nombre: 'Ventanilla 3 - Textos y Libros', ubicacion: 'Planta Baja Almacén' },
               ].map((v, i) => (
-                <div key={i} className="flex items-center justify-between text-xs p-2 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60">
+                <div key={i} className="py-2 flex items-center justify-between text-xs first:pt-0 last:pb-0">
                   <div>
-                    <p className="font-bold text-slate-800 dark:text-slate-200">{v.nombre}</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">{v.ubicacion}</p>
+                    <p className="font-bold text-[var(--text-main)]">{v.nombre}</p>
+                    <p className="text-[10px] text-[var(--text-muted)] font-mono">{v.ubicacion}</p>
                   </div>
-                  <span className="text-[10px] font-bold text-sky-700 dark:text-sky-400 px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800">Operativa</span>
+                  <span className="text-[10px] font-bold font-mono text-[var(--color-primary)] dark:text-[var(--color-accent)] px-2 py-0.5 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)]">
+                    Operativa
+                  </span>
                 </div>
               ))}
             </div>
           </div>
         ) : (
-          <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-4 shadow-xs space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-fine)]">
+              <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                <Sparkles className="w-3.5 h-3.5 text-[var(--color-accent)]" />
                 Panel de Supervisión General
               </h3>
             </div>
-            <div className="space-y-2 text-xs text-slate-500 dark:text-slate-400">
+            <div className="space-y-2 text-xs text-[var(--text-muted)]">
               <p>Métricas y estado general del sistema SACA CEDMIL operando bajo régimen normal.</p>
             </div>
           </div>
         )}
 
-        <div className="bg-white dark:bg-[#121d2b] border border-slate-200 dark:border-[#24354a] rounded-xl p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-neutral-800">
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-blue-500" />
+        {/* Panel 3: Doctrina y Régimen Académico */}
+        <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-4 shadow-xs space-y-3">
+          <div className="flex items-center justify-between pb-2 border-b border-[var(--border-fine)]">
+            <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+              <Clock className="w-3.5 h-3.5 text-[var(--color-accent)]" />
               Doctrina y Régimen Académico
             </h3>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">CEDMIL</span>
+            <span className="text-[10px] text-[var(--text-muted)] font-mono">CEDMIL</span>
           </div>
-          <div className="text-xs space-y-2 text-slate-600 dark:text-slate-300">
-            <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 space-y-1">
-              <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 text-[11px]">
+          <div className="text-xs space-y-2 text-[var(--text-muted)]">
+            <div className="p-2.5 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] space-y-1">
+              <div className="flex items-center justify-between font-bold text-[var(--text-main)] text-[11px]">
                 <span>Rotación Pedagógica Docente</span>
-                <span className="text-amber-600 dark:text-amber-400">Cada 15 días</span>
+                <span className="text-[var(--color-accent)] font-mono">Cada 15 días</span>
               </div>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+              <p className="text-[10.5px] text-[var(--text-muted)]">
                 Adaptación continua a acentos internacionales y desarrollo de fluidez auditiva militar.
               </p>
             </div>
-            <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-neutral-900/40 border border-slate-100 dark:border-neutral-800/60 space-y-1">
-              <div className="flex items-center justify-between font-bold text-slate-800 dark:text-slate-200 text-[11px]">
+            <div className="p-2.5 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] space-y-1">
+              <div className="flex items-center justify-between font-bold text-[var(--text-main)] text-[11px]">
                 <span>Certificación Lingüística</span>
-                <span className="text-emerald-600 dark:text-emerald-400">STANAG 6001</span>
+                <span className="text-[var(--color-primary)] dark:text-[var(--color-accent)] font-mono">STANAG 6001</span>
               </div>
-              <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+              <p className="text-[10.5px] text-[var(--text-muted)]">
                 Evaluaciones estandarizadas en 4 destrezas: escuchar, hablar, leer y redactar.
               </p>
             </div>

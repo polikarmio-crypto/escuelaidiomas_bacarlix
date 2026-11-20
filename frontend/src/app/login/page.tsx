@@ -50,7 +50,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
     try {
@@ -64,11 +64,9 @@ export default function LoginPage() {
           document.documentElement.classList.remove('dark');
         }
       } else {
-        const isDark =
-          document.documentElement.classList.contains('dark') ||
-          document.documentElement.getAttribute('data-theme') === 'dark';
-        const currentTheme = isDark ? 'dark' : 'light';
-        setTheme(currentTheme);
+        setTheme('light');
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.classList.remove('dark');
       }
     } catch (e) {}
   }, []);
@@ -219,9 +217,7 @@ export default function LoginPage() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1.25rem',
-        background: isLight
-          ? 'radial-gradient(ellipse at top, #f8fafc 0%, #e2e8f0 100%)'
-          : 'radial-gradient(ellipse at top, #0c1a12 0%, #060c08 100%)',
+        background: isLight ? '#F6F7F5' : '#0E1612',
         transition: 'background 0.3s ease',
       }}
     >
@@ -230,13 +226,13 @@ export default function LoginPage() {
         style={{
           maxWidth: '480px',
           width: '100%',
-          background: isLight ? '#ffffff' : '#121814',
-          border: isLight ? '1px solid rgba(212, 175, 55, 0.4)' : '1px solid rgba(212, 175, 55, 0.25)',
-          borderRadius: '12px',
+          background: isLight ? '#ECEEEB' : '#152019',
+          border: isLight ? '1px solid #D5D9D4' : '1px solid #2A3D31',
+          borderRadius: '3px',
           padding: '1.75rem 2rem',
           boxShadow: isLight
-            ? '0 20px 45px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04)'
-            : '0 20px 40px rgba(0,0,0,0.6)',
+            ? '0 1px 3px rgba(24, 28, 25, 0.06)'
+            : '0 4px 12px rgba(0,0,0,0.4)',
           transition: 'all 0.3s ease',
         }}
       >
@@ -248,7 +244,7 @@ export default function LoginPage() {
             alignItems: 'center',
             marginBottom: '1.25rem',
             paddingBottom: '0.75rem',
-            borderBottom: isLight ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.08)',
+            borderBottom: isLight ? '1px solid #D5D9D4' : '1px solid #2A3D31',
           }}
         >
           <button
@@ -260,10 +256,10 @@ export default function LoginPage() {
               gap: '0.4rem',
               fontSize: '0.75rem',
               padding: '0.35rem 0.65rem',
-              background: isLight ? '#f1f5f9' : 'rgba(255,255,255,0.05)',
-              border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(255,255,255,0.15)',
-              color: isLight ? '#334155' : '#e5e7eb',
-              borderRadius: '6px',
+              background: isLight ? '#F6F7F5' : 'rgba(255,255,255,0.05)',
+              border: isLight ? '1px solid #D5D9D4' : '1px solid rgba(255,255,255,0.15)',
+              color: isLight ? '#181C19' : '#e5e7eb',
+              borderRadius: '2px',
               cursor: 'pointer',
               fontWeight: 600,
             }}
@@ -284,16 +280,16 @@ export default function LoginPage() {
                 gap: '0.35rem',
                 fontSize: '0.75rem',
                 padding: '0.35rem 0.65rem',
-                background: isLight ? '#fef3c7' : 'rgba(234, 179, 8, 0.1)',
-                border: isLight ? '1px solid #fcd34d' : '1px solid rgba(234, 179, 8, 0.3)',
-                color: isLight ? '#92400e' : '#fbbf24',
-                borderRadius: '6px',
+                background: isLight ? '#F6F7F5' : 'rgba(181, 148, 73, 0.1)',
+                border: isLight ? '1px solid #D5D9D4' : '1px solid rgba(181, 148, 73, 0.3)',
+                color: '#B59449',
+                borderRadius: '2px',
                 cursor: 'pointer',
                 fontWeight: 700,
                 transition: 'all 0.2s ease',
               }}
             >
-              {isLight ? <Moon size={14} color="#b45309" /> : <Sun size={14} color="#fbbf24" />}
+              {isLight ? <Moon size={14} color="#B59449" /> : <Sun size={14} color="#B59449" />}
               <span>{isLight ? 'Modo Oscuro' : 'Modo Claro'}</span>
             </button>
 
@@ -304,7 +300,7 @@ export default function LoginPage() {
                 alignItems: 'center',
                 gap: '0.35rem',
                 fontSize: '0.75rem',
-                color: isLight ? '#b45309' : '#d4af37',
+                color: '#B59449',
                 fontWeight: 600,
                 textDecoration: 'none',
               }}
@@ -326,7 +322,7 @@ export default function LoginPage() {
             style={{
               fontSize: '1.2rem',
               fontWeight: 800,
-              color: isLight ? '#0f172a' : '#ffffff',
+              color: isLight ? '#181C19' : '#ffffff',
               letterSpacing: '0.03em',
               margin: 0,
             }}
@@ -337,7 +333,7 @@ export default function LoginPage() {
             style={{
               fontSize: '0.74rem',
               fontWeight: 700,
-              color: isLight ? '#b45309' : '#d4af37',
+              color: '#B59449',
               letterSpacing: '0.06em',
               textTransform: 'uppercase',
               marginTop: '0.3rem',
@@ -348,7 +344,7 @@ export default function LoginPage() {
           <p
             style={{
               fontSize: '0.72rem',
-              color: isLight ? '#64748b' : '#9ca3af',
+              color: isLight ? '#596159' : '#9ca3af',
               marginTop: '0.2rem',
               fontWeight: 500,
             }}
@@ -376,7 +372,7 @@ export default function LoginPage() {
               style={{
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                color: isLight ? '#1e293b' : '#e5e7eb',
+                color: isLight ? '#181C19' : '#e5e7eb',
                 display: 'block',
                 marginBottom: '0.35rem',
               }}
@@ -391,7 +387,7 @@ export default function LoginPage() {
                   left: '0.75rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: isLight ? '#64748b' : '#9ca3af',
+                  color: isLight ? '#596159' : '#9ca3af',
                 }}
               />
               <input
@@ -410,10 +406,10 @@ export default function LoginPage() {
                   width: '100%',
                   padding: '0.65rem 0.75rem 0.65rem 2.4rem',
                   fontSize: '0.85rem',
-                  background: isLight ? '#ffffff' : '#0a0f0c',
-                  border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(255,255,255,0.18)',
-                  borderRadius: '6px',
-                  color: isLight ? '#0f172a' : '#ffffff',
+                  background: isLight ? '#F6F7F5' : '#0E1612',
+                  border: isLight ? '1px solid #D5D9D4' : '1px solid #2A3D31',
+                  borderRadius: '2px',
+                  color: isLight ? '#181C19' : '#ffffff',
                   outline: 'none',
                   boxSizing: 'border-box',
                 }}
@@ -427,7 +423,7 @@ export default function LoginPage() {
               style={{
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                color: isLight ? '#1e293b' : '#e5e7eb',
+                color: isLight ? '#181C19' : '#e5e7eb',
                 display: 'block',
                 marginBottom: '0.35rem',
               }}
@@ -442,7 +438,7 @@ export default function LoginPage() {
                   left: '0.75rem',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  color: isLight ? '#64748b' : '#9ca3af',
+                  color: isLight ? '#596159' : '#9ca3af',
                 }}
               />
               <input
@@ -461,10 +457,10 @@ export default function LoginPage() {
                   width: '100%',
                   padding: '0.65rem 0.75rem 0.65rem 2.4rem',
                   fontSize: '0.85rem',
-                  background: isLight ? '#ffffff' : '#0a0f0c',
-                  border: isLight ? '1px solid #cbd5e1' : '1px solid rgba(255,255,255,0.18)',
-                  borderRadius: '6px',
-                  color: isLight ? '#0f172a' : '#ffffff',
+                  background: isLight ? '#F6F7F5' : '#0E1612',
+                  border: isLight ? '1px solid #D5D9D4' : '1px solid #2A3D31',
+                  borderRadius: '2px',
+                  color: isLight ? '#181C19' : '#ffffff',
                   outline: 'none',
                   boxSizing: 'border-box',
                 }}
@@ -478,12 +474,12 @@ export default function LoginPage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                color: isLight ? '#b91c1c' : '#f87171',
+                color: '#b91c1c',
                 fontSize: '0.78rem',
                 padding: '0.6rem 0.8rem',
-                background: isLight ? '#fef2f2' : 'rgba(239, 68, 68, 0.12)',
-                borderRadius: '6px',
-                border: isLight ? '1px solid #fecaca' : '1px solid rgba(239, 68, 68, 0.3)',
+                background: isLight ? '#FEF0F0' : 'rgba(239, 68, 68, 0.12)',
+                borderRadius: '2px',
+                border: isLight ? '1px solid #F5AAAA' : '1px solid rgba(239, 68, 68, 0.3)',
               }}
             >
               <AlertCircle size={16} style={{ flexShrink: 0 }} />
@@ -499,10 +495,10 @@ export default function LoginPage() {
               padding: '0.75rem',
               fontWeight: 700,
               fontSize: '0.88rem',
-              background: '#15803d',
-              border: '1px solid #16a34a',
+              background: '#233329',
+              border: '1px solid #19251E',
               color: '#ffffff',
-              borderRadius: '6px',
+              borderRadius: '2px',
               cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -510,7 +506,7 @@ export default function LoginPage() {
               gap: '0.5rem',
               marginTop: '0.35rem',
               transition: 'all 0.2s ease',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              boxShadow: '0 1px 2px rgba(24, 28, 25, 0.04)',
             }}
           >
             <UserCheck size={18} />
@@ -539,15 +535,15 @@ export default function LoginPage() {
           style={{
             width: '100%',
             padding: '0.65rem',
-            background: isLight ? '#f8fafc' : '#ffffff',
-            color: '#3c4043',
-            border: isLight ? '1px solid #cbd5e1' : '1px solid #dadce0',
+            background: isLight ? '#F6F7F5' : '#ffffff',
+            color: isLight ? '#181C19' : '#3c4043',
+            border: isLight ? '1px solid #D5D9D4' : '1px solid #dadce0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.75rem',
             fontWeight: 600,
-            borderRadius: '6px',
+            borderRadius: '2px',
             fontSize: '0.85rem',
             cursor: 'pointer',
             transition: 'background 0.2s ease',
@@ -566,16 +562,16 @@ export default function LoginPage() {
           style={{
             marginTop: '1.25rem',
             paddingTop: '0.85rem',
-            borderTop: isLight ? '1px solid #e2e8f0' : '1px solid rgba(255,255,255,0.08)',
+            borderTop: isLight ? '1px solid #D5D9D4' : '1px solid rgba(255,255,255,0.08)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.4rem',
             fontSize: '0.72rem',
-            color: isLight ? '#64748b' : '#9ca3af',
+            color: isLight ? '#596159' : '#9ca3af',
           }}
         >
-          <Shield size={14} color={isLight ? '#b45309' : '#d4af37'} />
+          <Shield size={14} color="#B59449" />
           <span>Acceso cifrado y registrado bajo normativa institucional CEDMIL</span>
         </div>
       </div>

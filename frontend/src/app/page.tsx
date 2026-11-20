@@ -351,50 +351,41 @@ export default function IndexPage() {
   const [tabIdioma, setTabIdioma] = useState<'INGLES' | 'NATIVOS' | 'EXTRANJEROS'>('INGLES');
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${theme === 'light' ? 'bg-[#f4f6f8] text-[#1e293b]' : 'bg-[#0b131f] text-slate-100'
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${theme === 'light' ? 'bg-[var(--bg-base)] text-[var(--text-main)]' : 'bg-[#0E1612] text-slate-100'
       }`}>
 
-      <header className={`sticky top-0 z-50 backdrop-blur-md border-b transition-all ${theme === 'light'
-          ? 'bg-white/95 border-slate-200 shadow-sm'
-          : 'bg-[#0b131f]/95 border-[#24354a] shadow-lg'
-        }`}>
+      <header className="sticky top-0 z-50 backdrop-blur-md border-b border-[#B59449]/40 bg-[#233329] text-white shadow-sm transition-all">
         <div className="tricolor-stripe" />
         <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20 gap-2 sm:gap-4">
 
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <a href="#inicio" className="flex items-center gap-2.5 sm:gap-3 group">
-                <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl border p-1 shadow-sm flex items-center justify-center transition shrink-0 ${theme === 'light' ? 'bg-slate-50 border-amber-400/50' : 'bg-[#121d2b] border-[#b8860b]/60'
-                  }`}>
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-[3px] border border-[#B59449]/50 bg-[#19251E] p-1 shadow-xs flex items-center justify-center transition shrink-0">
                   <img
                     src="/images/logos/logo-eie.png"
                     alt="Escudo de la Escuela de Idiomas del Ejército"
-                    className="w-full h-full object-contain filter drop-shadow"
+                    className="w-full h-full object-contain filter drop-shadow-xs"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <span className={`text-[9px] sm:text-[10px] font-mono font-bold tracking-wider uppercase whitespace-nowrap ${theme === 'light' ? 'text-[#855810]' : 'text-[#d4af37]'
-                    }`}>
+                  <span className="text-[9px] sm:text-[10px] font-mono font-bold tracking-wider uppercase whitespace-nowrap text-[#B59449]">
                     THINK GLOBALLY, ACT LOCALLY
                   </span>
-                  <span className={`text-xs sm:text-sm lg:text-[15px] font-extrabold tracking-tight leading-snug whitespace-nowrap transition ${theme === 'light' ? 'text-[#0f172a] group-hover:text-[#1b4332]' : 'text-white group-hover:text-amber-300'
-                    }`}>
+                  <span className="text-xs sm:text-sm lg:text-[15px] font-extrabold tracking-tight leading-snug whitespace-nowrap text-white transition">
                     ESCUELA DE IDIOMAS DEL EJÉRCITO
                   </span>
-                  <span className="text-[10px] text-slate-500 hidden md:block whitespace-nowrap">
-                    CEDMIL &bull; Bolivia
+                  <span className="text-[10px] text-white/70 hidden md:block whitespace-nowrap font-mono">
+                    CEDMIL &bull; Estado Mayor Miraflores &bull; La Paz
                   </span>
                 </div>
               </a>
 
-              <div className="hidden lg:flex items-center gap-1 ml-1 pl-2.5 border-l border-slate-300 dark:border-slate-700">
+              <div className="hidden lg:flex items-center gap-1 ml-1 pl-2.5 border-l border-white/20">
                 <button
                   type="button"
                   onClick={() => router.back()}
-                  className={`p-1.5 rounded-lg border transition ${theme === 'light'
-                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-                      : 'bg-[#121d2b] hover:bg-[#1a2738] border-[#24354a] text-slate-300'
-                    }`}
+                  className="p-1.5 rounded-[2px] border border-white/20 bg-[#19251E] hover:bg-[#233329] text-white/80 transition"
                   title="Página anterior (Atrás)"
                   aria-label="Atrás"
                 >
@@ -403,10 +394,7 @@ export default function IndexPage() {
                 <button
                   type="button"
                   onClick={() => router.forward()}
-                  className={`p-1.5 rounded-lg border transition ${theme === 'light'
-                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-                      : 'bg-[#121d2b] hover:bg-[#1a2738] border-[#24354a] text-slate-300'
-                    }`}
+                  className="p-1.5 rounded-[2px] border border-white/20 bg-[#19251E] hover:bg-[#233329] text-white/80 transition"
                   title="Página siguiente (Adelante)"
                   aria-label="Adelante"
                 >
@@ -414,10 +402,7 @@ export default function IndexPage() {
                 </button>
                 <a
                   href="#inicio"
-                  className={`p-1.5 rounded-lg border transition ${theme === 'light'
-                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
-                      : 'bg-[#121d2b] hover:bg-[#1a2738] border-[#24354a] text-slate-300'
-                    }`}
+                  className="p-1.5 rounded-[2px] border border-white/20 bg-[#19251E] hover:bg-[#233329] text-white/80 transition"
                   title="Volver al Inicio"
                   aria-label="Inicio"
                 >
@@ -426,15 +411,14 @@ export default function IndexPage() {
               </div>
             </div>
 
-            <nav className={`hidden xl:flex items-center gap-3.5 2xl:gap-6 text-xs font-semibold ${theme === 'light' ? 'text-slate-700' : 'text-slate-300'
-              }`}>
-              <a href="#mision-vision" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Misión</a>
-              <a href="#carrusel" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Galería</a>
-              <a href="#oferta-academica" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Idiomas</a>
-              <a href="#filiales" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Sedes</a>
-              <a href="#inscripciones" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Inscripción</a>
-              <a href="#correo-institucional" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Correo</a>
-              <a href="#contacto" className="whitespace-nowrap hover:text-amber-600 dark:hover:text-amber-400 transition py-1">Contacto</a>
+            <nav className="hidden xl:flex items-center gap-3.5 2xl:gap-6 text-xs font-semibold text-white/85">
+              <a href="#mision-vision" className="whitespace-nowrap hover:text-[#B59449] transition py-1">Misión</a>
+              <a href="#carrusel" className="whitespace-nowrap hover:text-[#B59449] transition py-1">Galería</a>
+              <a href="#oferta-academica" className="whitespace-nowrap hover:text-[#B59449] transition py-1">Idiomas</a>
+              <a href="#filiales" className="whitespace-nowrap hover:text-[#B59449] transition py-1">Sedes</a>
+              <a href="#inscripciones" className="whitespace-nowrap hover:text-[#B59449] transition py-1">Inscripción</a>
+              <a href="#correo-institucional" className="whitespace-nowrap hover:text-[#B59449] transition py-1">Correo</a>
+              <a href="#contacto" className="whitespace-nowrap hover:text-[#B59449] transition py-1">Contacto</a>
             </nav>
 
             <div className="flex items-center gap-2 shrink-0">
@@ -442,33 +426,29 @@ export default function IndexPage() {
               <button
                 type="button"
                 onClick={alternarTema}
-                className={`p-2 rounded-xl border transition shadow-sm flex items-center justify-center shrink-0 ${theme === 'light'
-                    ? 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
-                    : 'bg-[#121d2b] border-[#364d68] text-amber-300 hover:bg-[#1a2738]'
-                  }`}
+                className="p-2 rounded-[2px] border border-white/20 bg-[#19251E] hover:bg-[#233329] text-[#B59449] transition shadow-xs flex items-center justify-center shrink-0"
                 title={theme === 'light' ? 'Cambiar a Modo Oscuro' : 'Cambiar a Modo Claro'}
                 aria-label="Cambiar tema de color"
               >
                 {theme === 'light' ? (
-                  <Sun className="w-4 h-4 text-amber-600" />
+                  <Sun className="w-4 h-4 text-[#B59449]" />
                 ) : (
-                  <Moon className="w-4 h-4 text-amber-300" />
+                  <Moon className="w-4 h-4 text-[#B59449]" />
                 )}
               </button>
 
               <Link
                 href="/login"
-                className="whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white btn-bolivia-green shadow-sm hover:shadow transition shrink-0"
+                className="whitespace-nowrap inline-flex items-center gap-1.5 px-3.5 py-2 rounded-[2px] text-xs font-bold text-white btn-gold shadow-xs hover:shadow transition shrink-0"
                 title="Acceder a la plataforma SACA"
               >
                 <span>Acceder a SACA</span>
-                <ChevronRight className="w-3.5 h-3.5 text-amber-200" />
+                <ChevronRight className="w-3.5 h-3.5 text-neutral-900" />
               </Link>
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className={`xl:hidden p-2 rounded-xl border transition shrink-0 ${theme === 'light' ? 'bg-white border-slate-300 text-slate-700' : 'bg-[#121d2b] border-[#24354a] text-slate-300'
-                  }`}
+                className="xl:hidden p-2 rounded-[2px] border border-white/20 bg-[#19251E] text-white transition shrink-0"
                 aria-label="Abrir menú de navegación"
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

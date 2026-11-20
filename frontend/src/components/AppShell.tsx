@@ -553,9 +553,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             </nav>
 
-            <div style={{ padding: '0.75rem 0.85rem', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface-elevated)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            <div style={{ padding: '0.75rem 0.85rem', borderTop: '1px solid var(--border-fine)', background: 'var(--bg-surface-elevated)', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--military-green-primary)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--military-gold-primary)', color: '#181C19', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800, flexShrink: 0 }}>
                   {(usuario?.nombre || session?.user?.name || rolConfig.nombrePorDefecto).slice(0, 2).toUpperCase()}
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
@@ -571,7 +571,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <button
                 onClick={handleLogout}
                 className="btn btn-secondary"
-                style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: 'var(--status-danger)', borderColor: 'var(--status-danger)', borderRadius: '8px' }}
+                style={{ width: '100%', padding: '0.45rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', color: 'var(--status-danger)', borderColor: 'var(--status-danger)', borderRadius: '3px' }}
                 title="Cerrar Sesión y volver al Portal"
               >
                 <LogOut size={14} />
@@ -599,11 +599,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   }
                 `}</style>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--bg-surface)', padding: '0.2rem 0.35rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.08)', padding: '0.2rem 0.35rem', borderRadius: '3px', border: '1px solid rgba(181,148,73,0.25)' }}>
                   <button
                     type="button"
                     onClick={() => router.back()}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem 0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(232,235,231,0.65)', cursor: 'pointer', padding: '0.25rem 0.4rem', borderRadius: '2px', display: 'flex', alignItems: 'center' }}
                     title="Página anterior (Atrás)"
                     aria-label="Atrás"
                   >
@@ -612,16 +612,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <button
                     type="button"
                     onClick={() => router.forward()}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem 0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(232,235,231,0.65)', cursor: 'pointer', padding: '0.25rem 0.4rem', borderRadius: '2px', display: 'flex', alignItems: 'center' }}
                     title="Página siguiente (Adelante)"
                     aria-label="Adelante"
                   >
                     <ArrowRight size={14} />
                   </button>
-                  <div style={{ width: '1px', height: '14px', background: 'var(--border-subtle)', margin: '0 0.15rem' }} />
+                  <div style={{ width: '1px', height: '14px', background: 'rgba(181,148,73,0.30)', margin: '0 0.15rem' }} />
                   <Link
                     href="/dashboard"
-                    style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.25rem 0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center' }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(232,235,231,0.65)', cursor: 'pointer', padding: '0.25rem 0.4rem', borderRadius: '2px', display: 'flex', alignItems: 'center' }}
                     title="Inicio SACA"
                     aria-label="Inicio SACA"
                   >
@@ -629,10 +629,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   </Link>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.78rem', color: 'rgba(232,235,231,0.60)', fontWeight: 500, fontFamily: 'JetBrains Mono, monospace' }}>
                   <span>SACA</span>
-                  <span>/</span>
-                  <span style={{ color: 'var(--text-main)', fontWeight: 700, textTransform: 'capitalize' }}>
+                  <span style={{ color: 'rgba(181,148,73,0.70)' }}>/</span>
+                  <span style={{ color: '#E8EBE7', fontWeight: 700, textTransform: 'capitalize' }}>
                     {pathname.replace('/', '') || 'Dashboard'}
                   </span>
                 </div>
@@ -642,43 +642,43 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   href="/configuracion"
                   className="btn btn-secondary"
-                  style={{ padding: '0.25rem 0.6rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  style={{ padding: '0.25rem 0.65rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(181,148,73,0.25)', color: '#E8EBE7', borderRadius: '3px' }}
                   title="Configurar tema, alto contraste y tamaño de texto"
                 >
                   <Sliders size={13} style={{ color: 'var(--military-gold-primary)' }} />
-                  <span>Accesibilidad</span>
+                  <span style={{ color: '#E8EBE7' }}>Accesibilidad</span>
                 </Link>
 
                 <button
                   type="button"
                   onClick={() => cambiarTema(theme === 'light' ? 'dark' : 'light')}
                   className="btn btn-secondary btn-icon"
-                  style={{ padding: '0.3rem', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ padding: '0.3rem', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(181,148,73,0.25)', borderRadius: '3px' }}
                   title={`Cambiar a ${theme === 'light' ? 'Modo Oscuro' : 'Modo Claro'}`}
                   aria-label="Alternar tema claro y oscuro"
                 >
-                  {theme === 'light' ? <Sun size={14} style={{ color: '#b8860b' }} /> : <Moon size={14} style={{ color: '#f3c759' }} />}
+                  {theme === 'light' ? <Sun size={14} style={{ color: '#B59449' }} /> : <Moon size={14} style={{ color: '#E8C97A' }} />}
                 </button>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.5rem', borderLeft: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingLeft: '0.5rem', borderLeft: '1px solid rgba(181,148,73,0.25)' }}>
                   <div
                     style={{
                       width: 28,
                       height: 28,
                       borderRadius: '50%',
-                      background: 'var(--military-green-primary)',
-                      color: '#ffffff',
+                      background: 'var(--military-gold-primary)',
+                      color: '#181C19',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
                     }}
                   >
                     {(usuario?.nombre || session?.user?.name || rolConfig.nombrePorDefecto).slice(0, 2).toUpperCase()}
                   </div>
                   <div className="hidden sm:block">
-                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, lineHeight: 1.1 }}>
+                    <p style={{ fontSize: '0.75rem', fontWeight: 700, color: '#E8EBE7', margin: 0, lineHeight: 1.1 }}>
                       {usuario?.nombre || session?.user?.name || rolConfig.nombrePorDefecto}
                     </p>
                   </div>
