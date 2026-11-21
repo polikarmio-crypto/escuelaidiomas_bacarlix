@@ -16,11 +16,13 @@ import {
   BookOpen,
   Calendar,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  User,
+  Shield
 } from 'lucide-react';
 import { useAuthRole } from '@/context/AuthRoleContext';
 
-const PER_PAGE = 10;
+const PER_PAGE = 7;
 
 export default function InscripcionesPage() {
   const { esJefeAcademico, esEstudiante, esAdmin, rolConfig, usuario } = useAuthRole();
@@ -174,6 +176,18 @@ export default function InscripcionesPage() {
     return inscripcionesFiltradas.slice(start, start + PER_PAGE);
   }, [inscripcionesFiltradas, page]);
 
+  const [inscripcionSeleccionada, setInscripcionSeleccionada] = useState<any | null>(null);
+
+  useEffect(() => {
+    if (inscripcionesPaginadas.length > 0) {
+      if (!inscripcionSeleccionada || !inscripcionesPaginadas.some((i) => i.id_inscripcion === inscripcionSeleccionada.id_inscripcion)) {
+        setInscripcionSeleccionada(inscripcionesPaginadas[0]);
+      }
+    } else {
+      setInscripcionSeleccionada(null);
+    }
+  }, [inscripcionesPaginadas]);
+
   if (!puedeInscribir && !esEstudiante) {
     return (
       <div className="max-w-4xl mx-auto p-8">
@@ -190,177 +204,286 @@ export default function InscripcionesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-neutral-800">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shadow-sm shrink-0">
-            <ClipboardEdit className="w-6 h-6" />
+    <div className="h-full flex flex-col min-h-0 overflow-hidden">
+      {/* FRANJA SUPERIOR COMPACTA (44px): Breadcrumb + Filtros Inline + Acciones */}
+      <div className="strip-utility-bar">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--military-green-subtle)] border border-[var(--border-accent)] text-[var(--military-green-primary)] dark:text-[var(--military-gold-primary)] font-mono text-[11px] font-bold shrink-0">
+            <ClipboardEdit className="w-3.5 h-3.5" />
+            <span>SACA / Inscripciones</span>
           </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-mono text-neutral-400">
-              <span>SACA</span>
-              <span>/</span>
-              <span className="text-indigo-400 font-semibold">Inscripciones</span>
+
+          <div className="h-4 w-[1px] bg-[var(--border-fine)] shrink-0" />
+
+          {!esEstudiante && (
+            <div className="relative w-44 sm:w-64">
+              <Search className="w-3.5 h-3.5 text-[var(--text-dim)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Buscar por estudiante, CI o paralelo..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded pl-8 pr-2 py-1 text-xs text-[var(--text-main)] outline-none"
+              />
             </div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-white">
-              {esEstudiante ? 'Mis Matrículas y Cursos Inscritos' : 'Matriculación y Avance Académico'}
-            </h1>
-          </div>
+          )}
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={cargarDatos}
-            disabled={loading}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
-            <span>Sincronizar</span>
-          </button>
+
+        <div className="flex items-center gap-2 shrink-0">
           {puedeInscribir && (
             <button
               onClick={abrirModalInscribir}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition shadow-md shadow-indigo-600/20"
+              className="btn btn-primary"
+              style={{ padding: '0.2rem 0.65rem', fontSize: '0.72rem', height: '28px' }}
             >
-              <Plus className="w-4 h-4" />
-              + Inscribir Estudiante
+              <Plus className="w-3 h-3" />
+              <span className="hidden sm:inline">Nueva Matrícula</span>
             </button>
           )}
+
+          <button
+            onClick={cargarDatos}
+            disabled={loading}
+            className="btn btn-secondary"
+            style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', height: '28px' }}
+            title="Sincronizar matrículas"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
       {alerta && (
         <div
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded mb-2 text-xs font-semibold shrink-0 border ${
             alerta.tipo === 'ok'
-              ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200'
-              : 'bg-red-950/50 border-red-500/50 text-red-200'
+              ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+              : 'bg-red-950/20 border-red-500/40 text-red-600 dark:text-red-400'
           }`}
         >
-          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
           <span>{alerta.mensaje}</span>
         </div>
       )}
 
-      {!esEstudiante && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Buscar por estudiante, CI o código de paralelo..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white"
-            />
-          </div>
-          <span className="text-xs text-neutral-500">
-            Mostrando <strong className="text-white">{inscripcionesFiltradas.length === 0 ? 0 : (page - 1) * PER_PAGE + 1}-{Math.min(page * PER_PAGE, inscripcionesFiltradas.length)}</strong> de <strong className="text-white">{inscripcionesFiltradas.length}</strong> matriculados
-          </span>
-        </div>
-      )}
-
-      <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-950 text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
-              <tr>
-                <th className="p-3">ID Inscripción</th>
-                <th className="p-3">Estudiante</th>
-                <th className="p-3">Paralelo & Idioma</th>
-                <th className="p-3">Nivel Curricular</th>
-                <th className="p-3">Fecha Matrícula</th>
-                <th className="p-3">Avance Libros Inicializados</th>
-                <th className="p-3 text-center">Estado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-800 text-neutral-300">
-              {inscripcionesPaginadas.map((ins) => (
-                <tr key={ins.id_inscripcion} className="hover:bg-neutral-800/30 transition">
-                  <td className="p-3 font-mono font-bold text-purple-400">
-                    #{ins.id_inscripcion}
-                  </td>
-                  <td className="p-3">
-                    <div className="font-bold text-white text-sm">
-                      {ins.estudiante?.nombre_estudiante} {ins.estudiante?.apellido_estudiante}
-                    </div>
-                    <span className="text-[11px] text-neutral-400 font-mono">
-                      CI: {ins.estudiante?.ci_estudiante} &bull; {ins.estudiante?.tipo_estudiante}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <span className="font-mono font-bold text-white bg-neutral-950 px-2 py-0.5 rounded border border-neutral-800">
-                      {ins.paralelo?.codigo_paralelo}
-                    </span>
-                    <p className="text-[11px] text-sky-400 font-semibold mt-0.5">
-                      {ins.paralelo?.nivel?.programa?.idioma?.nombre_idioma}
-                    </p>
-                  </td>
-                  <td className="p-3 text-neutral-300">
-                    {ins.paralelo?.nivel?.nombre_nivel} ({ins.paralelo?.nivel?.programa?.nombre_programa})
-                  </td>
-                  <td className="p-3 font-mono text-neutral-400">
-                    {ins.fecha_inscripcion}
-                  </td>
-                  <td className="p-3">
-                    <div className="flex flex-wrap gap-1">
-                      {(ins.libros_avance || []).map((la: any) => (
-                        <span
-                          key={la.id_inscripcion_libro}
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono ${
-                            la.estado_libro === 'Aprobado'
-                              ? 'bg-emerald-500/20 text-emerald-400'
-                              : la.estado_libro === 'En curso'
-                              ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30 font-bold'
-                              : 'bg-neutral-800 text-neutral-500'
-                          }`}
-                        >
-                          {la.libro?.nombre_libro || `Libro ${la.id_libro}`} ({la.estado_libro})
-                        </span>
-                      ))}
-                      {(ins.libros_avance || []).length === 0 && (
-                        <span className="text-[10px] text-neutral-500">Sin avance registrado</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="p-3 text-center">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                      {ins.estado_inscripcion}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {inscripcionesFiltradas.length === 0 && !loading && (
+      {/* ÁREA DE TRABAJO DIVIDIDA (SPLIT-WORKSPACE) */}
+      <div className="split-workspace">
+        {/* PANEL PRINCIPAL: TABLA DE INSCRIPCIONES (7 REGISTROS) */}
+        <div className="workspace-main-panel">
+          <div className="workspace-table-container">
+            <table className="compact-table">
+              <thead>
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-neutral-500">
-                    No se encontraron inscripciones registradas.
-                  </td>
+                  <th style={{ width: '40px' }}>ID</th>
+                  <th>Estudiante</th>
+                  <th>Paralelo & Idioma</th>
+                  <th>Nivel Curricular</th>
+                  <th>Fecha Matrícula</th>
+                  <th className="text-center">Libros</th>
+                  <th className="text-center">Estado</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {inscripcionesPaginadas.map((ins) => {
+                  const esActivo = inscripcionSeleccionada?.id_inscripcion === ins.id_inscripcion;
 
-        {inscripcionesFiltradas.length > PER_PAGE && (
-          <div className="flex items-center justify-between p-3 border-t border-neutral-800 text-xs text-neutral-400 bg-neutral-950/40">
-            <span>Página {page} de {totalPages}</span>
+                  return (
+                    <tr
+                      key={ins.id_inscripcion}
+                      onClick={() => setInscripcionSeleccionada(ins)}
+                      className={`cursor-pointer transition ${esActivo ? 'selected' : ''}`}
+                    >
+                      <td className="font-mono font-bold text-[var(--military-gold-primary)] text-xs whitespace-nowrap">
+                        #{ins.id_inscripcion}
+                      </td>
+                      <td>
+                        <div className="font-bold text-[var(--text-main)] truncate max-w-[190px]">
+                          {ins.estudiante?.nombre_estudiante} {ins.estudiante?.apellido_estudiante}
+                        </div>
+                        <span className="text-[10px] text-[var(--text-dim)] font-mono">
+                          CI: {ins.estudiante?.ci_estudiante} &bull; {ins.estudiante?.tipo_estudiante}
+                        </span>
+                      </td>
+                      <td className="truncate max-w-[160px]">
+                        <span className="font-mono font-bold text-[var(--text-main)] text-xs">
+                          {ins.paralelo?.codigo_paralelo}
+                        </span>
+                        <div className="text-[10px] text-[var(--military-gold-primary)] font-bold">
+                          {ins.paralelo?.nivel?.programa?.idioma?.nombre_idioma}
+                        </div>
+                      </td>
+                      <td className="text-[11px] text-[var(--text-muted)] truncate max-w-[140px]">
+                        {ins.paralelo?.nivel?.nombre_nivel}
+                      </td>
+                      <td className="font-mono text-[var(--text-dim)] text-[11px] whitespace-nowrap">
+                        {ins.fecha_inscripcion}
+                      </td>
+                      <td className="text-center">
+                        <span className="font-mono font-bold text-xs text-[var(--text-main)]">
+                          {(ins.libros_avance || []).length}
+                        </span>
+                      </td>
+                      <td className="text-center whitespace-nowrap">
+                        <span className="badge badge-military">
+                          {ins.estado_inscripcion}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {inscripcionesFiltradas.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-[var(--text-dim)]">
+                      No se encontraron inscripciones registradas.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* DOCKED BOTTOM PAGINATION */}
+          <div className="tactical-pagination">
             <div className="flex items-center gap-2">
+              <span className="font-bold text-[var(--military-gold-primary)]">MATRÍCULAS:</span>
+              <span>{inscripcionesFiltradas.length} REGISTRADAS</span>
+            </div>
+
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="p-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="btn btn-secondary"
+                style={{ padding: '0.15rem 0.5rem', height: '26px', fontSize: '0.72rem' }}
+                title="Página Anterior"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3 h-3" />
+                <span className="hidden sm:inline">Anterior</span>
               </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .map((p, idx, arr) => (
+                    <React.Fragment key={p}>
+                      {idx > 0 && arr[idx - 1] !== p - 1 && <span className="text-[var(--text-dim)]">...</span>}
+                      <button
+                        onClick={() => setPage(p)}
+                        className={`px-2 py-0.5 rounded text-xs font-mono font-bold border transition ${
+                          page === p
+                            ? 'bg-[var(--military-green-primary)] text-white border-[var(--border-accent)]'
+                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)]'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  ))}
+              </div>
+
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="p-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="btn btn-secondary"
+                style={{ padding: '0.15rem 0.5rem', height: '26px', fontSize: '0.72rem' }}
+                title="Página Siguiente"
               >
-                <ChevronRight className="w-4 h-4" />
+                <span className="hidden sm:inline">Siguiente</span>
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
+
+            <div className="hidden sm:block">
+              <span>PÁG {page} DE {totalPages}</span>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* PANEL LATERAL DERECHO: DOSSIER DE MATRÍCULA Y AVANCE DE LIBROS */}
+        <div className="workspace-side-panel">
+          {inscripcionSeleccionada ? (
+            <div className="flex flex-col h-full gap-2.5">
+              {/* Encabezado */}
+              <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--border-subtle)]">
+                <div className="w-9 h-9 rounded bg-[var(--military-green-primary)] text-[var(--military-gold-primary)] font-bold font-mono text-sm flex items-center justify-center shrink-0 border border-[var(--border-accent)]">
+                  {inscripcionSeleccionada.estudiante?.nombre_estudiante?.slice(0, 2).toUpperCase() || 'ES'}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-xs text-[var(--text-main)] truncate leading-tight">
+                    {inscripcionSeleccionada.estudiante?.nombre_estudiante} {inscripcionSeleccionada.estudiante?.apellido_estudiante}
+                  </h3>
+                  <div className="text-[10px] text-[var(--text-dim)] font-mono mt-0.5">
+                    CI: {inscripcionSeleccionada.estudiante?.ci_estudiante} &bull; {inscripcionSeleccionada.estudiante?.tipo_estudiante}
+                  </div>
+                </div>
+              </div>
+
+              {/* Datos de Matrícula */}
+              <div className="flex flex-col gap-2 flex-1">
+                <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)] space-y-1">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] font-mono">
+                    Paralelo Asignado
+                  </div>
+                  <div className="text-sm font-bold text-[var(--military-gold-primary)] font-mono">
+                    {inscripcionSeleccionada.paralelo?.codigo_paralelo}
+                  </div>
+                  <div className="text-xs text-[var(--text-main)] font-semibold">
+                    {inscripcionSeleccionada.paralelo?.nivel?.programa?.idioma?.nombre_idioma}
+                  </div>
+                  <div className="text-[10px] text-[var(--text-dim)]">
+                    {inscripcionSeleccionada.paralelo?.nivel?.nombre_nivel} ({inscripcionSeleccionada.paralelo?.nivel?.programa?.nombre_programa})
+                  </div>
+                </div>
+
+                {/* Avance de Libros Inicializados */}
+                <div className="flex-1 flex flex-col gap-1.5 min-h-0">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] font-mono">
+                    Avance de Libros (Malla)
+                  </div>
+                  <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+                    {(inscripcionSeleccionada.libros_avance || []).map((la: any) => (
+                      <div
+                        key={la.id_inscripcion_libro}
+                        className="p-1.5 rounded bg-[var(--bg-surface-elevated)] border border-[var(--border-fine)] flex items-center justify-between text-xs"
+                      >
+                        <div className="truncate pr-2">
+                          <span className="font-medium text-[var(--text-main)] block truncate">
+                            {la.libro?.nombre_libro || `Libro #${la.id_libro}`}
+                          </span>
+                        </div>
+                        <span
+                          className={`badge shrink-0 ${
+                            la.estado_libro === 'Aprobado'
+                              ? 'badge-military'
+                              : la.estado_libro === 'En curso'
+                              ? 'badge-gold'
+                              : 'badge-civil'
+                          }`}
+                        >
+                          {la.estado_libro}
+                        </span>
+                      </div>
+                    ))}
+                    {(inscripcionSeleccionada.libros_avance || []).length === 0 && (
+                      <div className="text-xs text-[var(--text-dim)] p-2">Sin libros registrados en este curso.</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Fecha y Estado */}
+                <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)] flex items-center justify-between text-xs font-mono mt-auto">
+                  <span className="text-[var(--text-dim)]">Fecha: {inscripcionSeleccionada.fecha_inscripcion}</span>
+                  <span className="badge badge-military">{inscripcionSeleccionada.estado_inscripcion}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center p-4 text-[var(--text-dim)]">
+              <ClipboardEdit className="w-10 h-10 mb-2 opacity-30" />
+              <p className="text-xs">Seleccione una matrícula para ver el plan curricular y libros del estudiante.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {modalInscribir && (

@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import { useAuthRole } from '@/context/AuthRoleContext';
 
-const PER_PAGE = 10;
+const PER_PAGE = 7;
 
 export default function DocentesPage() {
   const { esJefeAcademico, esAdmin, rolConfig } = useAuthRole();
@@ -114,6 +114,8 @@ export default function DocentesPage() {
     estado_docente: 'Activo',
     idiomas_ids: [] as number[],
   });
+
+  const [docenteDetalleSeleccionado, setDocenteDetalleSeleccionado] = useState<any | null>(null);
 
   const mostrarMensaje = (tipo: 'ok' | 'error', mensaje: string) => {
     setAlerta({ tipo, mensaje });
@@ -367,257 +369,337 @@ export default function DocentesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-neutral-800">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm shrink-0">
-            <GraduationCap className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-mono text-neutral-400">
-              <span>SACA</span>
-              <span>/</span>
-              <span className="text-emerald-400 font-semibold">Cuerpo Docente</span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-white">
-              Gestión y Rotación de Docentes
-            </h1>
-          </div>
+    <div className="h-full flex flex-col min-h-0 overflow-hidden">
+      {/* Strip Utility Bar */}
+      <div className="strip-utility-bar" style={{ height: 'auto', minHeight: '44px', flexShrink: 0, padding: '0 0.75rem', gap: '0.5rem' }}>
+        <div className="flex items-center gap-1.5 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+          <GraduationCap className="w-3.5 h-3.5" style={{ color: 'var(--color-accent)' }} />
+          <span style={{ color: 'var(--color-accent)', fontWeight: 700 }}>SACA / Cuerpo Docente</span>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={cargarDatos}
-            disabled={loading}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
-            <span>Sincronizar</span>
-          </button>
-          <button
-            onClick={ejecutarAsignacionAutomatica}
-            disabled={ejecutandoAsignacion || !puedeAdministrar}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition shadow-md shadow-amber-600/20"
-            title="Asigna automáticamente docentes a paralelos sin docente según especialidad y carga lectiva"
-          >
-            <Wand2 className={`w-3.5 h-3.5 ${ejecutandoAsignacion ? 'animate-spin' : ''}`} />
-            <span>{ejecutandoAsignacion ? 'Asignando...' : 'Asignación Automática'}</span>
-          </button>
-          <button
-            onClick={abrirModalNuevo}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/20"
-          >
-            <Plus className="w-4 h-4" />
-            + Registrar Docente
-          </button>
+        <div className="relative flex-1 max-w-xs">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, CI o correo..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-[3px] border"
+            style={{ background: 'var(--bg-base)', borderColor: 'var(--border-fine)', color: 'var(--text-main)' }}
+          />
         </div>
+        <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+          {docentesFiltrados.length === 0 ? 0 : (page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, docentesFiltrados.length)} / {docentesFiltrados.length}
+        </span>
+        <div style={{ flex: 1 }} />
+        {alertasRotacion.length > 0 && (
+          <button
+            onClick={handleRotarTodosPendientes}
+            disabled={ejecutandoRotacionMasiva}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[3px] transition"
+            style={{ background: '#b59449', color: '#0d120f' }}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${ejecutandoRotacionMasiva ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{ejecutandoRotacionMasiva ? 'Rotando...' : `Rotar (${alertasRotacion.length})`}</span>
+          </button>
+        )}
+        <button
+          onClick={cargarDatos}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-[3px] border transition"
+          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-fine)', color: 'var(--text-main)' }}
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Sync</span>
+        </button>
+        <button
+          onClick={ejecutarAsignacionAutomatica}
+          disabled={ejecutandoAsignacion}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[3px] border transition"
+          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-fine)', color: 'var(--color-accent)' }}
+          title="Asignación Automática de Docentes"
+        >
+          <Wand2 className={`w-3.5 h-3.5 ${ejecutandoAsignacion ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Auto</span>
+        </button>
+        <button
+          onClick={abrirModalNuevo}
+          className="btn btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Registrar Docente
+        </button>
       </div>
 
       {alerta && (
-        <div
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
-            alerta.tipo === 'ok'
-              ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200'
-              : 'bg-red-950/50 border-red-500/50 text-red-200'
-          }`}
-        >
-          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+        <div className={`flex items-center gap-2 px-4 py-2 text-xs font-medium border-b flex-shrink-0 ${alerta.tipo === 'ok' ? 'bg-emerald-950/40 border-emerald-700/40 text-emerald-300' : 'bg-red-950/40 border-red-700/40 text-red-300'}`}>
+          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
           <span>{alerta.mensaje}</span>
         </div>
       )}
 
       {alertasRotacion.length > 0 && (
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-4 rounded-xl border border-amber-500/50 bg-amber-950/30 text-sm">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-amber-400 animate-pulse shrink-0" />
-            <div>
-              <span className="font-bold text-amber-300">
-                {alertasRotacion.length} relevo(s) pendiente(s)
-              </span>
-              <span className="text-neutral-400 ml-2 text-xs">
-                Docentes con ≥14 días continuos en aula
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={handleRotarTodosPendientes}
-              disabled={ejecutandoRotacionMasiva}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-neutral-950 font-extrabold rounded-lg text-xs transition shadow-md disabled:opacity-50"
-              title="Ejecuta de forma automática todas las rotaciones pendientes asignando docentes del mismo idioma"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${ejecutandoRotacionMasiva ? 'animate-spin' : ''}`} />
-              <span>{ejecutandoRotacionMasiva ? 'Rotando todas...' : 'Rotar Todas las Pendientes'}</span>
-            </button>
-            <div className="h-4 w-px bg-amber-700/50 hidden sm:block mx-1" />
+        <div className="flex items-center gap-2 px-4 py-1.5 text-xs border-b flex-shrink-0 overflow-x-auto" style={{ borderColor: '#f59e0b40', background: '#451a0320' }}>
+          <Clock className="w-3.5 h-3.5 text-amber-400 animate-pulse flex-shrink-0" />
+          <span className="font-bold text-amber-300 flex-shrink-0">{alertasRotacion.length} relevo(s) pendiente(s)</span>
+          <div className="flex gap-1.5 ml-1">
             {alertasRotacion.slice(0, 4).map((a, idx) => (
               <button
                 key={idx}
                 onClick={() => {
                   const par = paralelos.find((p) => p.codigo_paralelo === a.paralelo);
-                  setParaleloARotar(par || {
-                    id_paralelo: a.id_paralelo || a.id_asignacion,
-                    codigo_paralelo: a.paralelo,
-                    idioma: a.idioma,
-                    id_docente: a.id_docente,
-                    docente_actual: a.docente_actual,
-                  });
+                  setParaleloARotar(par || { id_paralelo: a.id_paralelo || a.id_asignacion, codigo_paralelo: a.paralelo, idioma: a.idioma, id_docente: a.id_docente, docente_actual: a.docente_actual });
                   setDocenteNuevoId('');
                   setModalRotar(true);
                 }}
-                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded-lg text-xs flex items-center gap-1 shadow"
-                title={`Relevar manualmente ${a.paralelo} (${a.idioma})`}
+                className="px-2 py-0.5 text-[10px] font-bold rounded-[2px] flex items-center gap-1"
+                style={{ background: '#b59449', color: '#0d120f' }}
               >
-                <ArrowRightLeft className="w-3 h-3" />
-                {a.paralelo} ({a.dias_en_aula}d)
+                <ArrowRightLeft className="w-2.5 h-2.5" />{a.paralelo} ({a.dias_en_aula}d)
               </button>
             ))}
-            {alertasRotacion.length > 4 && (
-              <span className="text-xs text-amber-400 self-center">+{alertasRotacion.length - 4} más</span>
-            )}
           </div>
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Buscar docente por nombre, CI o correo..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white"
-          />
-        </div>
-        <span className="text-xs text-neutral-500">
-          Mostrando <strong className="text-white">{docentesFiltrados.length === 0 ? 0 : (page - 1) * PER_PAGE + 1}-{Math.min(page * PER_PAGE, docentesFiltrados.length)}</strong> de <strong className="text-white">{docentesFiltrados.length}</strong> docentes
-        </span>
-      </div>
-
-      <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-950 text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
-              <tr>
-                <th className="p-3">Docente</th>
-                <th className="p-3">Cédula (CI)</th>
-                <th className="p-3">Idiomas Habilitados</th>
-                <th className="p-3">Paralelo Asignado</th>
-                <th className="p-3 text-center">Días en Aula</th>
-                <th className="p-3">Contacto</th>
-                <th className="p-3 text-center">Estado</th>
-                <th className="p-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-800 text-neutral-300">
-              {docentesPaginados.map((doc) => (
-                <tr key={doc.id_docente} className="hover:bg-neutral-800/30 transition">
-                  <td className="p-3">
-                    <div className="font-bold text-white text-sm">
-                      {doc.nombre_completo}
-                    </div>
-                  </td>
-                  <td className="p-3 font-mono text-neutral-300 font-semibold">
-                    {doc.ci_docente}
-                  </td>
-                  <td className="p-3">
-                    <div className="flex flex-wrap gap-1">
-                      {(doc.idiomas || []).map((idm: string, i: number) => (
-                        <span key={i} className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-semibold">
-                          {idm}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="p-3">
-                    {doc.paralelo_actual ? (
-                      <span className="font-mono text-sky-400 font-bold bg-neutral-950 px-2 py-0.5 rounded border border-neutral-800">
-                        {doc.paralelo_actual}
-                      </span>
-                    ) : (
-                      <span className="text-neutral-500 text-[11px]">En reserva / Sin paralelo</span>
-                    )}
-                  </td>
-                  <td className="p-3 text-center">
-                    <span className={`font-mono font-bold text-sm ${doc.dias_en_aula >= 14 ? 'text-amber-400' : 'text-neutral-300'}`}>
-                      {doc.dias_en_aula} d.
-                    </span>
-                  </td>
-                  <td className="p-3 text-[11px] text-neutral-400 space-y-0.5">
-                    <p className="flex items-center gap-1"><Phone className="w-3 h-3" /> {doc.telefono}</p>
-                    <p className="flex items-center gap-1"><Mail className="w-3 h-3" /> {doc.email}</p>
-                  </td>
-                  <td className="p-3 text-center">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      doc.estado === 'Activo' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-800 text-neutral-400'
-                    }`}>
-                      {doc.estado}
-                    </span>
-                  </td>
-                  <td className="p-3 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        onClick={() => abrirModalEditar(doc)}
-                        className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 flex items-center gap-1"
-                        title="Editar Ficha"
+      {/* Split Workspace */}
+      <div className="split-workspace" style={{ flex: 1, minHeight: 0 }}>
+        {/* Panel Izquierdo: Tabla compacta */}
+        <div className="workspace-main-panel">
+          <div className="workspace-table-container">
+            {docentesPaginados.length === 0 && !loading ? (
+              <div className="flex items-center justify-center h-full" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-center space-y-2">
+                  <GraduationCap className="w-8 h-8 mx-auto opacity-30" />
+                  <p className="text-xs">No se encontraron docentes</p>
+                </div>
+              </div>
+            ) : (
+              <table className="compact-table w-full">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>CI</th>
+                    <th>Idiomas</th>
+                    <th>Paralelo</th>
+                    <th className="text-center">Días</th>
+                    <th className="text-center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {docentesPaginados.map((doc) => {
+                    const alerta = alertasRotacion.find((a) => a.id_docente === doc.id_docente);
+                    const isSelected = docenteDetalleSeleccionado?.id_docente === doc.id_docente;
+                    return (
+                      <tr
+                        key={doc.id_docente}
+                        onClick={() => setDocenteDetalleSeleccionado(isSelected ? null : doc)}
+                        style={{
+                          cursor: 'pointer',
+                          background: isSelected ? 'var(--color-primary)' : undefined,
+                          color: isSelected ? '#fff' : undefined,
+                        }}
                       >
-                        <Edit className="w-3 h-3" /> Editar
-                      </button>
-                      <button
-                        onClick={() => setModalBajaDocente({ id: doc.id_docente, nombre: doc.nombre_completo, estado: doc.estado })}
-                        className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1 ${
-                          doc.estado === 'Activo'
-                            ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                            : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                        }`}
-                        title={doc.estado === 'Activo' ? 'Dar de Baja Lógica' : 'Reactivar Docente'}
-                      >
-                        <ShieldAlert className="w-3 h-3" />
-                        <span>{doc.estado === 'Activo' ? 'Baja' : 'Reactivar'}</span>
-                      </button>
-                      {doc.estado === 'Inactivo' && (
-                        <button
-                          onClick={() => setModalEliminarFisicoDocente({ id: doc.id_docente, nombre: doc.nombre_completo })}
-                          className="px-2 py-1 rounded text-[10px] font-semibold bg-red-950/60 text-red-300 hover:bg-red-900 border border-red-800/40 flex items-center gap-1"
-                          title="Eliminar Definitivamente (Baja Física)"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Eliminar</span>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {docentesPaginados.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-neutral-500">
-                    No se encontraron docentes con los filtros seleccionados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex items-center justify-between p-3 border-t border-neutral-800 text-xs text-neutral-400">
-          <span>Página {page} de {totalPages} &bull; {docentesFiltrados.length} registros</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-white"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-white"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+                        <td>
+                          <div className="flex items-center gap-1.5">
+                            {alerta && <span title="Alerta de rotación"><AlertTriangle className="w-3 h-3 text-amber-400 flex-shrink-0" /></span>}
+                            <span className="font-semibold text-[11px]" style={{ color: isSelected ? '#fff' : 'var(--text-main)' }}>{doc.nombre_completo}</span>
+                          </div>
+                        </td>
+                        <td className="font-mono text-[11px]" style={{ color: isSelected ? '#fff' : 'var(--text-muted)' }}>{doc.ci_docente}</td>
+                        <td>
+                          <div className="flex flex-wrap gap-0.5">
+                            {(doc.idiomas || []).slice(0, 2).map((idm: string, i: number) => (
+                              <span key={i} className="text-[9px] font-bold px-1 py-0.5 rounded-[2px]"
+                                style={{ background: isSelected ? 'rgba(255,255,255,0.15)' : 'var(--bg-surface)', color: isSelected ? '#fff' : '#10b981', border: `1px solid ${isSelected ? 'rgba(255,255,255,0.2)' : '#10b98130'}` }}>
+                                {idm}
+                              </span>
+                            ))}
+                            {(doc.idiomas || []).length > 2 && <span className="text-[9px]" style={{ color: 'var(--text-muted)' }}>+{(doc.idiomas || []).length - 2}</span>}
+                          </div>
+                        </td>
+                        <td className="font-mono text-[10px]">
+                          {doc.paralelo_actual
+                            ? <span className="text-sky-400 font-bold">{doc.paralelo_actual}</span>
+                            : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                        </td>
+                        <td className="text-center font-mono text-[11px]">
+                          <span className={doc.dias_en_aula >= 14 ? 'text-amber-400 font-bold' : ''} style={{ color: doc.dias_en_aula >= 14 ? '#f59e0b' : (isSelected ? '#fff' : 'var(--text-muted)') }}>
+                            {doc.dias_en_aula}d
+                          </span>
+                        </td>
+                        <td className="text-center">
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] ${doc.estado === 'Activo' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-700/40 text-neutral-400'}`}>
+                            {doc.estado}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
+          {/* Tactical Pagination */}
+          <div className="tactical-pagination">
+            <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+              Pág. {page} / {totalPages} &bull; {docentesFiltrados.length} registros
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="p-1 rounded-[2px] border disabled:opacity-30 transition"
+                style={{ borderColor: 'var(--border-fine)', color: 'var(--text-main)', background: 'var(--bg-surface)' }}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pg = page <= 3 ? i + 1 : page - 2 + i;
+                if (pg < 1 || pg > totalPages) return null;
+                return (
+                  <button
+                    key={pg}
+                    onClick={() => setPage(pg)}
+                    className="w-6 h-6 rounded-[2px] text-[10px] font-mono font-bold transition"
+                    style={{
+                      background: pg === page ? 'var(--color-primary)' : 'var(--bg-surface)',
+                      color: pg === page ? '#fff' : 'var(--text-main)',
+                      border: `1px solid ${pg === page ? 'var(--color-primary)' : 'var(--border-fine)'}`,
+                    }}
+                  >
+                    {pg}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="p-1 rounded-[2px] border disabled:opacity-30 transition"
+                style={{ borderColor: 'var(--border-fine)', color: 'var(--text-main)', background: 'var(--bg-surface)' }}
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel Derecho: Dossier del docente */}
+        <div className="workspace-side-panel p-3 space-y-3" style={{ background: 'var(--bg-surface)' }}>
+          {docenteDetalleSeleccionado ? (() => {
+            const doc = docenteDetalleSeleccionado;
+            const alertaDoc = alertasRotacion.find((a) => a.id_docente === doc.id_docente);
+            const paralelosDocente = paralelos.filter((p: any) =>
+              p.id_docente_actual === doc.id_docente ||
+              (typeof p.docente_actual === 'string' && p.docente_actual.toLowerCase().includes((doc.nombre_completo || '').toLowerCase().split(' ')[0]))
+            );
+            return (
+              <>
+                {/* Header */}
+                <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: 'var(--border-fine)' }}>
+                  <div>
+                    <p className="font-black text-sm" style={{ color: 'var(--text-main)' }}>{doc.nombre_completo}</p>
+                    <p className="font-mono text-xs" style={{ color: 'var(--text-muted)' }}>CI: {doc.ci_docente}</p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-[2px] ${doc.estado === 'Activo' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-700/40 text-neutral-400'}`}>
+                    {doc.estado}
+                  </span>
+                </div>
+
+                {/* Alerta de rotación */}
+                {alertaDoc && (
+                  <div className="flex items-center gap-2 p-2 rounded-[2px] text-xs border" style={{ background: '#451a0330', borderColor: '#f59e0b40', color: '#f59e0b' }}>
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                    <span>Relevo obligatorio — {alertaDoc.dias_en_aula} días en aula ({alertaDoc.paralelo})</span>
+                  </div>
+                )}
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div className="p-2 rounded-[2px] text-center border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-fine)' }}>
+                    <p className="font-black font-mono text-base" style={{ color: 'var(--text-main)' }}>{doc.dias_en_aula}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Días en Aula</p>
+                  </div>
+                  <div className="p-2 rounded-[2px] text-center border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-fine)' }}>
+                    <p className="font-black font-mono text-base" style={{ color: '#10b981' }}>{paralelosDocente.length}</p>
+                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Paralelos</p>
+                  </div>
+                </div>
+
+                {/* Contacto */}
+                <div className="space-y-1.5 text-xs border-t pt-2" style={{ borderColor: 'var(--border-fine)' }}>
+                  <p className="text-[10px] uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Contacto</p>
+                  {doc.telefono && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                      <span className="font-mono" style={{ color: 'var(--text-main)' }}>{doc.telefono}</span>
+                    </div>
+                  )}
+                  {doc.email && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
+                      <span className="font-mono text-[10px]" style={{ color: 'var(--text-main)' }}>{doc.email}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Idiomas */}
+                <div className="space-y-1.5 border-t pt-2" style={{ borderColor: 'var(--border-fine)' }}>
+                  <p className="text-[10px] uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Idiomas Habilitados</p>
+                  <div className="flex flex-wrap gap-1">
+                    {(doc.idiomas || []).map((idm: string, i: number) => (
+                      <span key={i} className="text-[10px] font-bold px-2 py-0.5 rounded-[2px] border"
+                        style={{ background: 'var(--bg-card)', borderColor: '#10b98130', color: '#10b981' }}>
+                        {idm}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Paralelo actual */}
+                {doc.paralelo_actual && (
+                  <div className="border-t pt-2" style={{ borderColor: 'var(--border-fine)' }}>
+                    <p className="text-[10px] uppercase font-bold mb-1" style={{ color: 'var(--text-muted)' }}>Paralelo Actual</p>
+                    <span className="font-mono font-black text-sky-400">{doc.paralelo_actual}</span>
+                  </div>
+                )}
+
+                {/* Acciones */}
+                <div className="space-y-1.5 border-t pt-2" style={{ borderColor: 'var(--border-fine)' }}>
+                  <button
+                    onClick={() => abrirModalEditar(doc)}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded-[2px] border border-sky-700/40 bg-sky-900/30 text-sky-300 hover:bg-sky-800/40 transition"
+                  >
+                    <Edit className="w-3 h-3" /> Editar Ficha
+                  </button>
+                  <div className="flex gap-1.5">
+                    <button
+                      onClick={() => setModalBajaDocente({ id: doc.id_docente, nombre: doc.nombre_completo, estado: doc.estado })}
+                      className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-semibold rounded-[2px] transition ${doc.estado === 'Activo' ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'}`}
+                    >
+                      <ShieldAlert className="w-3 h-3" />
+                      {doc.estado === 'Activo' ? 'Dar Baja' : 'Reactivar'}
+                    </button>
+                    {doc.estado === 'Inactivo' && (
+                      <button
+                        onClick={() => setModalEliminarFisicoDocente({ id: doc.id_docente, nombre: doc.nombre_completo })}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-semibold rounded-[2px] bg-red-950/60 text-red-300 hover:bg-red-900 border border-red-800/40 transition"
+                      >
+                        <Trash2 className="w-3 h-3" /> Eliminar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+          })() : (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-4" style={{ color: 'var(--text-muted)' }}>
+              <GraduationCap className="w-10 h-10 opacity-20" />
+              <div>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-main)' }}>Selecciona un docente</p>
+                <p className="text-[11px] mt-1">Haz clic en una fila de la tabla para ver el expediente completo y las acciones disponibles.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

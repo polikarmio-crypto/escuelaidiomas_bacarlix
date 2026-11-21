@@ -222,77 +222,79 @@ export default function CajasPage() {
   }
 
   return (
-    <div className="w-full max-w-[1550px] mx-auto space-y-6 pb-12">
-      {/* Encabezado Editorial de Módulo */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[var(--border-fine)]">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-[3px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-center text-[var(--color-primary)] dark:text-[var(--color-accent)] shadow-xs shrink-0">
-            <Landmark className="w-6 h-6" />
+    <div className="h-full flex flex-col min-h-0 overflow-hidden">
+      {/* FRANJA SUPERIOR COMPACTA (44px) */}
+      <div className="strip-utility-bar">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--military-green-subtle)] border border-[var(--border-accent)] text-[var(--military-green-primary)] dark:text-[var(--military-gold-primary)] font-mono text-[11px] font-bold shrink-0">
+            <Landmark className="w-3.5 h-3.5" />
+            <span>SACA / Cajas</span>
           </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--text-muted)]">
-              <span>SACA</span>
-              <span>/</span>
-              <span className="text-[var(--color-accent)] font-semibold">Cajas & Recaudaciones</span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-[var(--text-main)] tracking-tight">
-              {esEstudiante ? 'Atención en Caja — Turno Digital' : 'Cajas y Recaudaciones Institucionales'}
-            </h1>
-          </div>
+
+          <div className="h-4 w-[1px] bg-[var(--border-fine)] shrink-0" />
+
+          <span className="text-xs font-bold text-[var(--text-main)] truncate hidden sm:inline">
+            {esEstudiante ? 'Atención en Caja — Turno Digital' : 'Cajas y Recaudaciones Institucionales'}
+          </span>
         </div>
-        <button
-          onClick={() => cargarDatosCaja()}
-          disabled={loading}
-          className="btn-primary text-xs font-semibold px-4 py-2 rounded-[3px] flex items-center gap-2 transition shrink-0 shadow-xs"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Actualizar Cola</span>
-        </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => cargarDatosCaja()}
+            disabled={loading}
+            className="btn btn-secondary"
+            style={{ padding: '0.2rem 0.55rem', fontSize: '0.70rem', height: '28px' }}
+            title="Actualizar cola y turnos"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Actualizar Cola</span>
+          </button>
+        </div>
       </div>
 
       {alerta && (
         <div
-          className={`flex items-center gap-3 p-3.5 rounded-[2px] border text-xs font-medium ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded mb-2 text-xs font-semibold shrink-0 border ${
             alerta.tipo === 'ok'
-              ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200'
-              : 'bg-red-50 dark:bg-red-950/30 border-red-300 dark:border-red-800 text-red-800 dark:text-red-200'
+              ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+              : 'bg-red-950/20 border-red-500/40 text-red-600 dark:text-red-400'
           }`}
         >
-          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertTriangle className="w-4 h-4 flex-shrink-0" />}
+          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertTriangle className="w-3.5 h-3.5 shrink-0" />}
           <span>{alerta.mensaje}</span>
         </div>
       )}
 
       {esEstudiante ? (
         /* VISTA EDITORIAL ESTUDIANTE: DISPENSADOR DE TURNO DIGITAL */
-        <div className="max-w-2xl mx-auto space-y-6">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-6 text-center space-y-4 shadow-xs">
-            <div className="w-12 h-12 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-center text-[var(--color-accent)] mx-auto">
-              <Ticket className="w-6 h-6" />
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-3 overflow-y-auto">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[3px] p-5 text-center space-y-3 shadow-xs max-w-lg w-full">
+            <div className="w-10 h-10 rounded-[2px] bg-[var(--bg-surface)] border border-[var(--border-fine)] flex items-center justify-center text-[var(--color-accent)] mx-auto">
+              <Ticket className="w-5 h-5" />
             </div>
-            <h2 className="text-lg font-bold text-[var(--text-main)] font-sans">Emisión de Ticket de Atención</h2>
-            <p className="text-xs text-[var(--text-muted)] max-w-md mx-auto">
-              Seleccione el tipo de trámite a realizar en ventanilla y solicite su ficha de atención digital en tiempo real:
+            <h2 className="text-base font-bold text-[var(--text-main)] font-sans">Emisión de Ticket de Atención</h2>
+            <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
+              Seleccione el trámite a realizar en ventanilla y solicite su ficha de atención digital en tiempo real:
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-md mx-auto text-left pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left pt-1">
               <button
                 type="button"
                 onClick={() => setTipoTramiteFicha('regular')}
-                className={`p-3.5 rounded-[2px] border text-xs transition ${
+                className={`p-3 rounded-[2px] border text-xs transition ${
                   tipoTramiteFicha === 'regular'
-                    ? 'border-[var(--color-primary)] dark:border-[var(--color-accent)] bg-[var(--bg-surface)] text-[var(--text-main)] shadow-xs ring-1 ring-[var(--color-accent)]/50'
+                    ? 'border-[var(--color-primary)] dark:border-[var(--color-accent)] bg-[var(--bg-surface)] text-[var(--text-main)] ring-1 ring-[var(--color-accent)]/50'
                     : 'border-[var(--border-fine)] bg-[var(--bg-card)] text-[var(--text-muted)] hover:border-[var(--color-accent)]'
                 }`}
               >
-                <div className="font-bold text-[var(--text-main)] mb-1 flex items-center justify-between">
+                <div className="font-bold text-[var(--text-main)] mb-1 flex items-center justify-between text-xs">
                   <span>Trámite Regular / Matrícula</span>
                   {tipoTramiteFicha === 'regular' && <span className="w-2 h-2 rounded-[1px] bg-[var(--color-accent)]" />}
                 </div>
-                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                  Inscripciones, pagos de matrícula y mensualidades académicas.
+                <p className="text-[11px] text-[var(--text-muted)] leading-tight">
+                  Inscripciones y mensualidades.
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-mono text-[var(--color-primary)] dark:text-[var(--color-accent)] font-bold bg-[var(--bg-card)] border border-[var(--border-fine)] px-2 py-0.5 rounded-[2px]">
+                <span className="inline-block mt-2 text-[10px] font-mono text-[var(--color-primary)] dark:text-[var(--color-accent)] font-bold bg-[var(--bg-card)] border border-[var(--border-fine)] px-1.5 py-0.5 rounded-[2px]">
                   {usuario?.subtitulo?.toLowerCase().includes('militar') || usuario?.nombre?.includes('Cad.') ? 'Ventanilla 1 - Militar' : 'Ventanilla 2 - Civiles'}
                 </span>
               </button>
@@ -300,31 +302,31 @@ export default function CajasPage() {
               <button
                 type="button"
                 onClick={() => setTipoTramiteFicha('libros')}
-                className={`p-3.5 rounded-[2px] border text-xs transition ${
+                className={`p-3 rounded-[2px] border text-xs transition ${
                   tipoTramiteFicha === 'libros'
-                    ? 'border-[var(--color-accent)] bg-[var(--bg-surface)] text-[var(--text-main)] shadow-xs ring-1 ring-[var(--color-accent)]/50'
+                    ? 'border-[var(--color-accent)] bg-[var(--bg-surface)] text-[var(--text-main)] ring-1 ring-[var(--color-accent)]/50'
                     : 'border-[var(--border-fine)] bg-[var(--bg-card)] text-[var(--text-muted)] hover:border-[var(--color-accent)]'
                 }`}
               >
-                <div className="font-bold text-[var(--text-main)] mb-1 flex items-center justify-between">
-                  <span>Adquisición de Libros</span>
+                <div className="font-bold text-[var(--text-main)] mb-1 flex items-center justify-between text-xs">
+                  <span>Adquisición Libros</span>
                   {tipoTramiteFicha === 'libros' && <span className="w-2 h-2 rounded-[1px] bg-[var(--color-accent)]" />}
                 </div>
-                <p className="text-[11px] text-[var(--text-muted)] leading-relaxed">
-                  Compra de texto guía oficial y material bibliográfico.
+                <p className="text-[11px] text-[var(--text-muted)] leading-tight">
+                  Texto guía oficial y bibliografía.
                 </p>
-                <span className="inline-block mt-2 text-[10px] font-mono text-[var(--color-accent)] font-bold bg-[var(--bg-card)] border border-[var(--border-fine)] px-2 py-0.5 rounded-[2px]">
+                <span className="inline-block mt-2 text-[10px] font-mono text-[var(--color-accent)] font-bold bg-[var(--bg-card)] border border-[var(--border-fine)] px-1.5 py-0.5 rounded-[2px]">
                   Ventanilla 3 - Material & Libros
                 </span>
               </button>
             </div>
 
             {miFicha ? (
-              <div className="bg-[var(--bg-surface)] border border-[var(--border-fine)] border-t-4 border-t-[var(--color-primary)] dark:border-t-[var(--color-accent)] rounded-[2px] p-6 space-y-2 max-w-sm mx-auto shadow-xs">
+              <div className="bg-[var(--bg-surface)] border border-[var(--border-fine)] border-t-4 border-t-[var(--color-primary)] dark:border-t-[var(--color-accent)] rounded-[2px] p-4 space-y-1.5 max-w-xs mx-auto shadow-xs">
                 <span className="text-[10px] font-bold text-[var(--color-accent)] uppercase tracking-widest font-mono">
                   Su Turno Asignado
                 </span>
-                <div className="text-5xl font-black font-mono text-[var(--text-main)] py-1">
+                <div className="text-4xl font-black font-mono text-[var(--text-main)] py-0.5">
                   #{miFicha.numero_ficha}
                 </div>
                 <p className="text-xs text-[var(--text-muted)]">
@@ -334,209 +336,206 @@ export default function CajasPage() {
                   Ventanilla: <strong className="text-[var(--text-main)] font-mono">{miFicha.caja?.nombre_caja || (miFicha.id_caja === 3 ? 'Ventanilla 3 - Material & Libros' : (miFicha.id_caja === 1 ? 'Ventanilla 1 - Militar' : 'Ventanilla 2 - Civiles'))}</strong>
                 </p>
                 {miFicha.hora_llegada_ficha && (
-                  <p className="text-[11px] text-[var(--text-muted)] font-mono">
-                    Hora de solicitud: {new Date(miFicha.hora_llegada_ficha).toLocaleTimeString()}
+                  <p className="text-[10px] text-[var(--text-muted)] font-mono">
+                    Hora: {new Date(miFicha.hora_llegada_ficha).toLocaleTimeString()}
                   </p>
                 )}
               </div>
             ) : (
               <button
                 onClick={handleSolicitarFicha}
-                className="btn-primary px-8 py-2.5 rounded-[2px] text-xs font-bold transition shadow-xs"
+                className="btn btn-primary px-6 py-2 text-xs font-bold"
               >
                 Solicitar Ficha de Turno
               </button>
             )}
-          </div>
 
-          <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[2px] p-4 text-xs shadow-xs">
-            <div className="flex items-center justify-between text-[var(--text-muted)] mb-1">
-              <span>Personas esperando atención hoy:</span>
-              <strong className="text-[var(--text-main)] font-mono text-sm">{colaEspera.length}</strong>
+            <div className="border-t border-[var(--border-fine)] pt-2 text-xs text-[var(--text-muted)] font-mono flex justify-between">
+              <span>Esperando atención: <strong className="text-[var(--text-main)]">{colaEspera.length}</strong></span>
+              <span>Tiempo medio: ~{Math.max(1, Math.min(120, Math.round(Number(metricas?.promedio_espera_minutos_Wq) || 5)))} min</span>
             </div>
-            <p className="text-[11px] text-[var(--text-muted)] font-mono">
-              Tiempo estimado promedio de atención: ~{Math.max(1, Math.min(120, Math.round(Number(metricas?.promedio_espera_minutos_Wq) || 5)))} minutos por persona.
-            </p>
           </div>
         </div>
       ) : (
         /* VISTA EDITORIAL CAJERO / OPERADOR */
-        <div className="space-y-6">
-          {/* Tira Ledger de KPIs de Caja */}
-          <div className="border border-[var(--border-fine)] rounded-[2px] bg-[var(--bg-card)] shadow-xs overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-hidden">
+          {/* Tira Ledger de KPIs de Caja (52px) */}
+          <div className="border border-[var(--border-fine)] rounded-[2px] bg-[var(--bg-card)] shadow-xs overflow-hidden shrink-0">
             <div className="grid grid-cols-2 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-[var(--border-fine)]">
-              <div className="p-3.5 bg-[var(--bg-card)]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">En Sala de Espera</span>
-                <p className="text-2xl font-black font-mono text-[var(--text-main)] mt-0.5">{colaEspera.length}</p>
-                <span className="text-[10px] text-[var(--text-muted)] font-mono">Estudiantes en cola</span>
+              <div className="p-2 bg-[var(--bg-card)]">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">En Sala de Espera</span>
+                <p className="text-lg font-black font-mono text-[var(--text-main)] leading-none mt-0.5">{colaEspera.length}</p>
               </div>
-              <div className="p-3.5 bg-[var(--bg-card)]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">Tiempo Medio Espera</span>
-                <p className="text-2xl font-black font-mono text-[var(--color-accent)] mt-0.5">
+              <div className="p-2 bg-[var(--bg-card)]">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">Tiempo Medio Espera</span>
+                <p className="text-lg font-black font-mono text-[var(--color-accent)] leading-none mt-0.5">
                   {Math.max(0, Math.min(120, Math.round(Number(metricas?.promedio_espera_minutos_Wq) || 0)))} min
                 </p>
-                <span className="text-[10px] text-[var(--text-muted)] font-mono">Promedio de jornada</span>
               </div>
-              <div className="p-3.5 bg-[var(--bg-card)]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">Atendidos Hoy</span>
-                <p className="text-2xl font-black font-mono text-[var(--color-primary)] dark:text-[var(--color-accent)] mt-0.5">{metricas?.atendidas || 0}</p>
-                <span className="text-[10px] text-[var(--text-muted)] font-mono">Turnos completados</span>
+              <div className="p-2 bg-[var(--bg-card)]">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">Atendidos Hoy</span>
+                <p className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400 leading-none mt-0.5">{metricas?.atendidas || 0}</p>
               </div>
-              <div className="p-3.5 bg-[var(--bg-card)]">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">Ventanillas Activas</span>
-                <p className="text-2xl font-black font-mono text-[var(--text-main)] mt-0.5">{cajas.length}</p>
-                <span className="text-[10px] text-[var(--text-muted)] font-mono">Puestos habilitados</span>
+              <div className="p-2 bg-[var(--bg-card)]">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] block truncate font-sans">Ventanillas Activas</span>
+                <p className="text-lg font-black font-mono text-[var(--text-main)] leading-none mt-0.5">{cajas.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Área Dividida */}
+          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2.5 overflow-hidden">
             {/* Puesto de Ventanilla */}
-            <div className="bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[2px] p-5 space-y-4 shadow-xs">
-              <div className="flex items-center justify-between border-b border-[var(--border-fine)] pb-3">
-                <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2 font-sans">
-                  <Landmark className="w-4 h-4 text-[var(--color-accent)]" />
-                  Mi Ventanilla
-                </h3>
-                <select
-                  value={cajaActivaId}
-                  onChange={(e) => {
-                    const newId = parseInt(e.target.value) || 1;
-                    setCajaActivaId(newId);
-                    cargarDatosCaja(newId);
-                  }}
-                  className="bg-[var(--bg-surface)] border border-[var(--border-fine)] text-xs text-[var(--text-main)] rounded-[2px] px-2 py-1 font-mono"
-                >
-                  {cajas.map((c) => (
-                    <option key={c.id_caja} value={c.id_caja}>{c.nombre_caja}</option>
-                  ))}
-                </select>
-              </div>
-
-              {turnoEnAtencion ? (
-                <div className="bg-[var(--bg-surface)] border border-[var(--color-accent)]/60 rounded-[2px] p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase text-[var(--color-accent)] tracking-wider font-mono">
-                      Atendiendo Actualmente
-                    </span>
-                    <span className="font-mono text-xs text-[var(--text-main)] bg-[var(--bg-card)] border border-[var(--border-fine)] px-2 py-0.5 rounded-[2px] font-bold">
-                      Turno #{turnoEnAtencion.numero_ficha}
-                    </span>
-                  </div>
-                  <h4 className="text-base font-bold text-[var(--text-main)]">
-                    {turnoEnAtencion.estudiante?.nombre_estudiante
-                      ? `${turnoEnAtencion.estudiante.nombre_estudiante} ${turnoEnAtencion.estudiante.apellido_estudiante}`
-                      : (typeof turnoEnAtencion.estudiante === 'string' ? turnoEnAtencion.estudiante : 'Estudiante')}
-                  </h4>
-                  {turnoEnAtencion.hora_inicio_atencion_ficha && (
-                    <p className="text-xs text-[var(--text-muted)] font-mono">
-                      Hora inicio: {new Date(turnoEnAtencion.hora_inicio_atencion_ficha).toLocaleTimeString()}
-                    </p>
-                  )}
-                  <button
-                    onClick={() => setModalPago(true)}
-                    className="w-full py-2 btn-primary rounded-[2px] text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs"
-                  >
-                    <CreditCard className="w-4 h-4" /> Cobrar Arancel / Emitir Comprobante
-                  </button>
-                  <button
-                    onClick={async () => {
-                      await fetch(`${API_BASE}/cajas/ficha/finalizar`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id_ficha: turnoEnAtencion.id_ficha }),
-                      });
-                      setTurnoEnAtencion(null);
-                      mostrarMensaje('ok', 'Atención finalizada sin cobro.');
-                      cargarDatosCaja();
+            <div className="lg:col-span-4 bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[2px] p-3 flex flex-col justify-between overflow-y-auto">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between border-b border-[var(--border-fine)] pb-2">
+                  <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                    <Landmark className="w-3.5 h-3.5 text-[var(--color-accent)]" />
+                    Mi Ventanilla
+                  </h3>
+                  <select
+                    value={cajaActivaId}
+                    onChange={(e) => {
+                      const newId = parseInt(e.target.value) || 1;
+                      setCajaActivaId(newId);
+                      cargarDatosCaja(newId);
                     }}
-                    className="w-full py-1.5 border border-[var(--border-fine)] bg-[var(--bg-card)] hover:bg-[var(--bg-surface)] text-[var(--text-muted)] rounded-[2px] text-xs transition flex items-center justify-center gap-2"
+                    className="bg-[var(--bg-surface)] border border-[var(--border-fine)] text-xs text-[var(--text-main)] rounded-[2px] px-2 py-0.5 font-mono"
                   >
-                    <X className="w-3.5 h-3.5" /> Finalizar sin cobro
-                  </button>
+                    {cajas.map((c) => (
+                      <option key={c.id_caja} value={c.id_caja}>{c.nombre_caja}</option>
+                    ))}
+                  </select>
                 </div>
-              ) : (
-                <div className="text-center py-6 space-y-3 bg-[var(--bg-surface)] rounded-[2px] border border-dashed border-[var(--border-fine)]">
-                  <UserCheck className="w-8 h-8 text-[var(--text-muted)] mx-auto" />
-                  <p className="text-xs text-[var(--text-muted)]">Ventanilla lista para convocar turno</p>
-                  <button
-                    onClick={handleLlamarSiguiente}
-                    disabled={colaEspera.length === 0}
-                    className="px-5 py-2 btn-gold disabled:opacity-40 rounded-[2px] text-xs font-bold transition shadow-xs"
-                  >
-                    Llamar Siguiente Turno
-                  </button>
-                </div>
-              )}
+
+                {turnoEnAtencion ? (
+                  <div className="bg-[var(--bg-surface)] border border-[var(--color-accent)]/60 rounded-[2px] p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-bold uppercase text-[var(--color-accent)] tracking-wider font-mono">
+                        Atendiendo Actualmente
+                      </span>
+                      <span className="font-mono text-xs text-[var(--text-main)] bg-[var(--bg-card)] border border-[var(--border-fine)] px-2 py-0.5 rounded-[2px] font-bold">
+                        Turno #{turnoEnAtencion.numero_ficha}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-bold text-[var(--text-main)]">
+                      {turnoEnAtencion.estudiante?.nombre_estudiante
+                        ? `${turnoEnAtencion.estudiante.nombre_estudiante} ${turnoEnAtencion.estudiante.apellido_estudiante}`
+                        : (typeof turnoEnAtencion.estudiante === 'string' ? turnoEnAtencion.estudiante : 'Estudiante')}
+                    </h4>
+                    {turnoEnAtencion.hora_inicio_atencion_ficha && (
+                      <p className="text-[10px] text-[var(--text-muted)] font-mono">
+                        Inicio: {new Date(turnoEnAtencion.hora_inicio_atencion_ficha).toLocaleTimeString()}
+                      </p>
+                    )}
+                    <button
+                      onClick={() => setModalPago(true)}
+                      className="w-full py-1.5 btn btn-primary rounded-[2px] text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" /> Cobrar Arancel / Comprobante
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await fetch(`${API_BASE}/cajas/ficha/finalizar`, {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ id_ficha: turnoEnAtencion.id_ficha }),
+                        });
+                        setTurnoEnAtencion(null);
+                        mostrarMensaje('ok', 'Atención finalizada sin cobro.');
+                        cargarDatosCaja();
+                      }}
+                      className="w-full py-1 btn btn-secondary text-xs"
+                    >
+                      <X className="w-3 h-3" /> Finalizar sin cobro
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center py-5 space-y-2 bg-[var(--bg-surface)] rounded-[2px] border border-dashed border-[var(--border-fine)]">
+                    <UserCheck className="w-7 h-7 text-[var(--text-muted)] mx-auto opacity-40" />
+                    <p className="text-xs text-[var(--text-muted)]">Ventanilla lista para convocar turno</p>
+                    <button
+                      onClick={handleLlamarSiguiente}
+                      disabled={colaEspera.length === 0}
+                      className="btn btn-primary text-xs font-bold"
+                    >
+                      Llamar Siguiente Turno
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Listado Editorial de Sala de Espera */}
-            <div className="lg:col-span-2 bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[2px] p-5 space-y-3 shadow-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-fine)] pb-3">
+            <div className="lg:col-span-8 bg-[var(--bg-card)] border border-[var(--border-fine)] rounded-[2px] p-3 flex flex-col overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-fine)] pb-2 mb-2">
                 <div>
-                  <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-2 font-sans">
-                    <Users className="w-4 h-4 text-[var(--color-accent)]" />
+                  <h3 className="text-xs font-bold text-[var(--text-main)] uppercase tracking-wider flex items-center gap-1.5 font-sans">
+                    <Users className="w-3.5 h-3.5 text-[var(--color-accent)]" />
                     Turnos en Sala de Espera ({colaEspera.length})
                   </h3>
-                  <span className="text-[11px] text-[var(--text-muted)] font-mono">
-                    {filtrarPorVentanilla ? `Filtrando por ${cajas.find(c => c.id_caja === cajaActivaId)?.nombre_caja || 'Mi Ventanilla'}` : 'Mostrando todas las ventanillas'}
+                  <span className="text-[10px] text-[var(--text-muted)] font-mono">
+                    {filtrarPorVentanilla ? `Filtrando por ${cajas.find(c => c.id_caja === cajaActivaId)?.nombre_caja || 'Mi Ventanilla'}` : 'Todas las ventanillas'}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const nuevo = !filtrarPorVentanilla;
-                      setFiltrarPorVentanilla(nuevo);
-                      cargarDatosCaja(cajaActivaId, !nuevo);
-                    }}
-                    className={`px-3 py-1 rounded-[2px] text-xs font-mono font-semibold border transition ${
-                      filtrarPorVentanilla
-                        ? 'bg-[var(--bg-surface)] border-[var(--color-accent)] text-[var(--color-accent)]'
-                        : 'bg-[var(--bg-card)] border-[var(--border-fine)] text-[var(--text-muted)]'
-                    }`}
-                  >
-                    {filtrarPorVentanilla ? 'Filtrado: Mi Ventanilla' : 'Ver Todos los Turnos'}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nuevo = !filtrarPorVentanilla;
+                    setFiltrarPorVentanilla(nuevo);
+                    cargarDatosCaja(cajaActivaId, !nuevo);
+                  }}
+                  className="btn btn-secondary text-xs"
+                  style={{ padding: '0.15rem 0.5rem', height: '24px' }}
+                >
+                  {filtrarPorVentanilla ? 'Mi Ventanilla' : 'Todos los Turnos'}
+                </button>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border border-[var(--border-fine)]">
-                  <thead className="bg-[var(--bg-surface)] text-[var(--text-muted)] uppercase tracking-wider border-b border-[var(--border-fine)] font-mono text-[10px]">
+              <div className="flex-1 min-h-0 overflow-y-auto">
+                <table className="compact-table">
+                  <thead>
                     <tr>
-                      <th className="p-2.5">Pos.</th>
-                      <th className="p-2.5">N° Turno</th>
-                      <th className="p-2.5">Estudiante</th>
-                      <th className="p-2.5">Tipo</th>
-                      <th className="p-2.5">Ventanilla Asignada</th>
-                      <th className="p-2.5">Llegada</th>
-                      <th className="p-2.5">Tiempo Espera</th>
+                      <th style={{ width: '30px' }}>Pos.</th>
+                      <th>N° Turno</th>
+                      <th>Estudiante</th>
+                      <th>Tipo</th>
+                      <th>Ventanilla Asignada</th>
+                      <th>Llegada</th>
+                      <th>Tiempo Espera</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--border-fine)] text-[var(--text-main)]">
+                  <tbody>
                     {colaEspera.map((f) => (
-                      <tr key={f.id_ficha} className="hover:bg-[var(--bg-surface)]/50 transition">
-                        <td className="p-2.5 font-bold font-mono text-[var(--color-accent)]">#{f.posicion || f.posicion_cola}</td>
-                        <td className="p-2.5 font-bold font-mono text-[var(--text-main)]">{f.numero_ficha}</td>
-                        <td className="p-2.5 font-semibold text-[var(--text-main)]">{f.estudiante}</td>
-                        <td className="p-2.5">
-                          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-bold font-mono bg-[var(--bg-surface)] border border-[var(--border-fine)] text-[var(--text-muted)]">
-                            {f.tipo_estudiante}
+                      <tr key={f.id_ficha}>
+                        <td className="font-bold font-mono text-[var(--color-accent)]">#{f.posicion || f.posicion_cola}</td>
+                        <td className="font-bold font-mono text-[var(--text-main)]">#{f.numero_ficha}</td>
+                        <td>
+                          <div className="font-semibold text-[var(--text-main)] truncate max-w-[170px]">
+                            {f.estudiante?.nombre_estudiante
+                              ? `${f.estudiante.nombre_estudiante} ${f.estudiante.apellido_estudiante}`
+                              : (typeof f.estudiante === 'string' ? f.estudiante : 'Estudiante')}
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`badge ${f.tipo_cliente === 'Militar' ? 'badge-gold' : 'badge-civil'}`}>
+                            {f.tipo_cliente || 'Civil'}
                           </span>
                         </td>
-                        <td className="p-2.5">
-                          <span className="px-2 py-0.5 rounded-[2px] text-[10px] font-mono font-bold bg-[var(--bg-surface)] border border-[var(--border-fine)] text-[var(--text-main)]">
-                            {f.nombre_caja || (f.id_caja === 3 ? 'Material & Libros' : (f.id_caja === 1 ? 'Ventanilla Militar' : 'Ventanilla Civiles'))}
-                          </span>
+                        <td className="text-[11px] text-[var(--text-muted)] font-mono truncate max-w-[140px]">
+                          {f.caja?.nombre_caja || (f.id_caja === 3 ? 'Ventanilla 3 - Libros' : (f.id_caja === 1 ? 'Ventanilla 1 - Militar' : 'Ventanilla 2 - Civiles'))}
                         </td>
-                        <td className="p-2.5 font-mono text-[var(--text-muted)]">{f.hora_llegada}</td>
-                        <td className="p-2.5 font-mono text-[var(--color-accent)] font-semibold">{f.minutos_esperando || 0} min</td>
+                        <td className="font-mono text-[10px] text-[var(--text-dim)]">
+                          {f.hora_llegada_ficha ? new Date(f.hora_llegada_ficha).toLocaleTimeString() : '—'}
+                        </td>
+                        <td className="font-mono text-[11px] font-bold text-[var(--color-accent)]">
+                          {f.tiempo_espera_minutos !== undefined ? `${f.tiempo_espera_minutos} min` : '—'}
+                        </td>
                       </tr>
                     ))}
                     {colaEspera.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="p-6 text-center text-[var(--text-muted)] font-mono">
+                        <td colSpan={7} className="p-6 text-center text-[var(--text-dim)]">
                           No hay turnos pendientes en sala de espera.
                         </td>
                       </tr>

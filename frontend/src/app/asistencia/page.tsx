@@ -207,285 +207,331 @@ export default function AsistenciaPage() {
     licencias: estudiantes.filter((e) => e.estado_asistencia === 'Licencia').length,
   };
 
+  const porcentajeAsistencia = estudiantes.length > 0 ? Math.round((conteoLocal.presentes / estudiantes.length) * 100) : 0;
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-neutral-800">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm shrink-0">
-            <UserCheck className="w-6 h-6" />
+    <div className="h-full flex flex-col min-h-0 overflow-hidden">
+      {/* FRANJA SUPERIOR COMPACTA (44px): Breadcrumb + Filtros Inline + Acciones */}
+      <div className="strip-utility-bar">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--military-green-subtle)] border border-[var(--border-accent)] text-[var(--military-green-primary)] dark:text-[var(--military-gold-primary)] font-mono text-[11px] font-bold shrink-0">
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>SACA / Asistencia</span>
           </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-mono text-neutral-400">
-              <span>SACA</span>
-              <span>/</span>
-              <span className="text-emerald-400 font-semibold">Gestión Académica</span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-white">
-              Control Diario de Asistencia
-            </h1>
-          </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            onClick={abrirReportePdf}
-            disabled={cargandoPdf || !idParaleloSeleccionado}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-amber-400 text-xs font-bold border border-amber-500/30 transition shadow-sm"
-          >
-            <FileText className="w-4 h-4" />
-            <span>{cargandoPdf ? 'Generando...' : 'Previsualizar Reporte Oficial (PDF)'}</span>
-          </button>
+          <div className="h-4 w-[1px] bg-[var(--border-fine)] shrink-0" />
 
-          <button
-            onClick={handleGuardarAsistencia}
-            disabled={guardando || estudiantes.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-md shadow-emerald-600/20"
-          >
-            <CheckCircle2 className={`w-4 h-4 ${guardando ? 'animate-spin' : ''}`} />
-            <span>{guardando ? 'Guardando...' : 'Guardar Registro del Día'}</span>
-          </button>
-        </div>
-      </div>
-
-      {alerta && (
-        <div
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
-            alerta.tipo === 'ok'
-              ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200'
-              : 'bg-red-950/50 border-red-500/50 text-red-200'
-          }`}
-        >
-          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
-          <span>{alerta.mensaje}</span>
-        </div>
-      )}
-
-      <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-4 md:p-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-bold text-neutral-400 mb-1.5 uppercase tracking-wider">
-              Paralelo / Idioma
-            </label>
+          {/* Selector de Paralelo inline */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] font-bold text-[var(--text-dim)] uppercase hidden sm:inline">Curso:</span>
             <select
               value={idParaleloSeleccionado}
               onChange={(e) => setIdParaleloSeleccionado(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="bg-[var(--bg-surface-elevated)] border border-[var(--military-gold-primary)] rounded px-2 py-0.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
             >
               {paralelos.map((p) => {
                 const nombreIdioma = typeof p.idioma === 'string' ? p.idioma : (p.nivel?.programa?.idioma?.nombre_idioma || 'Idioma');
                 const nombreNivel = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.nombre_nivel || 'Nivel');
                 return (
                   <option key={p.id_paralelo} value={p.id_paralelo}>
-                    {p.codigo_paralelo} - {nombreIdioma} ({nombreNivel})
+                    {p.codigo_paralelo} — {nombreIdioma} ({nombreNivel})
                   </option>
                 );
               })}
             </select>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-neutral-400 mb-1.5 uppercase tracking-wider">
-              Fecha de la Sesión
-            </label>
-            <div className="relative">
-              <Calendar className="w-4 h-4 absolute left-3 top-2.5 text-neutral-500" />
-              <input
-                type="date"
-                value={fechaSeleccionada}
-                max={new Date().toISOString().split('T')[0]}
-                onChange={(e) => setFechaSeleccionada(e.target.value)}
-                className="w-full bg-neutral-950 border border-neutral-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-end gap-2">
-            <button
-              onClick={() => marcarTodos('Presente')}
-              className="flex-1 py-2 px-3 bg-neutral-800 hover:bg-emerald-950/60 text-emerald-400 border border-neutral-700 hover:border-emerald-500/50 rounded-lg text-xs font-bold transition"
-            >
-              Marcar Todos Presentes
-            </button>
-            <button
-              onClick={cargarAsistencia}
-              className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg border border-neutral-700 transition"
-              title="Refrescar lista"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+          {/* Fecha inline */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-[11px] font-bold text-[var(--text-dim)] uppercase hidden md:inline">Fecha:</span>
+            <input
+              type="date"
+              value={fechaSeleccionada}
+              max={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setFechaSeleccionada(e.target.value)}
+              className="bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded px-2 py-0.5 text-xs text-[var(--text-main)] font-mono outline-none"
+            />
           </div>
         </div>
 
-        {infoParalelo && (
-          <div className="mt-4 pt-4 border-t border-neutral-800/80 flex flex-wrap items-center justify-between gap-4 text-xs text-neutral-400">
-            <div>
-              <span className="font-semibold text-neutral-300">Docente Titular:</span>{' '}
-              <span className="text-emerald-400 font-bold">{infoParalelo.docente}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-neutral-300">Aula:</span>{' '}
-              <span className="text-white">{infoParalelo.aula}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-neutral-300">Horario:</span>{' '}
-              <span className="text-white">{infoParalelo.horario}</span>
-            </div>
-            <div>
-              <span className="font-semibold text-neutral-300">Total Alumnos:</span>{' '}
-              <span className="text-white font-bold">{estudiantes.length}</span>
-            </div>
-          </div>
-        )}
-      </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            onClick={() => marcarTodos('Presente')}
+            className="btn btn-secondary"
+            style={{ padding: '0.2rem 0.55rem', fontSize: '0.70rem', height: '28px' }}
+            title="Marcar toda la nómina como presente"
+          >
+            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+            <span className="hidden sm:inline">Todos Presentes</span>
+          </button>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-3 flex items-center justify-between">
-          <div>
-            <div className="text-xs text-emerald-300 font-semibold">Presentes</div>
-            <div className="text-xl font-bold text-emerald-400">{conteoLocal.presentes}</div>
-          </div>
-          <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold">P</span>
-        </div>
+          <button
+            onClick={abrirReportePdf}
+            disabled={cargandoPdf || !idParaleloSeleccionado}
+            className="btn btn-secondary"
+            style={{ padding: '0.2rem 0.55rem', fontSize: '0.70rem', height: '28px', color: 'var(--military-gold-primary)' }}
+            title="Previsualizar e imprimir reporte oficial"
+          >
+            <FileText className="w-3 h-3" />
+            <span className="hidden sm:inline">Reporte PDF</span>
+          </button>
 
-        <div className="bg-red-950/30 border border-red-500/30 rounded-xl p-3 flex items-center justify-between">
-          <div>
-            <div className="text-xs text-red-300 font-semibold">Faltas</div>
-            <div className="text-xl font-bold text-red-400">{conteoLocal.faltas}</div>
-          </div>
-          <span className="text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-300 font-bold">F</span>
-        </div>
+          <button
+            onClick={handleGuardarAsistencia}
+            disabled={guardando || estudiantes.length === 0}
+            className="btn btn-primary"
+            style={{ padding: '0.2rem 0.65rem', fontSize: '0.72rem', height: '28px' }}
+          >
+            <CheckCircle2 className={`w-3.5 h-3.5 ${guardando ? 'animate-spin' : ''}`} />
+            <span>{guardando ? 'Guardando...' : 'Guardar Asistencia'}</span>
+          </button>
 
-        <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-3 flex items-center justify-between">
-          <div>
-            <div className="text-xs text-amber-300 font-semibold">Atrasos</div>
-            <div className="text-xl font-bold text-amber-400">{conteoLocal.atrasos}</div>
-          </div>
-          <span className="text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold">A</span>
-        </div>
-
-        <div className="bg-sky-950/30 border border-sky-500/30 rounded-xl p-3 flex items-center justify-between">
-          <div>
-            <div className="text-xs text-sky-300 font-semibold">Licencias</div>
-            <div className="text-xl font-bold text-sky-400">{conteoLocal.licencias}</div>
-          </div>
-          <span className="text-xs px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold">L</span>
+          <button
+            onClick={cargarAsistencia}
+            disabled={loading}
+            className="btn btn-secondary"
+            style={{ padding: '0.2rem 0.45rem', fontSize: '0.72rem', height: '28px' }}
+            title="Refrescar lista"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
       </div>
 
-      <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-950 text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
-              <tr>
-                <th className="p-3">#</th>
-                <th className="p-3">Cédula / Matrícula</th>
-                <th className="p-3">Estudiante</th>
-                <th className="p-3">Condición</th>
-                <th className="p-3 text-center">Estado de Asistencia</th>
-                <th className="p-3">Observación</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-800 text-neutral-200">
-              {loading ? (
+      {alerta && (
+        <div
+          className={`flex items-center gap-2 px-3 py-1.5 rounded mb-2 text-xs font-semibold shrink-0 border ${
+            alerta.tipo === 'ok'
+              ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+              : 'bg-red-950/20 border-red-500/40 text-red-600 dark:text-red-400'
+          }`}
+        >
+          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
+          <span>{alerta.mensaje}</span>
+        </div>
+      )}
+
+      {/* ÁREA DE TRABAJO DIVIDIDA (SPLIT-WORKSPACE) */}
+      <div className="split-workspace">
+        {/* PANEL PRINCIPAL: TABLA DE ASISTENCIA */}
+        <div className="workspace-main-panel">
+          <div className="workspace-table-container">
+            <table className="compact-table">
+              <thead>
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-neutral-500">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-emerald-400" />
-                    Cargando nómina de estudiantes...
-                  </td>
+                  <th style={{ width: '32px' }}>#</th>
+                  <th>Cédula (CI)</th>
+                  <th>Estudiante</th>
+                  <th>Condición</th>
+                  <th className="text-center" style={{ width: '220px' }}>Estado Asistencia</th>
+                  <th>Observación</th>
                 </tr>
-              ) : estudiantes.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="p-8 text-center text-neutral-500">
-                    No se encontraron inscripciones activas para este paralelo.
-                  </td>
-                </tr>
-              ) : (
-                estudiantes.map((est, index) => (
-                  <tr key={est.id_inscripcion} className="hover:bg-neutral-800/40 transition">
-                    <td className="p-3 font-mono text-neutral-500">{index + 1}</td>
-                    <td className="p-3 font-mono text-neutral-300">{est.ci}</td>
-                    <td className="p-3">
-                      <div className="font-bold text-white">{est.nombre_completo}</div>
-                      {est.grado_militar && (
-                        <div className="text-xs text-amber-400 font-semibold">{est.grado_militar}</div>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          est.tipo === 'Militar' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-neutral-800 text-neutral-300'
-                        }`}
-                      >
-                        {est.tipo}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => cambiarEstadoAlumno(est.id_inscripcion, 'Presente')}
-                          className={`px-2.5 py-1 rounded text-xs font-bold transition ${
-                            est.estado_asistencia === 'Presente'
-                              ? 'bg-emerald-600 text-white shadow-sm'
-                              : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-                          }`}
-                        >
-                          Presente
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => cambiarEstadoAlumno(est.id_inscripcion, 'Falta')}
-                          className={`px-2.5 py-1 rounded text-xs font-bold transition ${
-                            est.estado_asistencia === 'Falta'
-                              ? 'bg-red-600 text-white shadow-sm'
-                              : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-                          }`}
-                        >
-                          Falta
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => cambiarEstadoAlumno(est.id_inscripcion, 'Atraso')}
-                          className={`px-2.5 py-1 rounded text-xs font-bold transition ${
-                            est.estado_asistencia === 'Atraso'
-                              ? 'bg-amber-600 text-white shadow-sm'
-                              : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-                          }`}
-                        >
-                          Atraso
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => cambiarEstadoAlumno(est.id_inscripcion, 'Licencia')}
-                          className={`px-2.5 py-1 rounded text-xs font-bold transition ${
-                            est.estado_asistencia === 'Licencia'
-                              ? 'bg-sky-600 text-white shadow-sm'
-                              : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'
-                          }`}
-                        >
-                          Licencia
-                        </button>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <input
-                        type="text"
-                        value={est.observacion}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setEstudiantes((prev) =>
-                            prev.map((item) => (item.id_inscripcion === est.id_inscripcion ? { ...item, observacion: val } : item))
-                          );
-                        }}
-                        placeholder="Nota u observación..."
-                        className="w-full bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-xs text-neutral-300 focus:outline-none focus:border-neutral-600"
-                      />
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-[var(--text-dim)]">
+                      <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-1 text-[var(--military-gold-primary)]" />
+                      Cargando nómina de estudiantes...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : estudiantes.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-[var(--text-dim)]">
+                      No se encontraron inscripciones activas para este paralelo.
+                    </td>
+                  </tr>
+                ) : (
+                  estudiantes.map((est, index) => (
+                    <tr key={est.id_inscripcion} className="hover:bg-[var(--military-green-subtle)] transition">
+                      <td className="font-mono text-[var(--text-dim)] text-xs">{index + 1}</td>
+                      <td className="font-mono text-[var(--text-muted)] font-semibold text-xs whitespace-nowrap">{est.ci}</td>
+                      <td>
+                        <div className="font-bold text-[var(--text-main)] truncate max-w-[200px]">{est.nombre_completo}</div>
+                        {est.grado_militar ? (
+                          <div className="text-[10px] text-[var(--military-gold-primary)] font-bold font-mono flex items-center gap-1">
+                            <Shield className="w-2.5 h-2.5" /> {est.grado_militar}
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-[var(--text-dim)] font-mono">CIVIL</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap">
+                        <span className={`badge ${est.tipo === 'Militar' ? 'badge-gold' : 'badge-civil'}`}>
+                          {est.tipo}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => cambiarEstadoAlumno(est.id_inscripcion, 'Presente')}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold transition border ${
+                              est.estado_asistencia === 'Presente'
+                                ? 'bg-emerald-600 text-white border-emerald-600'
+                                : 'bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-emerald-500'
+                            }`}
+                          >
+                            P
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => cambiarEstadoAlumno(est.id_inscripcion, 'Falta')}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold transition border ${
+                              est.estado_asistencia === 'Falta'
+                                ? 'bg-red-600 text-white border-red-600'
+                                : 'bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-red-500'
+                            }`}
+                          >
+                            F
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => cambiarEstadoAlumno(est.id_inscripcion, 'Atraso')}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold transition border ${
+                              est.estado_asistencia === 'Atraso'
+                                ? 'bg-amber-600 text-white border-amber-600'
+                                : 'bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-amber-500'
+                            }`}
+                          >
+                            A
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => cambiarEstadoAlumno(est.id_inscripcion, 'Licencia')}
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold transition border ${
+                              est.estado_asistencia === 'Licencia'
+                                ? 'bg-sky-600 text-white border-sky-600'
+                                : 'bg-[var(--bg-surface-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-sky-500'
+                            }`}
+                          >
+                            L
+                          </button>
+                        </div>
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          value={est.observacion}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEstudiantes((prev) =>
+                              prev.map((item) => (item.id_inscripcion === est.id_inscripcion ? { ...item, observacion: val } : item))
+                            );
+                          }}
+                          placeholder="Observación..."
+                          className="w-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded px-2 py-0.5 text-xs text-[var(--text-main)] outline-none"
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* DOCKED BOTTOM BAR */}
+          <div className="tactical-pagination">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-[var(--military-gold-primary)]">NÓMINA:</span>
+              <span>{estudiantes.length} ESTUDIANTES</span>
+            </div>
+            <div className="font-mono text-[11px]">
+              <span>FECHA: <strong className="text-[var(--text-main)]">{fechaSeleccionada}</strong></span>
+            </div>
+          </div>
+        </div>
+
+        {/* PANEL LATERAL DERECHO: MÉTRICAS EN TIEMPO REAL & DATOS DEL CURSO */}
+        <div className="workspace-side-panel">
+          <div className="flex flex-col h-full gap-2.5">
+            {/* Cabecera del Curso */}
+            {infoParalelo && (
+              <div className="bg-[var(--bg-surface-elevated)] p-2.5 rounded border border-[var(--border-fine)] space-y-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] font-mono">
+                  Datos de la Sesión
+                </div>
+                <div className="text-xs font-bold text-[var(--text-main)]">
+                  {infoParalelo.docente}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)] font-mono">
+                  Aula: {infoParalelo.aula} &bull; {infoParalelo.horario}
+                </div>
+              </div>
+            )}
+
+            {/* Gauge de Asistencia del día */}
+            <div className="p-3 rounded border border-[var(--border-accent)] bg-[var(--military-gold-subtle)] text-center">
+              <div className="text-[10px] uppercase font-bold text-[var(--text-muted)]">Asistencia General del Día</div>
+              <div className="text-3xl font-mono font-black text-[var(--text-main)] my-1">
+                {porcentajeAsistencia}%
+              </div>
+              <div className="w-full bg-[var(--border-subtle)] rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-emerald-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${porcentajeAsistencia}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Tarjetas de Conteo */}
+            <div className="grid grid-cols-2 gap-1.5">
+              <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)] flex items-center justify-between">
+                <div>
+                  <div className="text-[9px] uppercase font-bold text-emerald-600 dark:text-emerald-400">Presentes</div>
+                  <div className="text-lg font-mono font-bold text-[var(--text-main)]">{conteoLocal.presentes}</div>
+                </div>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">P</span>
+              </div>
+
+              <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)] flex items-center justify-between">
+                <div>
+                  <div className="text-[9px] uppercase font-bold text-red-600 dark:text-red-400">Faltas</div>
+                  <div className="text-lg font-mono font-bold text-[var(--text-main)]">{conteoLocal.faltas}</div>
+                </div>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-600 dark:text-red-400">F</span>
+              </div>
+
+              <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)] flex items-center justify-between">
+                <div>
+                  <div className="text-[9px] uppercase font-bold text-amber-600 dark:text-amber-400">Atrasos</div>
+                  <div className="text-lg font-mono font-bold text-[var(--text-main)]">{conteoLocal.atrasos}</div>
+                </div>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-600 dark:text-amber-400">A</span>
+              </div>
+
+              <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)] flex items-center justify-between">
+                <div>
+                  <div className="text-[9px] uppercase font-bold text-sky-600 dark:text-sky-400">Licencias</div>
+                  <div className="text-lg font-mono font-bold text-[var(--text-main)]">{conteoLocal.licencias}</div>
+                </div>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-500/20 text-sky-600 dark:text-sky-400">L</span>
+              </div>
+            </div>
+
+            {/* Acciones principales */}
+            <div className="flex flex-col gap-1.5 mt-auto pt-2 border-t border-[var(--border-subtle)]">
+              <button
+                onClick={handleGuardarAsistencia}
+                disabled={guardando || estudiantes.length === 0}
+                className="btn btn-primary w-full"
+                style={{ padding: '0.45rem', fontSize: '0.78rem' }}
+              >
+                <CheckCircle2 className={`w-3.5 h-3.5 ${guardando ? 'animate-spin' : ''}`} />
+                <span>{guardando ? 'Guardando Registro...' : 'Guardar Asistencia de Hoy'}</span>
+              </button>
+
+              <button
+                onClick={abrirReportePdf}
+                disabled={cargandoPdf || !idParaleloSeleccionado}
+                className="btn btn-secondary w-full"
+                style={{ padding: '0.4rem', fontSize: '0.75rem', color: 'var(--military-gold-primary)' }}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Imprimir Acta de Asistencia</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

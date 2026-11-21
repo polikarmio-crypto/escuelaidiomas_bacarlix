@@ -582,7 +582,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="main-content">
             <div className="tricolor-stripe" />
-            <header className="topbar" style={{ padding: '0.5rem 1.25rem', height: 'auto', minHeight: '48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+
+            {/* Marca de agua institucional centrada en el fondo */}
+            <div className="institutional-watermark" aria-hidden="true">
+              <img
+                src="/images/logos/logo-eie.png"
+                alt="Escudo Oficial Escuela de Idiomas del Ejército"
+                style={{ width: '380px', height: 'auto', pointerEvents: 'none', userSelect: 'none' }}
+              />
+            </div>
+
+            <header className="topbar" style={{ padding: '0 1.25rem', height: '44px', minHeight: '44px', maxHeight: '44px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <button
                   onClick={() => setMobileMenuOpen(true)}
@@ -599,11 +609,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   }
                 `}</style>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.08)', padding: '0.2rem 0.35rem', borderRadius: '3px', border: '1px solid rgba(181,148,73,0.25)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.08)', padding: '0.15rem 0.35rem', borderRadius: '3px', border: '1px solid rgba(181,148,73,0.25)' }}>
                   <button
                     type="button"
                     onClick={() => router.back()}
-                    style={{ background: 'transparent', border: 'none', color: 'rgba(232,235,231,0.65)', cursor: 'pointer', padding: '0.25rem 0.4rem', borderRadius: '2px', display: 'flex', alignItems: 'center' }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(232,235,231,0.65)', cursor: 'pointer', padding: '0.2rem 0.35rem', borderRadius: '2px', display: 'flex', alignItems: 'center' }}
                     title="Página anterior (Atrás)"
                     aria-label="Atrás"
                   >
@@ -612,7 +622,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <button
                     type="button"
                     onClick={() => router.forward()}
-                    style={{ background: 'transparent', border: 'none', color: 'rgba(232,235,231,0.65)', cursor: 'pointer', padding: '0.25rem 0.4rem', borderRadius: '2px', display: 'flex', alignItems: 'center' }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(232,235,231,0.65)', cursor: 'pointer', padding: '0.2rem 0.35rem', borderRadius: '2px', display: 'flex', alignItems: 'center' }}
                     title="Página siguiente (Adelante)"
                     aria-label="Adelante"
                   >
@@ -621,7 +631,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   <div style={{ width: '1px', height: '14px', background: 'rgba(181,148,73,0.30)', margin: '0 0.15rem' }} />
                   <Link
                     href="/dashboard"
-                    style={{ background: 'transparent', border: 'none', color: 'rgba(232,235,231,0.65)', cursor: 'pointer', padding: '0.25rem 0.4rem', borderRadius: '2px', display: 'flex', alignItems: 'center' }}
+                    style={{ background: 'transparent', border: 'none', color: 'rgba(232,235,231,0.65)', cursor: 'pointer', padding: '0.2rem 0.35rem', borderRadius: '2px', display: 'flex', alignItems: 'center' }}
                     title="Inicio SACA"
                     aria-label="Inicio SACA"
                   >
@@ -642,7 +652,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   href="/configuracion"
                   className="btn btn-secondary"
-                  style={{ padding: '0.25rem 0.65rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(181,148,73,0.25)', color: '#E8EBE7', borderRadius: '3px' }}
+                  style={{ padding: '0.2rem 0.6rem', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(181,148,73,0.25)', color: '#E8EBE7', borderRadius: '3px' }}
                   title="Configurar tema, alto contraste y tamaño de texto"
                 >
                   <Sliders size={13} style={{ color: 'var(--military-gold-primary)' }} />
@@ -653,7 +663,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   type="button"
                   onClick={() => cambiarTema(theme === 'light' ? 'dark' : 'light')}
                   className="btn btn-secondary btn-icon"
-                  style={{ padding: '0.3rem', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(181,148,73,0.25)', borderRadius: '3px' }}
+                  style={{ padding: '0.25rem', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(181,148,73,0.25)', borderRadius: '3px' }}
                   title={`Cambiar a ${theme === 'light' ? 'Modo Oscuro' : 'Modo Claro'}`}
                   aria-label="Alternar tema claro y oscuro"
                 >

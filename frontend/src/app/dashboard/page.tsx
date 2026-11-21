@@ -217,7 +217,7 @@ export default function DashboardSacaPage() {
   const config = getDashboardConfig(rolActivo, kpisData);
 
   return (
-    <div className="w-full max-w-[1550px] mx-auto space-y-6 pb-12">
+    <div className="w-full max-w-[1550px] mx-auto space-y-6 pb-12" style={{ height: '100%', overflowY: 'auto' }}>
       {/* Encabezado Institucional Táctico */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--border-fine)]">
         <div className="flex items-center gap-3.5">

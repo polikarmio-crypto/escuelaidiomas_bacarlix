@@ -53,6 +53,7 @@ export default function EstudiantesPage() {
   const puedeAdministrar = esJefeAcademico || esAdmin;
 
   const [estudiantes, setEstudiantes] = useState<EstudianteItem[]>([]);
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState<EstudianteItem | null>(null);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -99,7 +100,7 @@ export default function EstudiantesPage() {
     try {
       const params = new URLSearchParams();
       params.append('page', page.toString());
-      params.append('per_page', '15');
+      params.append('per_page', '7');
       if (filtroTipo !== 'TODOS') params.append('tipo', filtroTipo);
       if (filtroIdioma) params.append('idioma', filtroIdioma);
       if (filtroParalelo) params.append('paralelo', filtroParalelo);
@@ -108,12 +109,24 @@ export default function EstudiantesPage() {
       const res = await fetch(`/api/v1/estudiantes?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        setEstudiantes(data.data || []);
+        const lista = data.data || [];
+        setEstudiantes(lista);
         setTotal(data.total || 0);
+
+        if (lista.length > 0) {
+          setEstudianteSeleccionado((prev) => {
+            if (!prev || !lista.some((e: EstudianteItem) => (e.id_estudiante || e.id) === (prev.id_estudiante || prev.id))) {
+              return lista[0];
+            }
+            return prev;
+          });
+        } else {
+          setEstudianteSeleccionado(null);
+        }
 
         const idSet = new Set<string>();
         const parSet = new Set<string>();
-        (data.data || []).forEach((e: EstudianteItem) => {
+        lista.forEach((e: EstudianteItem) => {
           if (e.idiomaActual && e.idiomaActual !== 'Sin asignar') idSet.add(e.idiomaActual);
           if (e.paralelo && e.paralelo !== 'Sin asignar') parSet.add(e.paralelo);
         });
@@ -310,245 +323,375 @@ export default function EstudiantesPage() {
     );
   }
 
+  const totalPages = Math.max(1, Math.ceil(total / 7));
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-neutral-800">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shadow-sm shrink-0">
-            <Users className="w-6 h-6" />
+    <div className="h-full flex flex-col min-h-0 overflow-hidden">
+      {/* FRANJA SUPERIOR COMPACTA (44px): Breadcrumb + Filtros Inline + Buscador */}
+      <div className="strip-utility-bar">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--military-green-subtle)] border border-[var(--border-accent)] text-[var(--military-green-primary)] dark:text-[var(--military-gold-primary)] font-mono text-[11px] font-bold shrink-0">
+            <Users className="w-3.5 h-3.5" />
+            <span>SACA / Estudiantes</span>
           </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-mono text-neutral-400">
-              <span>SACA</span>
-              <span>/</span>
-              <span className="text-sky-400 font-semibold">Estudiantes</span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-white">
-              Expedientes de Estudiantes
-            </h1>
+
+          <div className="h-4 w-[1px] bg-[var(--border-fine)] shrink-0" />
+
+          {/* Filtro Tipo: TODOS / MILITAR / CIVIL */}
+          <div className="flex items-center gap-1 bg-[var(--bg-surface-elevated)] p-0.5 rounded border border-[var(--border-subtle)] shrink-0">
+            {(['TODOS', 'MILITAR', 'CIVIL'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => { setFiltroTipo(t); setPage(1); }}
+                className={`px-2 py-0.5 rounded text-[11px] font-semibold transition ${
+                  filtroTipo === t
+                    ? 'bg-[var(--military-green-primary)] text-white'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                }`}
+              >
+                {t === 'TODOS' ? 'Todos' : t === 'MILITAR' ? 'Militares' : 'Civiles'}
+              </button>
+            ))}
+          </div>
+
+          <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+            <select
+              value={filtroIdioma}
+              onChange={(e) => { setFiltroIdioma(e.target.value); setPage(1); }}
+              className="bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded px-2 py-0.5 text-xs text-[var(--text-main)] outline-none"
+            >
+              <option value="">Todos los Idiomas</option>
+              {idiomasDisponibles.map((i) => (
+                <option key={i} value={i}>{i}</option>
+              ))}
+            </select>
+
+            <select
+              value={filtroParalelo}
+              onChange={(e) => { setFiltroParalelo(e.target.value); setPage(1); }}
+              className="bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded px-2 py-0.5 text-xs text-[var(--text-main)] outline-none"
+            >
+              <option value="">Todos los Cursos</option>
+              {paralelosDisponibles.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex items-center gap-2 shrink-0">
+          <form onSubmit={handleBuscar} className="relative w-36 sm:w-52">
+            <Search className="w-3.5 h-3.5 text-[var(--text-dim)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar CI, nombre..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded pl-8 pr-2 py-1 text-xs text-[var(--text-main)] outline-none"
+            />
+          </form>
+
+          <button
+            onClick={abrirModalNuevo}
+            className="btn btn-primary"
+            style={{ padding: '0.2rem 0.65rem', fontSize: '0.72rem', height: '28px' }}
+          >
+            <Plus className="w-3 h-3" />
+            <span className="hidden sm:inline">Nuevo Estudiante</span>
+          </button>
+
           <button
             onClick={cargarEstudiantes}
             disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
+            className="btn btn-secondary"
+            style={{ padding: '0.2rem 0.5rem', fontSize: '0.72rem', height: '28px' }}
+            title="Actualizar listado"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            Actualizar
-          </button>
-          <button
-            onClick={abrirModalNuevo}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition shadow-md shadow-sky-600/20"
-          >
-            <Plus className="w-4 h-4" />
-            + Nuevo Estudiante
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
       {alerta && (
         <div
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded mb-2 text-xs font-semibold shrink-0 border ${
             alerta.tipo === 'ok'
-              ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200'
-              : 'bg-red-950/50 border-red-500/50 text-red-200'
+              ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+              : 'bg-red-950/20 border-red-500/40 text-red-600 dark:text-red-400'
           }`}
         >
-          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
           <span>{alerta.mensaje}</span>
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 py-1 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1.5">
-            {(['TODOS', 'MILITAR', 'CIVIL'] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => { setFiltroTipo(t); setPage(1); }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                  filtroTipo === t
-                    ? 'bg-sky-600 text-white shadow-xs'
-                    : 'bg-neutral-900 text-neutral-400 hover:text-white border border-neutral-800'
-                }`}
-              >
-                {t === 'TODOS' ? 'Todos' : t === 'MILITAR' ? 'Militares (FFAA)' : 'Civiles'}
-              </button>
-            ))}
-          </div>
-
-          <div className="h-4 w-px bg-neutral-800 hidden sm:block mx-1" />
-
-          <select
-            value={filtroIdioma}
-            onChange={(e) => { setFiltroIdioma(e.target.value); setPage(1); }}
-            className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white"
-          >
-            <option value="">Todos los Idiomas</option>
-            {idiomasDisponibles.map((i) => (
-              <option key={i} value={i}>{i}</option>
-            ))}
-          </select>
-
-          <select
-            value={filtroParalelo}
-            onChange={(e) => { setFiltroParalelo(e.target.value); setPage(1); }}
-            className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white"
-          >
-            <option value="">Todos los Cursos/Paralelos</option>
-            {paralelosDisponibles.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-
-          {(filtroIdioma || filtroParalelo || busqueda) && (
-            <button
-              onClick={() => { setFiltroIdioma(''); setFiltroParalelo(''); setBusqueda(''); setPage(1); }}
-              className="text-sky-400 hover:text-sky-300 text-xs font-medium underline px-1"
-            >
-              Limpiar
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3">
-          <form onSubmit={handleBuscar} className="flex items-center gap-2 w-full sm:w-72">
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Buscar por CI, nombre..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white placeholder-neutral-500"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-white rounded-lg text-xs font-semibold transition"
-            >
-              Buscar
-            </button>
-          </form>
-          <span className="text-neutral-500 text-[11px] whitespace-nowrap hidden md:inline">
-            Total: <strong className="text-white">{total}</strong>
-          </span>
-        </div>
-      </div>
-
-      <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-950 text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
-              <tr>
-                <th className="p-3">Matrícula / ID</th>
-                <th className="p-3">Estudiante</th>
-                <th className="p-3">Cédula (CI)</th>
-                <th className="p-3">Categoría</th>
-                <th className="p-3">Curso & Idioma Actual</th>
-                <th className="p-3">Contacto</th>
-                <th className="p-3 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-800 text-neutral-300">
-              {estudiantes.map((est) => (
-                <tr key={est.id_estudiante || est.id} className="hover:bg-neutral-800/30 transition">
-                  <td className="p-3 font-mono text-[11px] text-sky-400 font-semibold">
-                    {est.codigoMatricula}
-                  </td>
-                  <td className="p-3">
-                    <div className="font-bold text-white text-sm">
-                      {est.nombres} {est.apellidos}
-                    </div>
-                    {est.tipo === 'MILITAR' && est.gradoMilitar && (
-                      <p className="text-[11px] text-amber-400 flex items-center gap-1">
-                        <Shield className="w-3 h-3" /> {est.gradoMilitar} &bull; {est.unidadMilitar}
-                      </p>
-                    )}
-                  </td>
-                  <td className="p-3 font-mono text-neutral-300 font-semibold">
-                    {est.ci}
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${
-                        est.tipo === 'MILITAR'
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : 'bg-neutral-800 text-neutral-300'
-                      }`}
-                    >
-                      {est.tipo}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <p className="font-semibold text-white">{est.idiomaActual || 'Sin asignar'}</p>
-                    <p className="text-[11px] text-neutral-400">
-                      Paralelo: <span className="font-mono text-sky-400">{est.paralelo || 'Sin asignar'}</span>
-                    </p>
-                  </td>
-                  <td className="p-3 text-[11px] space-y-0.5 text-neutral-400">
-                    <p className="flex items-center gap-1.5"><Phone className="w-3 h-3 text-neutral-500" /> {est.telefono}</p>
-                    <p className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-neutral-500" /> {est.correo}</p>
-                  </td>
-                  <td className="p-3 text-right">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <button
-                        onClick={() => abrirModalEditar(est)}
-                        className="px-2 py-1 rounded text-[10px] font-semibold bg-sky-500/20 text-sky-400 hover:bg-sky-500/30 flex items-center gap-1"
-                        title="Editar Datos"
-                      >
-                        <Edit className="w-3 h-3" /> Editar
-                      </button>
-                      <button
-                        onClick={() => setModalConfirmarBaja({ id: est.id_estudiante || est.id, nombre: `${est.nombres} ${est.apellidos}` })}
-                        className="px-2 py-1 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 flex items-center gap-1"
-                        title="Baja Lógica / Reactivar"
-                      >
-                        <ShieldAlert className="w-3 h-3" /> Baja
-                      </button>
-                      {est.estado === 'Inactivo' && (
-                        <button
-                          onClick={() => setModalConfirmarFisica({ id: est.id_estudiante || est.id, nombre: `${est.nombres} ${est.apellidos}` })}
-                          className="px-2 py-1 rounded text-[10px] font-semibold bg-red-950/60 text-red-300 hover:bg-red-900 border border-red-800/40 flex items-center gap-1"
-                          title="Baja Física Definitiva"
-                        >
-                          <Trash2 className="w-3 h-3" /> Eliminar
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {estudiantes.length === 0 && !loading && (
+      {/* ÁREA DE TRABAJO DIVIDIDA (SPLIT-WORKSPACE) */}
+      <div className="split-workspace">
+        {/* PANEL PRINCIPAL: TABLA COMPACTA (7 REGISTROS) */}
+        <div className="workspace-main-panel">
+          <div className="workspace-table-container">
+            <table className="compact-table">
+              <thead>
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-neutral-500">
-                    No se encontraron estudiantes con los filtros seleccionados.
-                  </td>
+                  <th>Matrícula / ID</th>
+                  <th>Estudiante</th>
+                  <th>Cédula (CI)</th>
+                  <th>Categoría</th>
+                  <th>Curso & Idioma</th>
+                  <th>Contacto</th>
+                  <th className="text-right">Acciones</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {estudiantes.map((est) => {
+                  const esActivo = (estudianteSeleccionado?.id_estudiante || estudianteSeleccionado?.id) === (est.id_estudiante || est.id);
+
+                  return (
+                    <tr
+                      key={est.id_estudiante || est.id}
+                      onClick={() => setEstudianteSeleccionado(est)}
+                      className={`cursor-pointer transition ${esActivo ? 'selected' : ''}`}
+                    >
+                      <td className="font-mono text-[11px] text-[var(--military-gold-primary)] font-bold whitespace-nowrap">
+                        {est.codigoMatricula}
+                      </td>
+                      <td>
+                        <div className="font-bold text-[var(--text-main)] truncate max-w-[190px]">
+                          {est.nombres} {est.apellidos}
+                        </div>
+                        {est.tipo === 'MILITAR' && est.gradoMilitar ? (
+                          <p className="text-[10px] text-[var(--military-gold-primary)] flex items-center gap-1 font-mono">
+                            <Shield className="w-2.5 h-2.5" /> {est.gradoMilitar} &bull; {est.unidadMilitar || 'FFAA'}
+                          </p>
+                        ) : (
+                          <span className="text-[10px] text-[var(--text-dim)] font-mono">ESTUDIANTE CIVIL</span>
+                        )}
+                      </td>
+                      <td className="font-mono text-[var(--text-muted)] font-semibold text-xs whitespace-nowrap">
+                        {est.ci}
+                      </td>
+                      <td className="whitespace-nowrap">
+                        <span className={`badge ${est.tipo === 'MILITAR' ? 'badge-gold' : 'badge-civil'}`}>
+                          {est.tipo}
+                        </span>
+                      </td>
+                      <td className="truncate max-w-[160px]">
+                        <div className="font-medium text-[var(--text-main)] text-xs">
+                          {est.idiomaActual || 'Sin asignar'}
+                        </div>
+                        <div className="text-[10px] text-[var(--text-dim)] font-mono">
+                          Par: {est.paralelo || 'Sin asignar'}
+                        </div>
+                      </td>
+                      <td className="text-[11px] text-[var(--text-muted)] font-mono whitespace-nowrap">
+                        <div>{est.telefono || '—'}</div>
+                      </td>
+                      <td className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => abrirModalEditar(est)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.15rem 0.45rem', fontSize: '0.68rem', height: '24px' }}
+                            title="Editar Datos"
+                          >
+                            <Edit className="w-3 h-3 text-[var(--military-gold-primary)]" />
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            onClick={() => setModalConfirmarBaja({ id: est.id_estudiante || est.id, nombre: `${est.nombres} ${est.apellidos}` })}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.15rem 0.45rem', fontSize: '0.68rem', height: '24px' }}
+                            title="Baja Lógica / Reactivar"
+                          >
+                            <ShieldAlert className="w-3 h-3 text-[var(--status-danger)]" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {estudiantes.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-[var(--text-dim)]">
+                      No se encontraron estudiantes con los filtros seleccionados.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* PAGINACIÓN TÁCTICA FIJA INFERIOR */}
+          <div className="tactical-pagination">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-[var(--military-gold-primary)]">TOTAL:</span>
+              <span>{total} EXPEDIENTES</span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="btn btn-secondary"
+                style={{ padding: '0.15rem 0.5rem', height: '26px', fontSize: '0.72rem' }}
+                title="Página Anterior"
+              >
+                <ChevronLeft className="w-3 h-3" />
+                <span className="hidden sm:inline">Anterior</span>
+              </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .map((p, idx, arr) => (
+                    <React.Fragment key={p}>
+                      {idx > 0 && arr[idx - 1] !== p - 1 && <span className="text-[var(--text-dim)]">...</span>}
+                      <button
+                        onClick={() => setPage(p)}
+                        className={`px-2 py-0.5 rounded text-xs font-mono font-bold border transition ${
+                          page === p
+                            ? 'bg-[var(--military-green-primary)] text-white border-[var(--border-accent)]'
+                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)]'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  ))}
+              </div>
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="btn btn-secondary"
+                style={{ padding: '0.15rem 0.5rem', height: '26px', fontSize: '0.72rem' }}
+                title="Página Siguiente"
+              >
+                <span className="hidden sm:inline">Siguiente</span>
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            <div className="hidden sm:block">
+              <span>PÁG {page} DE {totalPages}</span>
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between p-3 border-t border-neutral-800 text-xs text-neutral-400">
-          <span>Página {page} de {Math.max(1, Math.ceil(total / 15))}</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-white"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page * 15 >= total}
-              className="p-1.5 rounded bg-neutral-800 hover:bg-neutral-700 disabled:opacity-40 text-white"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
+        {/* PANEL LATERAL DERECHO: DOSSIER ACTIVO DEL ESTUDIANTE */}
+        <div className="workspace-side-panel">
+          {estudianteSeleccionado ? (
+            <div className="flex flex-col h-full gap-2.5">
+              {/* Encabezado del expediente */}
+              <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--border-subtle)]">
+                <div className="w-10 h-10 rounded bg-[var(--military-green-primary)] text-[var(--military-gold-primary)] font-bold font-mono text-sm flex items-center justify-center shrink-0 border border-[var(--border-accent)]">
+                  {estudianteSeleccionado.tipo === 'MILITAR' ? (
+                    <Shield className="w-5 h-5" />
+                  ) : (
+                    estudianteSeleccionado.nombres.slice(0, 2).toUpperCase()
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-xs text-[var(--text-main)] truncate leading-tight">
+                    {estudianteSeleccionado.nombres} {estudianteSeleccionado.apellidos}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-dim)] font-mono mt-0.5">
+                    <span>CI: {estudianteSeleccionado.ci}</span>
+                    <span>&bull;</span>
+                    <span className="text-[var(--military-gold-primary)] font-bold">
+                      {estudianteSeleccionado.gradoMilitar || 'CIVIL'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ficha de datos del estudiante */}
+              <div className="flex flex-col gap-2 flex-1">
+                <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)]">
+                  <div className="text-[10px] uppercase font-bold text-[var(--text-dim)] font-mono">Código de Matrícula</div>
+                  <div className="text-sm font-bold text-[var(--military-gold-primary)] font-mono mt-0.5">
+                    {estudianteSeleccionado.codigoMatricula}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-1.5">
+                  <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)]">
+                    <div className="text-[9px] uppercase font-bold text-[var(--text-dim)]">Curso / Paralelo</div>
+                    <div className="text-xs font-bold text-[var(--text-main)] font-mono truncate mt-0.5">
+                      {estudianteSeleccionado.paralelo || 'Sin asignar'}
+                    </div>
+                  </div>
+
+                  <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)]">
+                    <div className="text-[9px] uppercase font-bold text-[var(--text-dim)]">Idioma Actual</div>
+                    <div className="text-xs font-bold text-[var(--text-main)] truncate mt-0.5">
+                      {estudianteSeleccionado.idiomaActual || 'Sin asignar'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)] space-y-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-[var(--text-dim)]">Teléfono:</span>
+                    <span className="font-mono text-[var(--text-main)]">{estudianteSeleccionado.telefono || '—'}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-[var(--text-dim)]">Correo:</span>
+                    <span className="font-mono text-[var(--text-main)] truncate max-w-[180px]">{estudianteSeleccionado.correo || '—'}</span>
+                  </div>
+                  {estudianteSeleccionado.tipo === 'MILITAR' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-[var(--text-dim)]">Unidad:</span>
+                      <span className="font-mono text-[var(--military-gold-primary)] font-bold">{estudianteSeleccionado.unidadMilitar || 'FFAA'}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-[var(--text-dim)]">Estado:</span>
+                    <span className={`badge ${estudianteSeleccionado.estado === 'Activo' ? 'badge-military' : 'badge-danger'}`}>
+                      {estudianteSeleccionado.estado}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Acciones del Expediente */}
+                <div className="flex flex-col gap-1.5 mt-auto">
+                  <button
+                    onClick={() => abrirModalEditar(estudianteSeleccionado)}
+                    className="btn btn-primary w-full"
+                    style={{ padding: '0.4rem', fontSize: '0.75rem' }}
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>Editar Expediente</span>
+                  </button>
+
+                  <button
+                    onClick={() => setModalConfirmarBaja({ id: estudianteSeleccionado.id_estudiante || estudianteSeleccionado.id, nombre: `${estudianteSeleccionado.nombres} ${estudianteSeleccionado.apellidos}` })}
+                    className="btn btn-secondary w-full"
+                    style={{ padding: '0.35rem', fontSize: '0.72rem', color: 'var(--status-danger)' }}
+                  >
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    <span>{estudianteSeleccionado.estado === 'Activo' ? 'Dar de Baja' : 'Reactivar Estudiante'}</span>
+                  </button>
+
+                  {estudianteSeleccionado.estado === 'Inactivo' && (
+                    <button
+                      onClick={() => setModalConfirmarFisica({ id: estudianteSeleccionado.id_estudiante || estudianteSeleccionado.id, nombre: `${estudianteSeleccionado.nombres} ${estudianteSeleccionado.apellidos}` })}
+                      className="btn btn-secondary w-full"
+                      style={{ padding: '0.35rem', fontSize: '0.72rem', borderColor: 'var(--status-danger)', color: 'var(--status-danger)' }}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Eliminación Definitiva</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center p-4 text-[var(--text-dim)]">
+              <Users className="w-10 h-10 mb-2 opacity-30" />
+              <p className="text-xs">Seleccione un estudiante de la tabla para ver su expediente y acciones rápidas.</p>
+            </div>
+          )}
         </div>
       </div>
 

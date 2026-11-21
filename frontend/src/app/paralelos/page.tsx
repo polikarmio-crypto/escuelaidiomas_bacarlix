@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuthRole } from '@/context/AuthRoleContext';
 
-const PER_PAGE = 9;
+const PER_PAGE = 7;
 
 export default function ParalelosPage() {
   const { rolActivo, esJefeAcademico, esDocente, esAdmin, usuario } = useAuthRole();
@@ -64,6 +64,8 @@ export default function ParalelosPage() {
     capacidad_maxima: 30,
     capacidad_minima: 10,
   });
+
+  const [paraleloSeleccionado, setParaleloSeleccionado] = useState<any | null>(null);
 
   const mostrarMensaje = (tipo: 'ok' | 'error', mensaje: string) => {
     setAlerta({ tipo, mensaje });
@@ -384,86 +386,180 @@ export default function ParalelosPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-neutral-800">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-sm shrink-0">
-            <Layers className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-mono text-neutral-400">
-              <span>SACA</span>
-              <span>/</span>
-              <span className="text-purple-400 font-semibold">Paralelos</span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-white">
-              {esDocente ? 'Mis Paralelos Asignados' : 'Apertura y Asignación de Paralelos'}
-            </h1>
-          </div>
+    <div className="h-full flex flex-col min-h-0 overflow-hidden">
+      {/* Strip Utility Bar */}
+      <div className="strip-utility-bar" style={{ height: 'auto', minHeight: '44px', flexShrink: 0, padding: '0 0.75rem', gap: '0.5rem' }}>
+        <div className="flex items-center gap-1.5 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+          <Layers className="w-3.5 h-3.5" style={{ color: 'var(--color-accent)' }} />
+          <span style={{ color: 'var(--color-accent)', fontWeight: 700 }}>SACA / Paralelos</span>
+          <span style={{ color: 'var(--text-muted)' }}>—</span>
+          <span style={{ color: 'var(--text-main)' }}>{esDocente ? 'Mis Paralelos' : 'Apertura y Asignación'}</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            placeholder="Buscar por código, idioma, aula..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-[3px] border"
+            style={{ background: 'var(--bg-base)', borderColor: 'var(--border-fine)', color: 'var(--text-main)' }}
+          />
+        </div>
+        <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+          {paralelosVisibles.length === 0 ? 0 : (page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, paralelosVisibles.length)} / {paralelosVisibles.length}
+        </span>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={cargarDatos}
+          disabled={loading}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-[3px] border transition"
+          style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-fine)', color: 'var(--text-main)' }}
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Sync</span>
+        </button>
+        {puedeCrear && (
           <button
-            onClick={cargarDatos}
-            disabled={loading}
-            className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
+            onClick={() => setModalApertura(true)}
+            className="btn btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold"
           >
-            <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
-            <span>Sincronizar</span>
+            <Plus className="w-3.5 h-3.5" />
+            Aperturar Paralelo
           </button>
-          {puedeCrear && (
-            <button
-              onClick={() => setModalApertura(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition shadow-md shadow-purple-600/20"
-            >
-              <Plus className="w-4 h-4 shrink-0" />
-              <span>+ Aperturar Paralelo</span>
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {alerta && (
-        <div
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${alerta.tipo === 'ok'
-              ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200'
-              : 'bg-red-950/50 border-red-500/50 text-red-200'
-            }`}
-        >
-          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+        <div className={`flex items-center gap-2 px-4 py-2 text-xs font-medium border-b flex-shrink-0 ${alerta.tipo === 'ok' ? 'bg-emerald-950/40 border-emerald-700/40 text-emerald-300' : 'bg-red-950/40 border-red-700/40 text-red-300'}`}>
+          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
           <span>{alerta.mensaje}</span>
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-1">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Buscar por código, idioma o aula..."
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white"
-          />
+      {/* Split Workspace */}
+      <div className="split-workspace" style={{ flex: 1, minHeight: 0 }}>
+        {/* Panel Izquierdo: Tabla compacta */}
+        <div className="workspace-main-panel">
+          <div className="workspace-table-container">
+            {paralelosPaginados.length === 0 ? (
+              <div className="flex items-center justify-center h-full" style={{ color: 'var(--text-muted)' }}>
+                <div className="text-center space-y-2">
+                  <Layers className="w-8 h-8 mx-auto opacity-30" />
+                  <p className="text-xs">No se encontraron paralelos</p>
+                </div>
+              </div>
+            ) : (
+              <table className="compact-table w-full">
+                <thead>
+                  <tr>
+                    <th>Código</th>
+                    <th>Idioma / Nivel</th>
+                    <th>Docente</th>
+                    <th>Aula</th>
+                    <th>Inscritos</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paralelosPaginados.map((p) => {
+                    const inscritos = p.inscritos ?? p.inscripciones_count ?? 0;
+                    const capMax = p.capacidad_maxima ?? p.capacidad_maxima_paralelo ?? 30;
+                    const estadoTexto = p.estado || p.estado_paralelo || 'Abierto';
+                    const nombreIdioma = typeof p.idioma === 'string' ? p.idioma : (p.nivel?.programa?.idioma?.nombre_idioma || 'Idioma');
+                    const nombreNivel = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.nombre_nivel || 'Nivel');
+                    const nombreAula = typeof p.aula === 'string' ? p.aula : (p.aula?.nombre_aula || '—');
+                    const nombreDocente = typeof p.docente_actual === 'string'
+                      ? p.docente_actual
+                      : (p.docente_actual?.nombre_docente ? `${p.docente_actual.nombre_docente} ${p.docente_actual.apellido_docente}` : '—');
+                    const isSelected = paraleloSeleccionado?.id_paralelo === p.id_paralelo;
+                    return (
+                      <tr
+                        key={p.id_paralelo}
+                        onClick={() => setParaleloSeleccionado(isSelected ? null : p)}
+                        style={{
+                          cursor: 'pointer',
+                          background: isSelected ? 'var(--color-primary)' : undefined,
+                          color: isSelected ? '#fff' : undefined,
+                        }}
+                      >
+                        <td><span className="font-mono font-bold text-sky-400 text-[11px]">{p.codigo_paralelo}</span></td>
+                        <td>
+                          <div className="font-semibold text-[11px]" style={{ color: isSelected ? '#fff' : 'var(--text-main)' }}>{nombreIdioma}</div>
+                          <div className="text-[10px]" style={{ color: isSelected ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)' }}>{nombreNivel}</div>
+                        </td>
+                        <td className="text-[11px]" style={{ color: isSelected ? '#fff' : 'var(--text-main)' }}>{nombreDocente !== '—' ? nombreDocente : <span style={{ color: '#f59e0b' }}>Sin asignar</span>}</td>
+                        <td className="text-[11px] font-mono" style={{ color: isSelected ? '#fff' : 'var(--text-muted)' }}>{nombreAula}</td>
+                        <td className="text-center font-mono text-[11px]">
+                          <span style={{ color: isSelected ? '#fff' : 'var(--text-main)' }}>{inscritos}</span>
+                          <span style={{ color: isSelected ? 'rgba(255,255,255,0.6)' : 'var(--text-muted)' }}>/{capMax}</span>
+                        </td>
+                        <td>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-[2px] ${estadoTexto === 'Abierto' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-700/40 text-neutral-400'}`}>
+                            {estadoTexto}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+          {/* Tactical Pagination */}
+          <div className="tactical-pagination">
+            <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+              Pág. {page} / {totalPages} &bull; {paralelosVisibles.length} registros
+            </span>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="p-1 rounded-[2px] border disabled:opacity-30 transition"
+                style={{ borderColor: 'var(--border-fine)', color: 'var(--text-main)', background: 'var(--bg-surface)' }}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                const pg = page <= 3 ? i + 1 : page - 2 + i;
+                if (pg < 1 || pg > totalPages) return null;
+                return (
+                  <button
+                    key={pg}
+                    onClick={() => setPage(pg)}
+                    className="w-6 h-6 rounded-[2px] text-[10px] font-mono font-bold transition"
+                    style={{
+                      background: pg === page ? 'var(--color-primary)' : 'var(--bg-surface)',
+                      color: pg === page ? '#fff' : 'var(--text-main)',
+                      border: `1px solid ${pg === page ? 'var(--color-primary)' : 'var(--border-fine)'}`,
+                    }}
+                  >
+                    {pg}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="p-1 rounded-[2px] border disabled:opacity-30 transition"
+                style={{ borderColor: 'var(--border-fine)', color: 'var(--text-main)', background: 'var(--bg-surface)' }}
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
         </div>
-        <span className="text-xs text-neutral-500">
-          Mostrando <strong className="text-white">{paralelosVisibles.length === 0 ? 0 : (page - 1) * PER_PAGE + 1}-{Math.min(page * PER_PAGE, paralelosVisibles.length)}</strong> de <strong className="text-white">{paralelosVisibles.length}</strong> paralelos
-        </span>
-      </div>
 
-      {paralelosPaginados.length === 0 ? (
-        <div className="p-12 text-center text-neutral-500 border border-neutral-800/80 rounded-2xl bg-neutral-900/30">
-          No se encontraron paralelos registrados o que coincidan con la búsqueda.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {paralelosPaginados.map((p) => {
+        {/* Panel Derecho: Dossier del paralelo */}
+        <div className="workspace-side-panel p-3 space-y-3" style={{ background: 'var(--bg-surface)' }}>
+          {paraleloSeleccionado ? (() => {
+            const p = paraleloSeleccionado;
             const inscritos = p.inscritos ?? p.inscripciones_count ?? 0;
             const capMax = p.capacidad_maxima ?? p.capacidad_maxima_paralelo ?? 30;
             const cuposDisp = Math.max(0, capMax - inscritos);
             const porcentaje = Math.min(100, Math.round((inscritos / capMax) * 100));
             const estadoTexto = p.estado || p.estado_paralelo || 'Abierto';
-
-            const nombreIdioma = typeof p.idioma === 'string' ? p.idioma : (p.nivel?.programa?.idioma?.nombre_idioma || 'Idioma General');
+            const nombreIdioma = typeof p.idioma === 'string' ? p.idioma : (p.nivel?.programa?.idioma?.nombre_idioma || 'Idioma');
             const nombrePrograma = p.programa || p.nivel?.programa?.nombre_programa || 'Plan de Idioma';
             const nombreNivel = typeof p.nivel === 'string' ? p.nivel : (p.nivel?.nombre_nivel || 'Nivel');
             const nombreAula = typeof p.aula === 'string' ? p.aula : (p.aula?.nombre_aula || 'Aula Principal');
@@ -471,141 +567,117 @@ export default function ParalelosPage() {
             const nombreDocente = typeof p.docente_actual === 'string'
               ? p.docente_actual
               : (p.docente_actual?.nombre_docente ? `${p.docente_actual.nombre_docente} ${p.docente_actual.apellido_docente}` : 'Sin asignar');
-            const sinDocente = nombreDocente === 'Sin asignar' || nombreDocente === 'Sin docente asignado';
-
+            const sinDocente = nombreDocente === 'Sin asignar';
             return (
-              <div
-                key={p.id_paralelo}
-                className="bg-neutral-900/50 border border-neutral-800 hover:border-neutral-700 rounded-2xl p-5 space-y-4 transition shadow-md flex flex-col justify-between"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between border-b border-neutral-800/70 pb-3">
-                    <span className="text-base font-extrabold font-mono text-sky-400">
-                      {p.codigo_paralelo}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${estadoTexto === 'Abierto' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-800 text-neutral-400'
-                      }`}>
-                      {estadoTexto}
-                    </span>
-                  </div>
+              <>
+                {/* Header código */}
+                <div className="flex items-center justify-between pb-2 border-b" style={{ borderColor: 'var(--border-fine)' }}>
+                  <span className="font-mono font-black text-lg text-sky-400">{p.codigo_paralelo}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-[2px] ${estadoTexto === 'Abierto' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-neutral-700/40 text-neutral-400'}`}>
+                    {estadoTexto}
+                  </span>
+                </div>
 
-                  <div className="space-y-1.5 text-xs">
-                    <p className="font-bold text-white text-sm">
-                      {nombreIdioma}
-                    </p>
-                    <p className="text-neutral-400">
-                      {nombrePrograma} &bull; <span className="text-sky-300 font-semibold">{nombreNivel}</span>
-                    </p>
-                    <div className="pt-2 border-t border-neutral-800/60 space-y-1 text-neutral-300">
-                      <p className="flex items-center gap-2">
-                        <DoorOpen className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                        Aula: <strong className="text-white">{nombreAula}</strong>
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <Clock className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
-                        Horario: <span className="font-mono text-neutral-200">{horarioTexto}</span>
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <GraduationCap className={`w-3.5 h-3.5 shrink-0 ${sinDocente ? 'text-amber-400' : 'text-emerald-400'}`} />
-                        Docente: <strong className={sinDocente ? 'text-amber-300' : 'text-emerald-300'}>
-                          {nombreDocente}
-                        </strong>
-                      </p>
+                {/* Idioma y Nivel */}
+                <div>
+                  <p className="font-bold text-sm" style={{ color: 'var(--text-main)' }}>{nombreIdioma}</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{nombrePrograma} · {nombreNivel}</p>
+                </div>
+
+                {/* Stats Ocupación */}
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[
+                    { label: 'Inscritos', val: inscritos, col: 'var(--text-main)' },
+                    { label: 'Cupos', val: cuposDisp, col: '#10b981' },
+                    { label: 'Máx.', val: capMax, col: 'var(--text-muted)' },
+                  ].map((s) => (
+                    <div key={s.label} className="p-2 rounded-[2px] text-center border" style={{ background: 'var(--bg-card)', borderColor: 'var(--border-fine)' }}>
+                      <p className="font-black font-mono text-base" style={{ color: s.col }}>{s.val}</p>
+                      <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-0.5">
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--border-fine)' }}>
+                    <div className="h-full rounded-full" style={{ width: `${porcentaje}%`, background: porcentaje >= 90 ? '#ef4444' : porcentaje >= 70 ? '#f59e0b' : '#10b981' }} />
+                  </div>
+                  <p className="text-[10px] text-right font-mono" style={{ color: 'var(--text-muted)' }}>{porcentaje}% cubierto</p>
+                </div>
+
+                {/* Info rows */}
+                <div className="space-y-1.5 text-xs border-t pt-2" style={{ borderColor: 'var(--border-fine)' }}>
+                  <div className="flex items-start gap-2">
+                    <GraduationCap className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${sinDocente ? 'text-amber-400' : 'text-emerald-400'}`} />
+                    <div>
+                      <span className="text-[10px] uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Docente</span>
+                      <p className={`font-semibold ${sinDocente ? 'text-amber-400' : ''}`} style={!sinDocente ? { color: 'var(--text-main)' } : {}}>{nombreDocente}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <DoorOpen className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
+                    <div>
+                      <span className="text-[10px] uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Aula</span>
+                      <p className="font-semibold font-mono" style={{ color: 'var(--text-main)' }}>{nombreAula}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Clock className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: 'var(--text-muted)' }} />
+                    <div>
+                      <span className="text-[10px] uppercase font-bold" style={{ color: 'var(--text-muted)' }}>Horario</span>
+                      <p className="font-semibold font-mono" style={{ color: 'var(--text-main)' }}>{horarioTexto}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-neutral-800/70 space-y-2 text-xs">
-                  <div className="flex items-center justify-between text-neutral-400 text-[11px]">
-                    <span>Ocupación: <strong className="text-white font-mono">{inscritos}/{capMax}</strong></span>
-                    <span>Disponibles: <strong className="text-emerald-400 font-mono font-bold">{cuposDisp}</strong></span>
-                  </div>
-                  <div className="w-full bg-neutral-800 rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${porcentaje >= 90 ? 'bg-red-500' : porcentaje >= 70 ? 'bg-amber-400' : 'bg-emerald-500'
-                        }`}
-                      style={{ width: `${porcentaje}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-neutral-500">
-                    <span>Mín. apertura: {p.capacidad_minima_apertura || 10} alumnos</span>
-                    <span>{porcentaje}% cubierto</span>
-                  </div>
-
-                  {puedeAsignar && (
-                    <div className="space-y-1.5 pt-1">
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => { setModalDocente({ paralelo: p }); setIdDocenteSeleccionado(p.id_docente_actual ? String(p.id_docente_actual) : ''); }}
-                          className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-sky-900/40 hover:bg-sky-800/60 border border-sky-700/40 text-sky-300 text-xs font-semibold transition shadow-sm"
-                          title="Asignar Docente"
-                        >
-                          <UserCheck className="w-3.5 h-3.5 shrink-0" />
-                          <span>Docente</span>
-                        </button>
-                        <button
-                          onClick={() => { setModalEstudiante({ paralelo: p }); setIdEstudianteSeleccionado(''); }}
-                          className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-emerald-900/40 hover:bg-emerald-800/60 border border-emerald-700/40 text-emerald-300 text-xs font-semibold transition shadow-sm"
-                          title="Inscribir Alumno"
-                        >
-                          <UserPlus className="w-3.5 h-3.5 shrink-0" />
-                          <span>+ Alumno</span>
-                        </button>
-                      </div>
-                      <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-neutral-800/50">
-                        <button
-                          onClick={() => setModalBajaParalelo({ id: p.id_paralelo, codigo: p.codigo_paralelo, estado: p.estado || 'Abierto' })}
-                          className={`px-2 py-1 rounded text-[10px] font-semibold flex items-center gap-1 ${
-                            p.estado === 'Inactivo'
-                              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                              : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'
-                          }`}
-                          title="Cambiar estado del paralelo"
-                        >
-                          <ShieldAlert className="w-3 h-3" />
-                          <span>{p.estado === 'Inactivo' ? 'Reactivar' : 'Baja'}</span>
-                        </button>
-                        {p.estado === 'Inactivo' && (
-                          <button
-                            onClick={() => setModalEliminarParalelo({ id: p.id_paralelo, codigo: p.codigo_paralelo })}
-                            className="px-2 py-1 rounded text-[10px] font-semibold bg-red-950/60 text-red-300 hover:bg-red-900 border border-red-800/40 flex items-center gap-1"
-                            title="Baja Física Definitiva"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span>Eliminar</span>
-                          </button>
-                        )}
-                      </div>
+                {/* Acciones */}
+                {puedeAsignar && (
+                  <div className="space-y-1.5 border-t pt-2" style={{ borderColor: 'var(--border-fine)' }}>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        onClick={() => { setModalDocente({ paralelo: p }); setIdDocenteSeleccionado(p.id_docente_actual ? String(p.id_docente_actual) : ''); }}
+                        className="flex items-center justify-center gap-1 py-1.5 text-xs font-semibold rounded-[2px] border border-sky-700/40 bg-sky-900/30 text-sky-300 hover:bg-sky-800/40 transition"
+                      >
+                        <UserCheck className="w-3 h-3" /> Docente
+                      </button>
+                      <button
+                        onClick={() => { setModalEstudiante({ paralelo: p }); setIdEstudianteSeleccionado(''); }}
+                        className="flex items-center justify-center gap-1 py-1.5 text-xs font-semibold rounded-[2px] border border-emerald-700/40 bg-emerald-900/30 text-emerald-300 hover:bg-emerald-800/40 transition"
+                      >
+                        <UserPlus className="w-3 h-3" /> Alumno
+                      </button>
                     </div>
-                  )}
-                </div>
-              </div>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => setModalBajaParalelo({ id: p.id_paralelo, codigo: p.codigo_paralelo, estado: p.estado || 'Abierto' })}
+                        className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-semibold rounded-[2px] transition ${p.estado === 'Inactivo' ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30'}`}
+                      >
+                        <ShieldAlert className="w-3 h-3" />
+                        {p.estado === 'Inactivo' ? 'Reactivar' : 'Dar Baja'}
+                      </button>
+                      {p.estado === 'Inactivo' && (
+                        <button
+                          onClick={() => setModalEliminarParalelo({ id: p.id_paralelo, codigo: p.codigo_paralelo })}
+                          className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[10px] font-semibold rounded-[2px] bg-red-950/60 text-red-300 hover:bg-red-900 border border-red-800/40 transition"
+                        >
+                          <Trash2 className="w-3 h-3" /> Eliminar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             );
-          })}
+          })() : (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-center px-4" style={{ color: 'var(--text-muted)' }}>
+              <Layers className="w-10 h-10 opacity-20" />
+              <div>
+                <p className="text-xs font-semibold" style={{ color: 'var(--text-main)' }}>Selecciona un paralelo</p>
+                <p className="text-[11px] mt-1">Haz clic en una fila de la tabla para ver el dossier completo y las acciones disponibles.</p>
+              </div>
+            </div>
+          )}
         </div>
-      )}
-
-      {paralelosVisibles.length > PER_PAGE && (
-        <div className="flex items-center justify-between px-4 py-3 bg-neutral-900/40 border border-neutral-800 rounded-xl text-xs text-neutral-400">
-          <span>Página {page} de {totalPages}</span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="p-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-              className="p-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+      </div>
 
       {modalApertura && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">

@@ -21,11 +21,13 @@ import {
   RefreshCw,
   Calculator,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  User,
+  Check
 } from 'lucide-react';
 import { useAuthRole } from '@/context/AuthRoleContext';
 
-const PER_PAGE = 10;
+const PER_PAGE = 7;
 
 interface AlumnoCalificacion {
   id_inscripcion: number;
@@ -223,6 +225,43 @@ export default function CalificacionesPage() {
     return alumnosFiltrados.slice(start, start + PER_PAGE);
   }, [alumnosFiltrados, page]);
 
+  const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<AlumnoCalificacion | null>(null);
+
+  useEffect(() => {
+    if (alumnosPaginados.length > 0) {
+      if (!alumnoSeleccionado || !alumnosPaginados.some((a) => a.id_inscripcion === alumnoSeleccionado.id_inscripcion)) {
+        setAlumnoSeleccionado(alumnosPaginados[0]);
+      }
+    } else {
+      setAlumnoSeleccionado(null);
+    }
+  }, [alumnosPaginados]);
+
+  const statsParalelo = useMemo(() => {
+    let totalNotas = 0;
+    let sumaNotas = 0;
+    let aprobados = 0;
+    let reprobados = 0;
+    let pendientes = 0;
+
+    alumnos.forEach((a) => {
+      const libro = a.libros_evaluados?.[0];
+      if (libro && libro.nota_final !== null && libro.nota_final !== undefined) {
+        totalNotas++;
+        sumaNotas += Number(libro.nota_final);
+        if (libro.aprobado) aprobados++;
+        else reprobados++;
+      } else {
+        pendientes++;
+      }
+    });
+
+    const promedio = totalNotas > 0 ? (sumaNotas / totalNotas).toFixed(1) : '—';
+    const tasaAprobacion = totalNotas > 0 ? Math.round((aprobados / totalNotas) * 100) : 0;
+
+    return { totalNotas, sumaNotas, promedio, aprobados, reprobados, pendientes, tasaAprobacion };
+  }, [alumnos]);
+
   const notaCalculadaPonderada = useMemo(() => {
     const e = parseFloat(formNotas.examen.toString()) || 0;
     const o = parseFloat(formNotas.oral.toString()) || 0;
@@ -299,267 +338,441 @@ export default function CalificacionesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-neutral-800">
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-sm shrink-0">
-            <Award className="w-6 h-6" />
+    <div className="h-full flex flex-col min-h-0 overflow-hidden">
+      {/* FRANJA SUPERIOR COMPACTA (44px): Breadcrumb + Filtros Inline + Buscador */}
+      <div className="strip-utility-bar">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--military-green-subtle)] border border-[var(--border-accent)] text-[var(--military-green-primary)] dark:text-[var(--military-gold-primary)] font-mono text-[11px] font-bold shrink-0">
+            <Award className="w-3.5 h-3.5" />
+            <span>SACA / Calificaciones</span>
           </div>
-          <div>
-            <div className="flex items-center gap-1.5 text-xs font-mono text-neutral-400">
-              <span>SACA</span>
-              <span>/</span>
-              <span className="text-emerald-400 font-semibold">Calificaciones</span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-extrabold text-white">
-              {esEstudiante ? 'Mi Historial de Calificaciones' : 'Registro de Calificaciones'}
-            </h1>
-          </div>
+
+          {!esEstudiante && (
+            <>
+              <div className="h-4 w-[1px] bg-[var(--border-fine)] shrink-0" />
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[11px] font-bold text-[var(--text-dim)] uppercase hidden sm:inline">Idioma:</span>
+                <select
+                  value={filtroIdioma}
+                  onChange={(e) => setFiltroIdioma(e.target.value)}
+                  className="bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded px-2 py-0.5 text-xs text-[var(--text-main)] outline-none"
+                >
+                  <option value="">Todos los idiomas</option>
+                  {idiomasDisponibles.map((i) => (
+                    <option key={i} value={i}>{i}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-[11px] font-bold text-[var(--text-dim)] uppercase hidden md:inline">Paralelo:</span>
+                <select
+                  value={idParaleloSeleccionado}
+                  onChange={(e) => setIdParaleloSeleccionado(e.target.value)}
+                  className="bg-[var(--bg-surface-elevated)] border border-[var(--military-gold-primary)] rounded px-2 py-0.5 text-xs text-[var(--text-main)] font-mono font-bold outline-none"
+                >
+                  {paralelosFiltrados.map((p) => (
+                    <option key={p.id_paralelo} value={p.id_paralelo}>
+                      {p.codigo_paralelo} — {p.nivel?.programa?.idioma?.nombre_idioma} ({p.nivel?.nombre_nivel})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
         </div>
-        <button
-          onClick={() => cargarNotasParalelo(idParaleloSeleccionado)}
-          disabled={loading}
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-lg bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-medium border border-neutral-700 transition"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 shrink-0 ${loading ? 'animate-spin' : ''}`} />
-          <span>Sincronizar Notas</span>
-        </button>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {!esEstudiante && (
+            <div className="relative w-40 sm:w-56">
+              <Search className="w-3.5 h-3.5 text-[var(--text-dim)] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Buscar CI / nombre..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full bg-[var(--bg-surface-elevated)] border border-[var(--border-subtle)] rounded pl-8 pr-2 py-1 text-xs text-[var(--text-main)] outline-none"
+              />
+            </div>
+          )}
+
+          <button
+            onClick={() => cargarNotasParalelo(idParaleloSeleccionado)}
+            disabled={loading}
+            className="btn btn-secondary"
+            style={{ padding: '0.2rem 0.6rem', fontSize: '0.72rem', height: '28px' }}
+            title="Sincronizar actas de calificaciones"
+          >
+            <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Sincronizar</span>
+          </button>
+        </div>
       </div>
 
       {alerta && (
         <div
-          className={`flex items-center gap-3 p-4 rounded-xl border text-sm font-medium ${
+          className={`flex items-center gap-2 px-3 py-1.5 rounded mb-2 text-xs font-semibold shrink-0 border ${
             alerta.tipo === 'ok'
-              ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-200'
-              : 'bg-red-950/50 border-red-500/50 text-red-200'
+              ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-600 dark:text-emerald-400'
+              : 'bg-red-950/20 border-red-500/40 text-red-600 dark:text-red-400'
           }`}
         >
-          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" /> : <AlertCircle className="w-5 h-5 flex-shrink-0" />}
+          {alerta.tipo === 'ok' ? <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> : <AlertCircle className="w-3.5 h-3.5 shrink-0" />}
           <span>{alerta.mensaje}</span>
         </div>
       )}
 
-      {!esEstudiante && (
-        <div className="flex flex-wrap items-center justify-between gap-3 py-1 text-xs">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="text-neutral-400 font-semibold">Idioma:</span>
-              <select
-                value={filtroIdioma}
-                onChange={(e) => setFiltroIdioma(e.target.value)}
-                className="bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-white"
-              >
-                <option value="">Todos los idiomas</option>
-                {idiomasDisponibles.map((i) => (
-                  <option key={i} value={i}>{i}</option>
-                ))}
-              </select>
-            </div>
+      {/* ÁREA DE TRABAJO DIVIDIDA (SPLIT-WORKSPACE): TABLA COMPACTA + PANEL LATERAL */}
+      <div className="split-workspace">
+        {/* PANEL PRINCIPAL: TABLA COMPACTA (7 REGISTROS) */}
+        <div className="workspace-main-panel">
+          <div className="workspace-table-container">
+            <table className="compact-table">
+              <thead>
+                <tr>
+                  <th>Estudiante</th>
+                  <th>CI</th>
+                  <th>Libro en Curso</th>
+                  <th className="text-center">Examen (80%)</th>
+                  <th className="text-center">Oral (10%)</th>
+                  <th className="text-center">Part. (10%)</th>
+                  <th className="text-center">Nota Final</th>
+                  <th className="text-center">Estado</th>
+                  {puedeCalificar && <th className="text-right">Acción</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {alumnosPaginados.map((item) => {
+                  const primerLibro = item.libros_evaluados?.[0];
+                  const esActivo = alumnoSeleccionado?.id_inscripcion === item.id_inscripcion;
 
-            <div className="flex items-center gap-1.5">
-              <span className="text-neutral-400 font-semibold">Paralelo / Curso:</span>
-              <select
-                value={idParaleloSeleccionado}
-                onChange={(e) => setIdParaleloSeleccionado(e.target.value)}
-                className="bg-neutral-900 border border-emerald-500/50 rounded-lg px-3 py-1.5 text-white font-mono font-bold"
-              >
-                {paralelosFiltrados.map((p) => (
-                  <option key={p.id_paralelo} value={p.id_paralelo}>
-                    {p.codigo_paralelo} — {p.nivel?.programa?.idioma?.nombre_idioma} ({p.nivel?.nombre_nivel})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="relative w-full sm:w-64">
-            <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Buscar en acta..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg pl-10 pr-3 py-1.5 text-xs text-white"
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="bg-neutral-900/50 border border-neutral-800 rounded-xl overflow-hidden shadow-lg">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-neutral-950 text-neutral-400 uppercase tracking-wider border-b border-neutral-800">
-              <tr>
-                <th className="p-3">Estudiante</th>
-                <th className="p-3">CI</th>
-                <th className="p-3">Libro en Curso</th>
-                <th className="p-3 text-center">Examen (80%)</th>
-                <th className="p-3 text-center">Oral (10%)</th>
-                <th className="p-3 text-center">Part. (10%)</th>
-                <th className="p-3 text-center">Nota Final</th>
-                <th className="p-3 text-center">Estado</th>
-                {puedeCalificar && <th className="p-3 text-right">Acción</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-800 text-neutral-300">
-              {alumnosPaginados.map((item) => {
-                const primerLibro = item.libros_evaluados?.[0];
-                return (
-                  <tr key={item.id_inscripcion} className="hover:bg-neutral-800/30 transition">
-                    <td className="p-3">
-                      <div className="font-bold text-white text-sm">
-                        {item.estudiante.nombre_completo}
-                      </div>
-                      {item.estudiante.grado_militar && (
-                        <p className="text-[11px] text-amber-400 flex items-center gap-1">
-                          <Shield className="w-3 h-3" /> {item.estudiante.grado_militar}
-                        </p>
-                      )}
-                    </td>
-                    <td className="p-3 font-mono text-neutral-400">
-                      {item.estudiante.ci}
-                    </td>
-                    <td className="p-3">
-                      <span className="font-semibold text-white">
-                        {primerLibro?.libro || 'Sin libro asignado'}
-                      </span>
-                    </td>
-                    <td className="p-3 text-center font-mono font-semibold text-white">
-                      {primerLibro?.nota_examen !== null ? primerLibro?.nota_examen : '—'}
-                    </td>
-                    <td className="p-3 text-center font-mono font-semibold text-white">
-                      {primerLibro?.nota_oral !== null ? primerLibro?.nota_oral : '—'}
-                    </td>
-                    <td className="p-3 text-center font-mono font-semibold text-white">
-                      {primerLibro?.nota_participacion !== null ? primerLibro?.nota_participacion : '—'}
-                    </td>
-                    <td className="p-3 text-center font-mono font-bold text-base">
-                      {primerLibro?.nota_final !== null ? (
-                        <span className={primerLibro.aprobado ? 'text-emerald-400' : 'text-red-400'}>
-                          {primerLibro.nota_final}
-                        </span>
-                      ) : (
-                        <span className="text-neutral-500 font-normal text-xs">Pendiente</span>
-                      )}
-                    </td>
-                    <td className="p-3 text-center">
-                      {primerLibro?.estado_libro ? (
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase ${
-                            primerLibro.estado_libro === 'Aprobado'
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : primerLibro.estado_libro === 'Reprobado'
-                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          }`}
-                        >
-                          {primerLibro.estado_libro}
-                        </span>
-                      ) : (
-                        <span className="text-neutral-500 text-[10px]">Sin registro</span>
-                      )}
-                    </td>
-                    {puedeCalificar && (
-                      <td className="p-3 text-right">
-                        {primerLibro ? (
-                          <button
-                            onClick={() =>
-                              abrirModalCalificar(
-                                primerLibro.id_inscripcion_libro,
-                                item.estudiante.nombre_completo,
-                                primerLibro.libro,
-                                primerLibro
-                              )
-                            }
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition flex items-center gap-1.5 ml-auto"
-                          >
-                            <Edit className="w-3 h-3" /> Calificar
-                          </button>
+                  return (
+                    <tr
+                      key={item.id_inscripcion}
+                      onClick={() => setAlumnoSeleccionado(item)}
+                      className={`cursor-pointer transition ${esActivo ? 'selected' : ''}`}
+                    >
+                      <td>
+                        <div className="font-bold text-[var(--text-main)] truncate max-w-[200px]">
+                          {item.estudiante.nombre_completo}
+                        </div>
+                        {item.estudiante.grado_militar ? (
+                          <span className="text-[10px] text-[var(--military-gold-primary)] font-bold flex items-center gap-1 font-mono">
+                            <Shield className="w-2.5 h-2.5" /> {item.estudiante.grado_militar}
+                          </span>
                         ) : (
-                          <span className="text-neutral-500 text-[11px]">No habilitado</span>
+                          <span className="text-[10px] text-[var(--text-dim)] font-mono">CIVIL</span>
                         )}
                       </td>
-                    )}
+                      <td className="font-mono text-[var(--text-muted)] font-semibold text-xs whitespace-nowrap">
+                        {item.estudiante.ci}
+                      </td>
+                      <td className="truncate max-w-[150px]">
+                        <span className="font-medium text-[var(--text-main)] text-xs">
+                          {primerLibro?.libro || 'Sin libro'}
+                        </span>
+                      </td>
+                      <td className="text-center font-mono font-semibold text-[var(--text-main)]">
+                        {primerLibro?.nota_examen !== null && primerLibro?.nota_examen !== undefined ? primerLibro.nota_examen : '—'}
+                      </td>
+                      <td className="text-center font-mono font-semibold text-[var(--text-main)]">
+                        {primerLibro?.nota_oral !== null && primerLibro?.nota_oral !== undefined ? primerLibro.nota_oral : '—'}
+                      </td>
+                      <td className="text-center font-mono font-semibold text-[var(--text-main)]">
+                        {primerLibro?.nota_participacion !== null && primerLibro?.nota_participacion !== undefined ? primerLibro.nota_participacion : '—'}
+                      </td>
+                      <td className="text-center font-mono font-bold text-sm">
+                        {primerLibro?.nota_final !== null && primerLibro?.nota_final !== undefined ? (
+                          <span className={primerLibro.aprobado ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}>
+                            {primerLibro.nota_final}
+                          </span>
+                        ) : (
+                          <span className="text-[var(--text-dim)] font-normal text-[11px]">Pendiente</span>
+                        )}
+                      </td>
+                      <td className="text-center whitespace-nowrap">
+                        {primerLibro?.estado_libro ? (
+                          <span
+                            className={`badge ${
+                              primerLibro.estado_libro === 'Aprobado'
+                                ? 'badge-military'
+                                : primerLibro.estado_libro === 'Reprobado'
+                                ? 'badge-danger'
+                                : 'badge-gold'
+                            }`}
+                          >
+                            {primerLibro.estado_libro}
+                          </span>
+                        ) : (
+                          <span className="text-[var(--text-dim)] text-[10px]">Sin registro</span>
+                        )}
+                      </td>
+                      {puedeCalificar && (
+                        <td className="text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          {primerLibro ? (
+                            <button
+                              onClick={() =>
+                                abrirModalCalificar(
+                                  primerLibro.id_inscripcion_libro,
+                                  item.estudiante.nombre_completo,
+                                  primerLibro.libro,
+                                  primerLibro
+                                )
+                              }
+                              className="btn btn-secondary"
+                              style={{ padding: '0.15rem 0.45rem', fontSize: '0.70rem', height: '24px' }}
+                            >
+                              <Edit className="w-3 h-3 text-[var(--military-gold-primary)]" />
+                              <span>Calificar</span>
+                            </button>
+                          ) : (
+                            <span className="text-[var(--text-dim)] text-[10px]">—</span>
+                          )}
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+                {alumnosFiltrados.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-[var(--text-dim)]">
+                      No hay estudiantes registrados en el paralelo seleccionado.
+                    </td>
                   </tr>
-                );
-              })}
-              {alumnosFiltrados.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={9} className="p-8 text-center text-neutral-500">
-                    No hay estudiantes inscritos en este paralelo o curso seleccionado.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-        {alumnosFiltrados.length > PER_PAGE && (
-          <div className="flex items-center justify-between p-3 border-t border-neutral-800 text-xs text-neutral-400 bg-neutral-950/40">
-            <span>Página {page} de {totalPages} ({alumnosFiltrados.length} estudiantes)</span>
+          {/* PAGINACIÓN TÁCTICA FIJA INFERIOR */}
+          <div className="tactical-pagination">
             <div className="flex items-center gap-2">
+              <span className="font-bold text-[var(--military-gold-primary)]">ALUMNOS:</span>
+              <span>{alumnosFiltrados.length} REGISTRADOS</span>
+            </div>
+
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="p-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="btn btn-secondary"
+                style={{ padding: '0.15rem 0.5rem', height: '26px', fontSize: '0.72rem' }}
+                title="Página Anterior"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-3 h-3" />
+                <span className="hidden sm:inline">Anterior</span>
               </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                  .map((p, idx, arr) => (
+                    <React.Fragment key={p}>
+                      {idx > 0 && arr[idx - 1] !== p - 1 && <span className="text-[var(--text-dim)]">...</span>}
+                      <button
+                        onClick={() => setPage(p)}
+                        className={`px-2 py-0.5 rounded text-xs font-mono font-bold border transition ${
+                          page === p
+                            ? 'bg-[var(--military-green-primary)] text-white border-[var(--border-accent)]'
+                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:bg-[var(--bg-surface-hover)]'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    </React.Fragment>
+                  ))}
+              </div>
+
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="p-1.5 rounded-lg border border-neutral-800 hover:bg-neutral-800 text-neutral-300 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                className="btn btn-secondary"
+                style={{ padding: '0.15rem 0.5rem', height: '26px', fontSize: '0.72rem' }}
+                title="Página Siguiente"
               >
-                <ChevronRight className="w-4 h-4" />
+                <span className="hidden sm:inline">Siguiente</span>
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
+
+            <div className="hidden sm:block">
+              <span>PÁG {page} DE {totalPages}</span>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* PANEL LATERAL DERECHO: DOSSIER ACTIVO & ACCIÓN RÁPIDA */}
+        <div className="workspace-side-panel">
+          {alumnoSeleccionado ? (
+            <div className="flex flex-col h-full gap-2.5">
+              {/* Encabezado del Alumno */}
+              <div className="flex items-center gap-2.5 pb-2 border-b border-[var(--border-subtle)]">
+                <div className="w-9 h-9 rounded bg-[var(--military-green-primary)] text-[var(--military-gold-primary)] font-bold font-mono text-sm flex items-center justify-center shrink-0 border border-[var(--border-accent)]">
+                  {alumnoSeleccionado.estudiante.grado_militar ? (
+                    <Shield className="w-5 h-5" />
+                  ) : (
+                    alumnoSeleccionado.estudiante.nombre_completo.slice(0, 2).toUpperCase()
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-xs text-[var(--text-main)] truncate leading-tight">
+                    {alumnoSeleccionado.estudiante.nombre_completo}
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-dim)] font-mono mt-0.5">
+                    <span>CI: {alumnoSeleccionado.estudiante.ci}</span>
+                    <span>&bull;</span>
+                    <span className="text-[var(--military-gold-primary)] font-bold">
+                      {alumnoSeleccionado.estudiante.grado_militar || 'CIVIL'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Libro y Calificaciones en Tiempo Real */}
+              {(() => {
+                const primerLibro = alumnoSeleccionado.libros_evaluados?.[0];
+                return (
+                  <div className="flex flex-col gap-2 flex-1">
+                    <div className="bg-[var(--bg-surface-elevated)] p-2 rounded border border-[var(--border-fine)]">
+                      <div className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Libro Evaluado</div>
+                      <div className="text-xs font-bold text-[var(--text-main)] truncate mt-0.5">
+                        {primerLibro?.libro || 'Sin libro asignado en este curso'}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <div className="bg-[var(--bg-surface-elevated)] p-1.5 rounded border border-[var(--border-fine)] text-center">
+                        <div className="text-[9px] uppercase font-bold text-[var(--text-dim)]">Examen</div>
+                        <div className="text-sm font-mono font-bold text-[var(--text-main)] mt-0.5">
+                          {primerLibro?.nota_examen ?? '—'}
+                        </div>
+                        <div className="text-[8px] text-[var(--text-dim)] font-mono">80%</div>
+                      </div>
+
+                      <div className="bg-[var(--bg-surface-elevated)] p-1.5 rounded border border-[var(--border-fine)] text-center">
+                        <div className="text-[9px] uppercase font-bold text-[var(--text-dim)]">Oral</div>
+                        <div className="text-sm font-mono font-bold text-[var(--text-main)] mt-0.5">
+                          {primerLibro?.nota_oral ?? '—'}
+                        </div>
+                        <div className="text-[8px] text-[var(--text-dim)] font-mono">10%</div>
+                      </div>
+
+                      <div className="bg-[var(--bg-surface-elevated)] p-1.5 rounded border border-[var(--border-fine)] text-center">
+                        <div className="text-[9px] uppercase font-bold text-[var(--text-dim)]">Part.</div>
+                        <div className="text-sm font-mono font-bold text-[var(--text-main)] mt-0.5">
+                          {primerLibro?.nota_participacion ?? '—'}
+                        </div>
+                        <div className="text-[8px] text-[var(--text-dim)] font-mono">10%</div>
+                      </div>
+                    </div>
+
+                    {/* Nota Final Prominente */}
+                    <div className="p-2.5 rounded border border-[var(--border-accent)] bg-[var(--military-gold-subtle)] flex items-center justify-between">
+                      <div>
+                        <div className="text-[10px] uppercase font-bold text-[var(--text-muted)]">Nota Final Ponderada</div>
+                        <div className="text-[10px] text-[var(--text-dim)] font-mono">Mínimo aprobación: 71.0</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-mono font-black text-[var(--text-main)]">
+                          {primerLibro?.nota_final !== null && primerLibro?.nota_final !== undefined ? primerLibro.nota_final : '—'}
+                        </div>
+                        {primerLibro?.estado_libro && (
+                          <span className={`badge ${primerLibro.aprobado ? 'badge-military' : 'badge-danger'}`}>
+                            {primerLibro.estado_libro}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Botón de Acción Directo */}
+                    {puedeCalificar && primerLibro && (
+                      <button
+                        onClick={() =>
+                          abrirModalCalificar(
+                            primerLibro.id_inscripcion_libro,
+                            alumnoSeleccionado.estudiante.nombre_completo,
+                            primerLibro.libro,
+                            primerLibro
+                          )
+                        }
+                        className="btn btn-primary w-full mt-auto"
+                        style={{ padding: '0.45rem', fontSize: '0.78rem' }}
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                        <span>Calificar / Asignar Nota</span>
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center p-4 text-[var(--text-dim)]">
+              <User className="w-10 h-10 mb-2 opacity-30" />
+              <p className="text-xs">Seleccione un estudiante de la tabla para ver su desglose táctico y calificar.</p>
+            </div>
+          )}
+
+          {/* Estadísticas del Paralelo al pie del panel derecho */}
+          <div className="pt-2 mt-auto border-t border-[var(--border-subtle)]">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] mb-1 font-mono">
+              Balance del Curso
+            </div>
+            <div className="grid grid-cols-2 gap-1 text-[11px] font-mono">
+              <div className="flex justify-between bg-[var(--bg-surface-elevated)] p-1.5 rounded">
+                <span className="text-[var(--text-dim)]">Promedio:</span>
+                <span className="font-bold text-[var(--text-main)]">{statsParalelo.promedio}</span>
+              </div>
+              <div className="flex justify-between bg-[var(--bg-surface-elevated)] p-1.5 rounded">
+                <span className="text-[var(--text-dim)]">Aprobados:</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{statsParalelo.tasaAprobacion}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {modalCalificar && evaluando && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-neutral-700 rounded-2xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+        <div className="modal-overlay" onClick={() => setModalCalificar(false)}>
+          <div className="modal-card animate-solemn-fade" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="modal-header">
               <div>
-                <h3 className="text-base font-bold text-white">Registro de Evaluación</h3>
-                <p className="text-xs text-neutral-400">
-                  {evaluando.alumnoNombre} &bull; <span className="text-emerald-400">{evaluando.libroTitulo}</span>
+                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                  Registro de Evaluación
+                </h3>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-dim)', margin: '0.15rem 0 0' }}>
+                  {evaluando.alumnoNombre} &bull; <span style={{ color: 'var(--military-gold-primary)', fontWeight: 700 }}>{evaluando.libroTitulo}</span>
                 </p>
               </div>
-              <button onClick={() => setModalCalificar(false)} className="text-neutral-400 hover:text-white">
-                <X className="w-5 h-5" />
+              <button onClick={() => setModalCalificar(false)} className="btn-icon btn-ghost">
+                <X size={16} />
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 bg-neutral-950 p-1 rounded-lg border border-neutral-800 text-xs font-semibold">
+            <div style={{ padding: '0.85rem 1.25rem 0', display: 'flex', gap: '0.35rem' }}>
               <button
                 type="button"
                 onClick={() => setModoCalculo('ponderada')}
-                className={`py-1.5 rounded transition ${
-                  modoCalculo === 'ponderada' ? 'bg-emerald-600 text-white' : 'text-neutral-400 hover:text-white'
-                }`}
+                className={`filter-tab ${modoCalculo === 'ponderada' ? 'active' : ''}`}
+                style={{ flex: 1, justifyContent: 'center' }}
               >
-                Fórmula 80/10/10 (Desglose)
+                Fórmula 80/10/10
               </button>
               <button
                 type="button"
                 onClick={() => setModoCalculo('directa')}
-                className={`py-1.5 rounded transition ${
-                  modoCalculo === 'directa' ? 'bg-emerald-600 text-white' : 'text-neutral-400 hover:text-white'
-                }`}
+                className={`filter-tab ${modoCalculo === 'directa' ? 'active' : ''}`}
+                style={{ flex: 1, justifyContent: 'center' }}
               >
-                Promedio Directo Docente
+                Promedio Directo
               </button>
             </div>
 
-            <form onSubmit={handleGuardarCalificacion} className="space-y-4 text-xs">
+            <form onSubmit={handleGuardarCalificacion} style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               {modoCalculo === 'ponderada' ? (
-                <div className="space-y-3">
+                <>
                   <div>
-                    <label className="text-neutral-300 font-semibold block mb-1">
-                      1. Examen Teórico / Escrito (80% de la nota final)
-                    </label>
+                    <label>1. Examen Teórico / Escrito (80%)</label>
                     <input
                       type="number"
                       min="0"
@@ -567,15 +780,13 @@ export default function CalificacionesPage() {
                       step="0.5"
                       value={formNotas.examen}
                       onChange={(e) => setFormNotas({ ...formNotas, examen: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white font-mono text-sm"
                       required
+                      style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
                     />
                   </div>
 
                   <div>
-                    <label className="text-neutral-300 font-semibold block mb-1">
-                      2. Defensa Oral / Speaking (10% de la nota final)
-                    </label>
+                    <label>2. Defensa Oral / Speaking (10%)</label>
                     <input
                       type="number"
                       min="0"
@@ -583,15 +794,13 @@ export default function CalificacionesPage() {
                       step="0.5"
                       value={formNotas.oral}
                       onChange={(e) => setFormNotas({ ...formNotas, oral: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white font-mono text-sm"
                       required
+                      style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
                     />
                   </div>
 
                   <div>
-                    <label className="text-neutral-300 font-semibold block mb-1">
-                      3. Participación y Disciplina (10% de la nota final)
-                    </label>
+                    <label>3. Participación & Disciplina (10%)</label>
                     <input
                       type="number"
                       min="0"
@@ -599,23 +808,21 @@ export default function CalificacionesPage() {
                       step="0.5"
                       value={formNotas.participacion}
                       onChange={(e) => setFormNotas({ ...formNotas, participacion: parseFloat(e.target.value) || 0 })}
-                      className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white font-mono text-sm"
                       required
+                      style={{ fontFamily: 'JetBrains Mono, monospace', fontWeight: 700 }}
                     />
                   </div>
 
-                  <div className="bg-neutral-950/80 border border-neutral-800 rounded-xl p-3 flex items-center justify-between">
-                    <span className="text-neutral-400 font-medium">Nota Final Ponderada:</span>
-                    <span className={`font-mono text-lg font-extrabold ${notaCalculadaPonderada >= 71 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <div style={{ background: 'var(--military-gold-subtle)', border: '1px solid var(--border-accent)', padding: '0.65rem 0.85rem', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>Nota Final Ponderada:</span>
+                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.1rem', fontWeight: 900, color: notaCalculadaPonderada >= 71 ? 'var(--status-active)' : 'var(--status-danger)' }}>
                       {notaCalculadaPonderada} / 100 {notaCalculadaPonderada >= 71 ? '(Aprobado)' : '(Reprobado)'}
                     </span>
                   </div>
-                </div>
+                </>
               ) : (
                 <div>
-                  <label className="text-neutral-300 font-semibold block mb-1">
-                    Nota Promedio Final (Colocada por el Docente)
-                  </label>
+                  <label>Nota Promedio Final (Docente)</label>
                   <input
                     type="number"
                     min="0"
@@ -623,26 +830,28 @@ export default function CalificacionesPage() {
                     step="0.5"
                     value={formNotas.promedioDirecto}
                     onChange={(e) => setFormNotas({ ...formNotas, promedioDirecto: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-2 text-white font-mono text-base font-bold"
                     required
+                    style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '1.1rem', fontWeight: 900 }}
                   />
-                  <p className="text-[11px] text-neutral-400 mt-1.5">
+                  <p style={{ fontSize: '0.68rem', color: 'var(--text-dim)', margin: '0.35rem 0 0' }}>
                     Nota mínima de aprobación: 71.0 puntos.
                   </p>
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-800">
+              <div className="modal-footer" style={{ margin: '0.5rem -1.25rem -1rem', padding: '0.75rem 1.25rem' }}>
                 <button
                   type="button"
                   onClick={() => setModalCalificar(false)}
-                  className="px-3 py-1.5 rounded-lg bg-neutral-800 text-white font-semibold"
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition shadow"
+                  className="btn btn-primary"
+                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.85rem' }}
                 >
                   Guardar Calificación
                 </button>
